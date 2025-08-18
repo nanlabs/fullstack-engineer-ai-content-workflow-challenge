@@ -10,6 +10,7 @@ import {
 import { MovieService } from './movie.service';
 import { CreateMovieDto } from './dto/create-movie.dto';
 import { UpdateMovieDto } from './dto/update-movie.dto';
+import type { Movie } from './movie.entity';
 
 @Controller('movie')
 export class MovieController {
@@ -21,7 +22,7 @@ export class MovieController {
   }
 
   @Get()
-  findAll() {
+  findAll(): Promise<Movie[]> {
     return this.movieService.findAll();
   }
 

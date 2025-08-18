@@ -10,6 +10,7 @@ import {
 import { SongService } from './song.service';
 import { CreateSongDto } from './dto/create-song.dto';
 import { UpdateSongDto } from './dto/update-song.dto';
+import type { Song } from './song.entity';
 
 @Controller('song')
 export class SongController {
@@ -21,22 +22,22 @@ export class SongController {
   }
 
   @Get()
-  findAll() {
+  findAll(): Promise<Song[]> {
     return this.songService.findAll();
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.songService.findOne(+id);
+    return this.songService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateSongDto: UpdateSongDto) {
-    return this.songService.update(+id, updateSongDto);
+    return this.songService.update(id, updateSongDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.songService.remove(+id);
+    return this.songService.remove(id);
   }
 }
