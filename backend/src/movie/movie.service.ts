@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateMovieDto } from './dto/create-movie.dto';
 import { UpdateMovieDto } from './dto/update-movie.dto';
@@ -30,5 +30,21 @@ export class MovieService {
 
   remove(id: number) {
     return `This action removes a #${id} movie`;
+  }
+
+  async findDetail(id: string): Promise<Movie> {
+    const m = await this.movieRepository
+      .createQueryBuilder('m')
+      .leftJoinAndSelect('m.scenes', 's')
+      .leftJoinAndSelect('s.tracks', 't')
+      .leftJoinAndSelect('t.song', 'song')
+      .where('m.id = :id', { id })
+      .orderBy('s.name', 'ASC')
+      .addOrderBy('t.startTime', 'ASC')
+      .getOne();
+
+    if (!m) throw new NotFoundException('Movie not found');
+
+    return m as unknown as Movie;
   }
 }
