@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { getMovies } from '@/lib/api';
 import type { Movie } from '../types'
 
@@ -32,11 +33,14 @@ export default function MovieList() {
 
   return (
     <>
+    {/* TODO: add search, filters, pagination */}
     {movies?.map((movie) => (
-        <div key={movie.id} className="p-4 border rounded shadow">
-            <h3 className="text-lg font-bold">{movie.title}</h3>
-            <p className="text-sm text-gray-600">{movie.description || 'No description'}</p>
-        </div>
+      <div key={movie.id} className="p-4 border rounded shadow">
+        <h3 className="text-lg font-bold">
+          <Link className="underline" href={`/movies/${movie.id}`}>{movie.title}</Link>
+        </h3>
+        <p className="text-sm text-gray-600">{movie.description || 'No description'}</p>
+      </div>
     ))}
     </>
   );
