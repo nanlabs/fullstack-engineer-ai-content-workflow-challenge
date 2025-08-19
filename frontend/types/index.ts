@@ -28,3 +28,6 @@ export interface Movie {
   description?: string | null;
   scenes: Scene[];
 }
+
+export const STATUS_OPTIONS = ['PENDING','NEGOTIATION','APPROVED','REJECTED'] as const;
+export type LicenseStatusGQL = typeof STATUS_OPTIONS[number];

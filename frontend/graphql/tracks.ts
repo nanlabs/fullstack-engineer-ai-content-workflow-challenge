@@ -11,3 +11,12 @@ export const SET_TRACK_SONG = gql`
     }
   }
 `;
+
+export const UPDATE_TRACK_STATUS = gql`
+  mutation UpdateTrackStatus($trackId: ID!, $status: LicenseStatus!) {
+    updateTrackStatus(trackId: $trackId, status: $status) {
+      id
+      licenseStatus
+    }
+  }
+`;
