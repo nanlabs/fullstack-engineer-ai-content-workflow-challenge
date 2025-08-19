@@ -31,7 +31,7 @@ export class Track {
   scene!: Scene;
 
   @Field(() => Song, { nullable: true })
-  @ManyToOne(() => Song, { onDelete: 'SET NULL' })
+  @ManyToOne(() => Song, { onDelete: 'SET NULL', eager: true })
   @JoinColumn({ name: 'song_id' })
   song!: Song;
 
