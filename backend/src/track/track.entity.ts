@@ -26,19 +26,24 @@ export class Track {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @ManyToOne(() => Scene, (scene) => scene.tracks, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Scene, (scene) => scene.tracks, {
+    onDelete: 'CASCADE',
+    nullable: false,
+  })
   @JoinColumn({ name: 'scene_id' })
   scene!: Scene;
 
   @Field(() => Song, { nullable: true })
-  @ManyToOne(() => Song, { onDelete: 'SET NULL', eager: true })
+  @ManyToOne(() => Song, { onDelete: 'SET NULL', eager: true, nullable: true })
   @JoinColumn({ name: 'song_id' })
-  song!: Song;
+  song: Song | null = null;
 
+  // TODO: ensure endTime > startTime
   @Field(() => Int)
   @Column({ type: 'int' })
   startTime!: number; // seconds
 
+  // TODO: ensure endTime > startTime
   @Field(() => Int)
   @Column({ type: 'int' })
   endTime!: number; // seconds

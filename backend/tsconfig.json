@@ -1,4 +1,5 @@
 {
+  // TODO: revise all options
   "compilerOptions": {
     "module": "nodenext",
     "moduleResolution": "nodenext",
@@ -20,6 +21,7 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": true,
     "strictBindCallApply": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "strict": true,
   }
 }

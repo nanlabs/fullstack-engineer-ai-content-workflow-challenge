@@ -18,7 +18,7 @@ export class Song {
 
   @Field()
   @Column({ type: 'varchar', length: 255, nullable: true })
-  album?: string;
+  album: string;
 
   @Field(() => Int, { nullable: true })
   @Column({ type: 'int', nullable: true })
