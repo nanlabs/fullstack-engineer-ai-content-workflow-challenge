@@ -37,6 +37,8 @@ export class TrackResolver {
     await this.pubSub.publish(`trackUpdated:movie-${track.scene.movie.id}`, {
       trackUpdated: track,
     });
+    await this.pubSub.publish('movieSummaryChanged', true);
+
     return track;
   }
 
@@ -58,6 +60,8 @@ export class TrackResolver {
     await this.pubSub.publish(`trackUpdated:movie-${track.scene.movie.id}`, {
       trackUpdated: track,
     });
+    await this.pubSub.publish('movieSummaryChanged', true);
+
     return track;
   }
 
@@ -80,5 +84,13 @@ export class TrackResolver {
     return this.pubSub.asyncIterableIterator<TrackUpdatedPayload>(
       `trackUpdated:movie-${movieId}`,
     );
+  }
+
+  @Subscription(() => Boolean, {
+    name: 'movieSummaryChanged',
+    resolve: () => true,
+  })
+  movieSummaryChanged() {
+    return this.pubSub.asyncIterableIterator('movieSummaryChanged');
   }
 }

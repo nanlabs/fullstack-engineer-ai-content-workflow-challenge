@@ -1,6 +1,17 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
-import { ObjectType, Field, ID } from '@nestjs/graphql';
+import { ObjectType, Field, ID, Int } from '@nestjs/graphql';
 import { Scene } from '../scene/scene.entity';
+
+@ObjectType()
+export class MovieSummary {
+  @Field(() => Int) totalScenes!: number;
+  @Field(() => Int) totalTracks!: number;
+  @Field(() => Int) withSong!: number;
+  @Field(() => Int) pending!: number;
+  @Field(() => Int) negotiation!: number;
+  @Field(() => Int) approved!: number;
+  @Field(() => Int) rejected!: number;
+}
 
 @ObjectType()
 @Entity()
@@ -20,4 +31,10 @@ export class Movie {
   @Field(() => [Scene])
   @OneToMany(() => Scene, (scene) => scene.movie)
   scenes!: Scene[];
+
+  // This is a computed field, not stored in the database.
+  // It summarizes licensing status counts and the number of tracks
+  // without a song, calculated at runtime from related entities.
+  @Field(() => MovieSummary)
+  summary!: MovieSummary;
 }
