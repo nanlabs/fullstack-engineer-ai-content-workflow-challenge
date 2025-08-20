@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { ApolloProvider, useQuery, useMutation } from '@apollo/client';
+import { ApolloProvider, useQuery, useMutation, useSubscription } from '@apollo/client';
 import { apollo } from '@/graphql/apollo';
 import { GET_SONGS } from '@/graphql/songs';
-import { SET_TRACK_SONG, UPDATE_TRACK_STATUS } from '@/graphql/tracks';
+import { SET_TRACK_SONG, UPDATE_TRACK_STATUS, TRACK_UPDATED_SUBSCRIPTION } from '@/graphql/tracks';
 import { GET_MOVIE } from '@/graphql/movies';
 import type { Movie, Song } from '@/types';
 
@@ -16,8 +16,22 @@ const STATUS_OPTIONS = ['PENDING', 'NEGOTIATION', 'APPROVED', 'REJECTED'] as con
 type LicenseStatusGQL = typeof STATUS_OPTIONS[number];
 
 function Detail({ id }: { id: string }) {
-  const { data: movieData, loading, error } = useQuery<GetMovieData, GetMovieVars>(GET_MOVIE, { variables: { id } });
+  const { data: movieData, loading, error, refetch } = useQuery<GetMovieData, GetMovieVars>(GET_MOVIE, { variables: { id } });
   const { data: songsData } = useQuery<{ songs: Song[] }>(GET_SONGS);
+
+  // --- subscription for updates in real time ---
+  useSubscription(TRACK_UPDATED_SUBSCRIPTION, {
+    variables: { movieId: id },
+    onData: ({ data }) => {
+      const updatedTrack = data.data?.trackUpdated;
+      if (updatedTrack) {
+        refetch();
+      }
+    },
+    onError: (error) => {
+      console.error('Subscription error:', error);
+    }
+  });
 
   // --- mutations ---
   const [setSong, { loading: savingSong, error: errSong }] = useMutation(SET_TRACK_SONG, {
@@ -143,7 +157,7 @@ function Detail({ id }: { id: string }) {
                             value={selectedSongId || ''}
                             onChange={(e) => setSelectedSongId(e.target.value)}
                           >
-                            <option value="">Select song…</option>
+                            <option value="">Select song...</option>
                             {songs.map((song) => (
                               <option key={song.id} value={song.id}>
                                 {song.title} — {song.artist}
