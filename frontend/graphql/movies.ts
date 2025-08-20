@@ -1,7 +1,7 @@
 import { gql } from '@apollo/client';
 
 export const GET_MOVIE = gql`
-  query GetMovie($id: ID!) {
+  query Movie($id: ID!) {
     movie(id: $id) {
       id
       title
@@ -19,5 +19,30 @@ export const GET_MOVIE = gql`
         }
       }
     }
+  }
+`;
+
+export const GET_MOVIES = gql`
+  query Movies {
+    movies {
+      id
+      title
+      description
+      summary {
+        totalScenes
+        totalTracks
+        withSong
+        pending
+        negotiation
+        approved
+        rejected
+      }
+    }
+  }
+`;
+
+export const MOVIE_SUMMARY_CHANGED = gql`
+  subscription MovieSummaryChanged {
+    movieSummaryChanged
   }
 `;
