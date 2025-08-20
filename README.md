@@ -1,5 +1,8 @@
 # Music Licensing Workflow Challenge
 
+This project was built as part of a technical challenge for a position that requested a stack based on **NestJS** and **Next.js**.  
+My background is mainly with **Vue** on the frontend and **Django/Express** on the backend, but for this challenge I wanted to stick to the tools they use. It felt like a good opportunity to get hands-on with Nest and Next, and to show that I can adapt quickly to new stacks.
+
 ## Requirements
 - Docker & Docker Compose
 
