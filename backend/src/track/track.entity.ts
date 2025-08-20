@@ -26,6 +26,7 @@ export class Track {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
+  @Field(() => Scene)
   @ManyToOne(() => Scene, (scene) => scene.tracks, {
     onDelete: 'CASCADE',
     nullable: false,

@@ -23,5 +23,7 @@
     "strictBindCallApply": true,
     "noFallthroughCasesInSwitch": true,
     "strict": true,
+    "lib": ["ES2020", "DOM", "ESNext.AsyncIterable"],
+    "downlevelIteration": true
   }
 }

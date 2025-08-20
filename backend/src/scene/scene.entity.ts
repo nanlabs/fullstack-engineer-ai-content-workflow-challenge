@@ -24,6 +24,7 @@ export class Scene {
   @Column({ type: 'text', nullable: true })
   description?: string;
 
+  @Field(() => Movie)
   @ManyToOne(() => Movie, (movie) => movie.scenes, { onDelete: 'CASCADE' })
   movie!: Movie;
 

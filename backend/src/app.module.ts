@@ -15,8 +15,11 @@ import { dataSourceOptions } from './database/data-source';
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: true,
-      playground: true,
+      playground: true, // only for dev
       sortSchema: true,
+      subscriptions: {
+        'graphql-ws': true,
+      },
     }),
     TypeOrmModule.forRoot(dataSourceOptions),
     SongModule,
