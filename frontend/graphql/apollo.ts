@@ -3,16 +3,15 @@ import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
 import { createClient } from 'graphql-ws';
 import { getMainDefinition } from '@apollo/client/utilities';
 
-// TODO: read it from .env
-const API_HOST = 'localhost';
-const API_PORT = 3001
+const httpUrl = process.env.NEXT_PUBLIC_API_HTTP_URL;
+const wsUrl = process.env.NEXT_PUBLIC_API_WS_URL;
 
 const httpLink = new HttpLink({
-  uri: `http://${API_HOST}:${API_PORT}/graphql`
+  uri: httpUrl
 });
 
 const wsLink = new GraphQLWsLink(createClient({
-  url: `ws://${API_HOST}:${API_PORT}/graphql`,
+  url: wsUrl || ''
 }));
 
 const splitLink = split(

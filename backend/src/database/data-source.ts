@@ -7,11 +7,11 @@ import { Track } from '../track/track.entity';
 
 export const dataSourceOptions: PostgresConnectionOptions = {
   type: 'postgres',
-  host: 'localhost', // In production/stage, use env vars (e.g., process.env.DB_HOST)
-  port: 5432, // In production/stage, use env vars (e.g., process.env.DB_PORT)
-  username: 'postgres', // In production/stage, use env vars (e.g., process.env.DB_USER)
-  password: 'postgres', // In production/stage, use env vars (e.g., process.env.DB_PASSWORD)
-  database: 'music_licensing', // In production/stage, use env vars (e.g., process.env.DB_NAME)
+  host: process.env.DB_HOST,
+  port: Number(process.env.DB_PORT),
+  username: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
   entities: [Song, Movie, Scene, Track],
   synchronize: true, // Auto-updates DB schema on app launch (DEV ONLY - disable in production and implement migrations instead!)
 };
