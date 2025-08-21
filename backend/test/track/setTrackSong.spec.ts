@@ -1,21 +1,20 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { PubSub } from 'graphql-subscriptions';
 import { NotFoundException } from '@nestjs/common';
-import { TrackResolver } from '../src/track/track.resolver';
-import { Track } from '../src/track/track.entity';
-import { Song } from '../src/song/song.entity';
-import { Scene } from '../src/scene/scene.entity';
-import { Movie } from '../src/movie/movie.entity';
-import { PUB_SUB } from '../src/realtime/pubsub.token';
+import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { TrackResolver } from '../../src/track/track.resolver';
+import { Track } from '../../src/track/track.entity';
+import { Song } from '../../src/song/song.entity';
+import { Scene } from '../../src/scene/scene.entity';
+import { Movie } from '../../src/movie/movie.entity';
+import { PUB_SUB } from '../../src/realtime/pubsub.token';
 import {
   emitMovieEvent,
   emitGlobalMoviesEvent,
   MovieEventKind,
-} from '../src/realtime/events';
+} from '../../src/realtime/events';
 
-jest.mock('../src/realtime/events', () => ({
+jest.mock('../../src/realtime/events', () => ({
   MovieEventKind: {
     TRACK_SONG_SET: 'TRACK_SONG_SET',
   },
@@ -23,23 +22,32 @@ jest.mock('../src/realtime/events', () => ({
   emitGlobalMoviesEvent: jest.fn().mockResolvedValue(undefined),
 }));
 
+type RepoMock<T> = {
+  findOne: jest.Mock<Promise<T | null>, [any]>;
+  save: jest.Mock<Promise<T>, [T]>;
+};
+
 describe('TrackResolver.setTrackSong (unit)', () => {
   let resolver: TrackResolver;
   let pubSub: PubSub;
-  let trackRepo: jest.Mocked<Partial<Repository<Track>>>;
-  let songRepo: jest.Mocked<Partial<Repository<Song>>>;
-  let sceneRepo: jest.Mocked<Partial<Repository<Scene>>>;
+  let trackRepo: RepoMock<Track>;
+  let songRepo: RepoMock<Song>;
+  let sceneRepo: RepoMock<Scene>;
 
   beforeEach(async () => {
     trackRepo = {
-      findOne: jest.fn(),
-      save: jest.fn(),
+      findOne: jest.fn<Promise<Track | null>, [any]>(),
+      save: jest.fn<Promise<Track>, [Track]>(),
     };
+
     songRepo = {
-      findOne: jest.fn(),
+      findOne: jest.fn<Promise<Song | null>, [any]>(),
+      save: jest.fn<Promise<Song>, [Song]>(),
     };
+
     sceneRepo = {
-      // no-op for this test
+      findOne: jest.fn<Promise<Scene | null>, [any]>(),
+      save: jest.fn<Promise<Scene>, [Scene]>(),
     };
 
     pubSub = {
@@ -68,25 +76,43 @@ describe('TrackResolver.setTrackSong (unit)', () => {
     // Arrange
     const movie: Partial<Movie> = { id: 'm1', title: 'Movie A' };
     const scene: Partial<Scene> = { id: 'sc1', movie: movie as Movie };
-    const track: Partial<Track> = { id: 't1', scene: scene as Scene };
+    const track: Partial<Track> = {
+      id: 't1',
+      scene: scene as Scene,
+      song: null,
+    };
     const song: Partial<Song> = { id: 's1', title: 'Song X' };
 
     (trackRepo.findOne as jest.Mock).mockResolvedValue(track as Track);
     (songRepo.findOne as jest.Mock).mockResolvedValue(song as Song);
+    (trackRepo.save as jest.Mock).mockImplementation((t: Track) =>
+      Promise.resolve(t),
+    );
 
     // Act
     const updated = await resolver.setTrackSong(track.id!, song.id!);
 
-    // Assert
+    // Assert entity updated
     expect(updated.song?.id).toBe(song.id!);
+
+    // Assert repo calls and requested relations
+    expect(trackRepo.findOne).toHaveBeenCalledWith({
+      where: { id: track.id },
+      relations: ['scene', 'scene.movie'],
+    });
+    expect(trackRepo.save).toHaveBeenCalledTimes(1);
+    const [saved] = trackRepo.save.mock.lastCall!;
+    expect(saved.song?.id).toBe(song.id);
+
+    // Realtime notifications
     expect(emitMovieEvent).toHaveBeenCalledWith(
       pubSub,
-      'm1',
+      movie.id,
       MovieEventKind.TRACK_SONG_SET,
     );
     expect(emitGlobalMoviesEvent).toHaveBeenCalledWith(
       pubSub,
-      'Movie A',
+      movie.title,
       MovieEventKind.TRACK_SONG_SET,
     );
   });
@@ -111,6 +137,7 @@ describe('TrackResolver.setTrackSong (unit)', () => {
       resolver.setTrackSong(track.id!, 'missing-song'),
     ).rejects.toBeInstanceOf(NotFoundException);
 
+    // Should not try to save nor emit events
     expect(trackRepo.save).not.toHaveBeenCalled();
     expect(emitMovieEvent).not.toHaveBeenCalled();
     expect(emitGlobalMoviesEvent).not.toHaveBeenCalled();
