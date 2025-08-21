@@ -45,11 +45,20 @@ I used **GraphQL only** to keep the project small and consistent:
 
 ### 🧪 Tests
 
-All backend unit tests live under `backend/test/`.  
+All backend unit tests live under `backend/test/`.
+
+#### Naming convention
 Tests follow a naming convention of `<resolver>.<method>.spec.ts` for unit tests that focus on a single resolver method.
 
 Example:  
 - `track.resolver.setTrackSong.spec.ts` → tests only `setTrackSong` in `TrackResolver`.
+
+#### Running tests
+
+Run **all tests**:
+```bash
+npm test
+```
 
 ### Future Improvements
 
