@@ -3,17 +3,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Track } from './track.entity';
 import { Song } from '../song/song.entity';
 import { Scene } from '../scene/scene.entity';
-import { TrackService } from './track.service';
-import { TrackController } from './track.controller';
 import { TrackResolver } from './track.resolver';
 import { PubSub } from 'graphql-subscriptions';
 import { PUB_SUB } from '../realtime/pubsub.token';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Track, Song, Scene])],
-  controllers: [TrackController],
   providers: [
-    TrackService,
     TrackResolver,
     { provide: PUB_SUB, useFactory: () => new PubSub() },
   ],
