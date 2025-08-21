@@ -8,6 +8,7 @@ import { SET_TRACK_SONG, UPDATE_TRACK_STATUS, TRACK_UPDATED_SUBSCRIPTION } from 
 import { GET_MOVIE } from '@/graphql/movies';
 import type { Movie, Song } from '@/types';
 import CreateTrackForm from '@/components/CreateTrackForm';
+import CreateSceneForm from '@/components/CreateSceneForm';
 
 type GetMovieVars = { id: string };
 type GetMovieData = { movie: Movie | null };
@@ -54,7 +55,10 @@ function Detail({ id }: { id: string }) {
   const [selectedStatus, setSelectedStatus] = useState<LicenseStatusGQL | null>(null);
 
   // --- track creation UI state ---
-  const [creatingSceneId, setCreatingSceneId] = useState<string | null>(null);
+  const [creatingTrackSceneId, setCreatingTrackSceneId] = useState<string | null>(null);
+
+  // --- scene creation UI state ---
+  const [creatingScene, setCreatingScene] = useState(false);
 
   if (loading) return <div className="p-6">Loading...</div>;
   if (error)   return <div className="p-6 text-red-600">{error.message}</div>;
@@ -84,24 +88,41 @@ function Detail({ id }: { id: string }) {
         <p className="text-gray-600">{movie.description ?? 'No description'}</p>
       </header>
 
+      <div className="mt-3">
+        {creatingScene ? (
+          <CreateSceneForm
+            movieId={movie.id}
+            onCancel={() => setCreatingScene(false)}
+          />
+        ) : (
+          <button
+            className="text-xs px-2 py-1 rounded border"
+            onClick={() => setCreatingScene(true)}
+          >
+            Create scene
+          </button>
+        )}
+      </div>
+
       {movie.scenes.length === 0 ? (
         <p className="text-sm text-gray-500">No scenes yet.</p>
       ) : movie.scenes.map((s) => (
         <section key={s.id} className="border rounded p-4 space-y-2">
           <h2 className="font-semibold">{s.name}</h2>
+          <p className="text-gray-600">{s.description ?? 'No description'}</p>
 
           {/* Create track toggle */}
-          {creatingSceneId === s.id ? (
+          {creatingTrackSceneId === s.id ? (
             <div className="space-y-2">
               <CreateTrackForm
                 sceneId={s.id}
-                onCancel={() => setCreatingSceneId(null)}
+                onCancel={() => setCreatingTrackSceneId(null)}
               />
             </div>
           ) : (
             <button
               className="text-xs px-2 py-1 rounded border"
-              onClick={() => setCreatingSceneId(s.id)}
+              onClick={() => setCreatingTrackSceneId(s.id)}
             >
               Create track
             </button>
