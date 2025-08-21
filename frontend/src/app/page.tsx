@@ -7,7 +7,7 @@ export default function Home() {
       
       <section className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Movies</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-testid="movies-list">
           <MovieList />
         </div>
       </section>

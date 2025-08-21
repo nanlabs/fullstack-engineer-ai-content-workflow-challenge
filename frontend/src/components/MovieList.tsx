@@ -18,7 +18,7 @@ function List() {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   // NOTE: Currently we trigger a full refetch of the movies list every time
-  // `movieSummaryChanged` fires (any track update in any movie).
+  // `ALL_MOVIES_EVENTS` fires (any track update in any movie).
   // This is simple but not optimal: even if only one movie changed, we refetch them all.
   //
   // TODO(improvement):
@@ -61,26 +61,28 @@ function List() {
         <Toast message={toastMsg} onClose={() => setToastMsg(null)} />
       )}
       {/* TODO: add search, filters, pagination */}
-      {movies?.map((movie) => (
-        <div key={movie.id} className="p-4 border rounded shadow">
-          <h3 className="text-lg font-bold">
-            <Link className="underline" href={`/movies/${movie.id}`}>{movie.title}</Link>
-          </h3>
-          <p className="text-sm text-gray-600">{movie.description || 'No description'}</p>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-              <StatusPill label="approved" value={movie.summary.approved} tone="approved" />
-              <StatusPill label="negotiation" value={movie.summary.negotiation} tone="negotiation" />
-              <StatusPill label="pending" value={movie.summary.pending} tone="pending" />
-              <StatusPill label="rejected" value={movie.summary.rejected} tone="rejected" />
-            </div>
+      <>
+          {movies?.map((movie) => (
+          <div key={movie.id} className="p-4 border rounded shadow" data-testid={`movie-item-${movie.id}`}>
+            <h3 className="text-lg font-bold">
+              <Link className="underline" href={`/movies/${movie.id}`}>{movie.title}</Link>
+            </h3>
+            <p className="text-sm text-gray-600">{movie.description || 'No description'}</p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+                <StatusPill label="approved" value={movie.summary.approved} tone="approved" />
+                <StatusPill label="negotiation" value={movie.summary.negotiation} tone="negotiation" />
+                <StatusPill label="pending" value={movie.summary.pending} tone="pending" />
+                <StatusPill label="rejected" value={movie.summary.rejected} tone="rejected" />
+              </div>
 
-            <div className="mt-3 text-xs text-slate-500">
-              <span className="tabular-nums font-medium">{movie.summary.withSong}</span> / {movie.summary.totalTracks} with song
-              <span className="mx-2">·</span>
-              <span className="tabular-nums">{movie.summary.totalScenes}</span> scenes
-            </div>
-        </div>
-      ))}
+              <div className="mt-3 text-xs text-slate-500">
+                <span className="tabular-nums font-medium">{movie.summary.withSong}</span> / {movie.summary.totalTracks} with song
+                <span className="mx-2">·</span>
+                <span className="tabular-nums">{movie.summary.totalScenes}</span> scenes
+              </div>
+          </div>
+        ))}
+      </>
     </>
   );
 }
