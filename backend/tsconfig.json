@@ -24,6 +24,9 @@
     "noFallthroughCasesInSwitch": true,
     "strict": true,
     "lib": ["ES2020", "DOM", "ESNext.AsyncIterable"],
-    "downlevelIteration": true
+    "downlevelIteration": true,
+    "paths": {
+      "src/*": ["src/*"]
+    }
   }
 }

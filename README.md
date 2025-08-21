@@ -43,6 +43,14 @@ I used **GraphQL only** to keep the project small and consistent:
 ### Containerization
 - **Docker & Docker Compose** – one command to run the full stack (frontend, backend, and database).
 
+### 🧪 Tests
+
+All backend unit tests live under `backend/test/`.  
+Tests follow a naming convention of `<resolver>.<method>.spec.ts` for unit tests that focus on a single resolver method.
+
+Example:  
+- `track.resolver.setTrackSong.spec.ts` → tests only `setTrackSong` in `TrackResolver`.
+
 ### Future Improvements
 
 - **Optimize nested queries with DataLoader** – current resolvers may suffer from the **N+1 query problem** (e.g. fetching scenes for each movie separately). Using [DataLoader](https://github.com/graphql/dataloader) would batch and cache requests, turning multiple small queries into a single query, improving performance on deeply nested queries (movies → scenes → tracks → songs).
