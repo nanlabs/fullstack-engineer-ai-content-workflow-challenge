@@ -41,8 +41,20 @@ export const GET_MOVIES = gql`
   }
 `;
 
-export const MOVIE_SUMMARY_CHANGED = gql`
-  subscription MovieSummaryChanged {
-    movieSummaryChanged
+export const MOVIE_EVENTS_SUB = gql`
+  subscription MovieEvents($movieId: ID!) {
+    movieEvents(movieId: $movieId) {
+      kind
+      at
+    }
+  }
+`;
+
+export const ALL_MOVIES_EVENTS = gql`
+  subscription AllMoviesEvents {
+    allMoviesEvents {
+      kind
+      at
+    }
   }
 `;

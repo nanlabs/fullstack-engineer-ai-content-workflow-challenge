@@ -4,7 +4,7 @@
 import { ApolloProvider, useQuery, useSubscription } from '@apollo/client';
 import Link from 'next/link';
 import { apollo } from '@/graphql/apollo';
-import { GET_MOVIES, MOVIE_SUMMARY_CHANGED } from '@/graphql/movies';
+import { GET_MOVIES, ALL_MOVIES_EVENTS } from '@/graphql/movies';
 import type { MovieSummary } from '@/types';
 import StatusPill from '@/components/StatusPill';
 
@@ -21,11 +21,14 @@ function List() {
   //   - Make the subscription return `{ movieId, summary }`
   //   - Then update only that movie
   //   - This avoids reloading the entire list and reduces unnecessary network traffic.
-  useSubscription(MOVIE_SUMMARY_CHANGED, {
-    onData: () => {
+  useSubscription(ALL_MOVIES_EVENTS, {
+    onData: ({ data }) => {
+      const kind = data.data?.allMoviesEvents?.kind;
+      if (!kind) return;
+
       refetch();
     },
-    onError: (e) => console.error('movieSummaryChanged sub error', e),
+    onError: (e) => console.error('allMoviesEvents sub error', e),
   });
   
   if (loading) {

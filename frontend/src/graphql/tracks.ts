@@ -21,28 +21,6 @@ export const UPDATE_TRACK_STATUS = gql`
   }
 `;
 
-export const TRACK_UPDATED_SUBSCRIPTION = gql`
-  subscription TrackUpdated($movieId: ID!) {
-    trackUpdated(movieId: $movieId) {
-      id
-      startTime
-      endTime
-      licenseStatus
-      song {
-        id
-        title
-        artist
-      }
-      scene {
-        id
-        movie {
-          id
-        }
-      }
-    }
-  }
-`;
-
 export const CREATE_TRACK = gql`
   mutation CreateTrack($input: CreateTrackInput!) {
     createTrack(input: $input) {

@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { ApolloProvider, useQuery, useMutation, useSubscription } from '@apollo/client';
 import { apollo } from '@/graphql/apollo';
 import { GET_SONGS } from '@/graphql/songs';
-import { SET_TRACK_SONG, UPDATE_TRACK_STATUS, TRACK_UPDATED_SUBSCRIPTION } from '@/graphql/tracks';
-import { GET_MOVIE } from '@/graphql/movies';
+import { SET_TRACK_SONG, UPDATE_TRACK_STATUS } from '@/graphql/tracks';
+import { GET_MOVIE, MOVIE_EVENTS_SUB } from '@/graphql/movies';
 import type { Movie, Song } from '@/types';
 import CreateTrackForm from '@/components/CreateTrackForm';
 import CreateSceneForm from '@/components/CreateSceneForm';
@@ -22,13 +22,12 @@ function Detail({ id }: { id: string }) {
   const { data: songsData } = useQuery<{ songs: Song[] }>(GET_SONGS);
 
   // --- subscription for updates in real time ---
-  useSubscription(TRACK_UPDATED_SUBSCRIPTION, {
+  useSubscription(MOVIE_EVENTS_SUB, {
     variables: { movieId: id },
     onData: ({ data }) => {
-      const updatedTrack = data.data?.trackUpdated;
-      if (updatedTrack) {
-        refetch();
-      }
+      const kind = data.data?.movieEvents?.kind;
+      if (!kind) return;
+      refetch();
     },
     onError: (error) => {
       console.error('Subscription error:', error);
