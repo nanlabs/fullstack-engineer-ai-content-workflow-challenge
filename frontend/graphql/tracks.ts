@@ -42,3 +42,16 @@ export const TRACK_UPDATED_SUBSCRIPTION = gql`
     }
   }
 `;
+
+export const CREATE_TRACK = gql`
+  mutation CreateTrack($input: CreateTrackInput!) {
+    createTrack(input: $input) {
+      id
+      startTime
+      endTime
+      licenseStatus
+      song { id title artist }
+      scene { id movie { id } }
+    }
+  }
+`;

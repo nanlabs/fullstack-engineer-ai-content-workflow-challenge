@@ -7,6 +7,7 @@ import { GET_SONGS } from '@/graphql/songs';
 import { SET_TRACK_SONG, UPDATE_TRACK_STATUS, TRACK_UPDATED_SUBSCRIPTION } from '@/graphql/tracks';
 import { GET_MOVIE } from '@/graphql/movies';
 import type { Movie, Song } from '@/types';
+import CreateTrackForm from '@/components/CreateTrackForm';
 
 type GetMovieVars = { id: string };
 type GetMovieData = { movie: Movie | null };
@@ -52,6 +53,9 @@ function Detail({ id }: { id: string }) {
   const [editingStatusTrackId, setEditingStatusTrackId] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<LicenseStatusGQL | null>(null);
 
+  // --- track creation UI state ---
+  const [creatingSceneId, setCreatingSceneId] = useState<string | null>(null);
+
   if (loading) return <div className="p-6">Loading...</div>;
   if (error)   return <div className="p-6 text-red-600">{error.message}</div>;
   if (!movieData?.movie) return <div className="p-6">Movie not found</div>;
@@ -86,6 +90,24 @@ function Detail({ id }: { id: string }) {
         <section key={s.id} className="border rounded p-4 space-y-2">
           <h2 className="font-semibold">{s.name}</h2>
 
+          {/* Create track toggle */}
+          {creatingSceneId === s.id ? (
+            <div className="space-y-2">
+              <CreateTrackForm
+                sceneId={s.id}
+                onCancel={() => setCreatingSceneId(null)}
+              />
+            </div>
+          ) : (
+            <button
+              className="text-xs px-2 py-1 rounded border"
+              onClick={() => setCreatingSceneId(s.id)}
+            >
+              Create track
+            </button>
+          )}
+
+          {/* existing tracks list */}
           <div className="divide-y">
             {s.tracks.slice().sort((a,b) => a.startTime - b.startTime).map((t) =>{
               const hasSong = !!t.song;
