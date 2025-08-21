@@ -9,6 +9,8 @@ import { GET_MOVIE, MOVIE_EVENTS_SUB } from '@/graphql/movies';
 import type { Movie, Song } from '@/types';
 import CreateTrackForm from '@/components/CreateTrackForm';
 import CreateSceneForm from '@/components/CreateSceneForm';
+import Toast from '@/components/Toast';
+import { formatEventMessage } from '@/helpers/formatEventMessage';
 
 type GetMovieVars = { id: string };
 type GetMovieData = { movie: Movie | null };
@@ -20,13 +22,16 @@ type LicenseStatusGQL = typeof STATUS_OPTIONS[number];
 function Detail({ id }: { id: string }) {
   const { data: movieData, loading, error, refetch } = useQuery<GetMovieData, GetMovieVars>(GET_MOVIE, { variables: { id } });
   const { data: songsData } = useQuery<{ songs: Song[] }>(GET_SONGS);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   // --- subscription for updates in real time ---
   useSubscription(MOVIE_EVENTS_SUB, {
     variables: { movieId: id },
     onData: ({ data }) => {
-      const kind = data.data?.movieEvents?.kind;
-      if (!kind) return;
+      const event = data.data?.movieEvents;
+      if (!event) return;
+
+      setToastMsg(formatEventMessage(event.kind, new Date(event.at)));
       refetch();
     },
     onError: (error) => {
@@ -82,6 +87,10 @@ function Detail({ id }: { id: string }) {
 
   return (
     <main className="p-6 max-w-5xl mx-auto space-y-6">
+      {toastMsg && (
+        <Toast message={toastMsg} onClose={() => setToastMsg(null)} />
+      )}
+
       <header>
         <h1 className="text-2xl font-bold">{movie.title}</h1>
         <p className="text-gray-600">{movie.description ?? 'No description'}</p>

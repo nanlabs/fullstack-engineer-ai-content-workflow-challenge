@@ -1,17 +1,21 @@
 
 'use client';
 
+import { useState } from 'react';
 import { ApolloProvider, useQuery, useSubscription } from '@apollo/client';
 import Link from 'next/link';
 import { apollo } from '@/graphql/apollo';
 import { GET_MOVIES, ALL_MOVIES_EVENTS } from '@/graphql/movies';
 import type { MovieSummary } from '@/types';
 import StatusPill from '@/components/StatusPill';
+import { formatEventMessage } from '@/helpers/formatEventMessage';
+import Toast from '@/components/Toast';
 
 type GetMoviesData = { movies: MovieSummary[] };
 
 function List() {
   const { data: moviesData, loading, error, refetch } = useQuery<GetMoviesData>(GET_MOVIES);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   // NOTE: Currently we trigger a full refetch of the movies list every time
   // `movieSummaryChanged` fires (any track update in any movie).
@@ -23,9 +27,10 @@ function List() {
   //   - This avoids reloading the entire list and reduces unnecessary network traffic.
   useSubscription(ALL_MOVIES_EVENTS, {
     onData: ({ data }) => {
-      const kind = data.data?.allMoviesEvents?.kind;
-      if (!kind) return;
+      const event = data.data?.allMoviesEvents;
+      if (!event) return;
 
+      setToastMsg(formatEventMessage(event.kind, new Date(event.at)));
       refetch();
     },
     onError: (e) => console.error('allMoviesEvents sub error', e),
@@ -52,6 +57,9 @@ function List() {
 
   return (
     <>
+      {toastMsg && (
+        <Toast message={toastMsg} onClose={() => setToastMsg(null)} />
+      )}
       {/* TODO: add search, filters, pagination */}
       {movies?.map((movie) => (
         <div key={movie.id} className="p-4 border rounded shadow">
