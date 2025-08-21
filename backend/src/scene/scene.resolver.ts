@@ -1,13 +1,23 @@
-import { Resolver, Mutation, Args } from '@nestjs/graphql';
-import { InjectRepository } from '@nestjs/typeorm';
+import { PubSub } from 'graphql-subscriptions';
 import { Repository } from 'typeorm';
 import { NotFoundException, BadRequestException, Inject } from '@nestjs/common';
+import {
+  Resolver,
+  Mutation,
+  Args,
+  InputType,
+  Field,
+  ID,
+} from '@nestjs/graphql';
+import { InjectRepository } from '@nestjs/typeorm';
 import { Scene } from './scene.entity';
-import { Movie } from '../movie/movie.entity';
-import { PubSub } from 'graphql-subscriptions';
-import { PUB_SUB } from '../realtime/pubsub.token';
-
-import { InputType, Field, ID } from '@nestjs/graphql';
+import { Movie } from 'src/movie/movie.entity';
+import { PUB_SUB } from 'src/realtime/pubsub.token';
+import {
+  MovieEventKind,
+  emitMovieEvent,
+  emitGlobalMoviesEvent,
+} from 'src/realtime/events';
 
 @InputType()
 class CreateSceneInput {
@@ -60,8 +70,17 @@ export class SceneResolver {
     });
     const saved = await this.scenes.save(scene);
 
-    // Emit real-time notifications used by UI lists/summary
-    await this.pubSub.publish('movieSummaryChanged', true);
+    // --- Emit real-time updates ---
+    await emitMovieEvent(
+      this.pubSub,
+      scene.movie.id,
+      MovieEventKind.SCENE_CREATED,
+    );
+    await emitGlobalMoviesEvent(
+      this.pubSub,
+      scene.movie.title,
+      MovieEventKind.SCENE_CREATED,
+    );
 
     return saved;
   }

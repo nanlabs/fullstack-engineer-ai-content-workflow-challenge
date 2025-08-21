@@ -1,23 +1,25 @@
+import { PubSub } from 'graphql-subscriptions';
+import { Repository, LessThan, MoreThan } from 'typeorm';
+import { NotFoundException, Inject, BadRequestException } from '@nestjs/common';
 import {
   Resolver,
   Mutation,
   Args,
   ID,
-  Subscription,
   InputType,
   Field,
   Int,
 } from '@nestjs/graphql';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan, MoreThan } from 'typeorm';
-import { NotFoundException, Inject, BadRequestException } from '@nestjs/common';
 import { Track, LicenseStatus } from './track.entity';
-import { Song } from '../song/song.entity';
-import { Scene } from '../scene/scene.entity';
-import { PubSub } from 'graphql-subscriptions';
-import { PUB_SUB } from '../realtime/pubsub.token';
-
-type TrackUpdatedPayload = { trackUpdated: Track };
+import { Song } from 'src/song/song.entity';
+import { Scene } from 'src/scene/scene.entity';
+import { PUB_SUB } from 'src/realtime/pubsub.token';
+import {
+  MovieEventKind,
+  emitMovieEvent,
+  emitGlobalMoviesEvent,
+} from 'src/realtime/events';
 
 @InputType()
 class CreateTrackInput {
@@ -57,10 +59,17 @@ export class TrackResolver {
     track.song = song;
     await this.tracks.save(track);
 
-    await this.pubSub.publish(`trackUpdated:movie-${track.scene.movie.id}`, {
-      trackUpdated: track,
-    });
-    await this.pubSub.publish('movieSummaryChanged', true);
+    // --- Emit real-time updates ---
+    await emitMovieEvent(
+      this.pubSub,
+      track.scene.movie.id,
+      MovieEventKind.TRACK_SONG_SET,
+    );
+    await emitGlobalMoviesEvent(
+      this.pubSub,
+      track.scene.movie.title,
+      MovieEventKind.TRACK_SONG_SET,
+    );
 
     return track;
   }
@@ -80,41 +89,19 @@ export class TrackResolver {
     track.licenseStatus = status;
     await this.tracks.save(track);
 
-    await this.pubSub.publish(`trackUpdated:movie-${track.scene.movie.id}`, {
-      trackUpdated: track,
-    });
-    await this.pubSub.publish('movieSummaryChanged', true);
+    // --- Emit real-time updates ---
+    await emitMovieEvent(
+      this.pubSub,
+      track.scene.movie.id,
+      MovieEventKind.TRACK_STATUS_UPDATED,
+    );
+    await emitGlobalMoviesEvent(
+      this.pubSub,
+      track.scene.movie.title,
+      MovieEventKind.TRACK_STATUS_UPDATED,
+    );
 
     return track;
-  }
-
-  @Subscription(() => Track, {
-    name: 'trackUpdated',
-    resolve: async function (
-      this: TrackResolver,
-      payload: TrackUpdatedPayload,
-    ): Promise<Track> {
-      const full = await this.tracks.findOne({
-        where: { id: payload.trackUpdated.id },
-        relations: ['song', 'scene', 'scene.movie'],
-      });
-
-      if (!full) throw new NotFoundException('Track not found');
-      return full;
-    },
-  })
-  trackUpdated(@Args('movieId', { type: () => ID }) movieId: string) {
-    return this.pubSub.asyncIterableIterator<TrackUpdatedPayload>(
-      `trackUpdated:movie-${movieId}`,
-    );
-  }
-
-  @Subscription(() => Boolean, {
-    name: 'movieSummaryChanged',
-    resolve: () => true,
-  })
-  movieSummaryChanged() {
-    return this.pubSub.asyncIterableIterator('movieSummaryChanged');
   }
 
   @Mutation(() => Track, { name: 'createTrack' })
@@ -160,10 +147,16 @@ export class TrackResolver {
     const saved = await this.tracks.save(track);
 
     // --- Emit real-time updates ---
-    await this.pubSub.publish(`trackUpdated:movie-${scene.movie.id}`, {
-      trackUpdated: saved,
-    });
-    await this.pubSub.publish('movieSummaryChanged', true);
+    await emitMovieEvent(
+      this.pubSub,
+      track.scene.movie.id,
+      MovieEventKind.TRACK_CREATED,
+    );
+    await emitGlobalMoviesEvent(
+      this.pubSub,
+      track.scene.movie.title,
+      MovieEventKind.TRACK_CREATED,
+    );
 
     return saved;
   }
