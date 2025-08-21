@@ -23,13 +23,14 @@ jest.mock('../../src/realtime/events', () => ({
 }));
 
 type RepoMock<T> = {
-  findOne: jest.Mock<Promise<T | null>, [any]>;
-  save: jest.Mock<Promise<T>, [T]>;
+  findOne?: jest.Mock<Promise<T | null>, [any]>;
+  save?: jest.Mock<Promise<T>, [T]>;
 };
 
 describe('TrackResolver.setTrackSong (unit)', () => {
   let resolver: TrackResolver;
   let pubSub: PubSub;
+
   let trackRepo: RepoMock<Track>;
   let songRepo: RepoMock<Song>;
   let sceneRepo: RepoMock<Scene>;
@@ -42,12 +43,10 @@ describe('TrackResolver.setTrackSong (unit)', () => {
 
     songRepo = {
       findOne: jest.fn<Promise<Song | null>, [any]>(),
-      save: jest.fn<Promise<Song>, [Song]>(),
     };
 
     sceneRepo = {
-      findOne: jest.fn<Promise<Scene | null>, [any]>(),
-      save: jest.fn<Promise<Scene>, [Scene]>(),
+      // no-op
     };
 
     pubSub = {

@@ -30,6 +30,7 @@ type RepoMock<T> = {
 describe('TrackResolver.updateTrackStatus (unit)', () => {
   let resolver: TrackResolver;
   let pubSub: PubSub;
+
   let trackRepo: RepoMock<Track>;
   let songRepo: RepoMock<Song>;
   let sceneRepo: RepoMock<Scene>;
