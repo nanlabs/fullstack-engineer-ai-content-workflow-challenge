@@ -9,6 +9,7 @@ import { TrackModule } from './track/track.module';
 import { SceneModule } from './scene/scene.module';
 import { MovieModule } from './movie/movie.module';
 import { dataSourceOptions } from './database/data-source';
+import { RealtimeModule } from './realtime/realtime.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { dataSourceOptions } from './database/data-source';
     TrackModule,
     SceneModule,
     MovieModule,
+    RealtimeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

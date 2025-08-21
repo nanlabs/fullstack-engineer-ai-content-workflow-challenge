@@ -20,9 +20,9 @@ export class Scene {
   @Column({ length: 255 })
   name!: string;
 
-  @Field()
-  @Column({ type: 'text', nullable: true })
-  description?: string;
+  @Field(() => String, { nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  description?: string | null;
 
   @Field(() => Movie)
   @ManyToOne(() => Movie, (movie) => movie.scenes, { onDelete: 'CASCADE' })

@@ -16,11 +16,11 @@ export class Song {
   @Column({ type: 'varchar', length: 255 })
   artist!: string;
 
-  @Field()
+  @Field(() => String, { nullable: true })
   @Column({ type: 'varchar', length: 255, nullable: true })
-  album?: string;
+  description?: string | null;
 
   @Field(() => Int, { nullable: true })
   @Column({ type: 'int', nullable: true })
-  duration?: number; // seconds
+  duration?: number | null; // seconds
 }

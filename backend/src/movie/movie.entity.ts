@@ -24,9 +24,9 @@ export class Movie {
   @Column({ length: 255 })
   title!: string;
 
-  @Field()
-  @Column({ type: 'text', nullable: true })
-  description?: string;
+  @Field(() => String, { nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  description?: string | null;
 
   @Field(() => [Scene])
   @OneToMany(() => Scene, (scene) => scene.movie)
