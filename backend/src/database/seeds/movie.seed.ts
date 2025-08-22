@@ -9,13 +9,27 @@ export class MovieSeeder implements Seeder {
         id: '11111111-1111-1111-1111-111111111111',
         title: 'Inception',
         description:
-          'A thief who steals corporate secrets through dream-sharing technology',
+          '⚠️ Do not modify or delete this if you want the ui-tests to pass.', // UI tests depend on this movie's ID and title.
       },
       {
         id: '22222222-2222-2222-2222-222222222222',
         title: 'The Dark Knight',
         description:
-          'When the menace known as the Joker emerges, Batman must confront chaos',
+          '⚠️ Do not modify or delete this if you want the ui-tests to pass.', // UI tests depend on this movie's ID and title.
+      },
+      {
+        title: 'Interstellar',
+        description: `Explorers travel through a wormhole in space in an attempt to ensure humanity's survival.`,
+      },
+      {
+        title: 'The Matrix',
+        description:
+          'A hacker discovers the true nature of his reality and his role in the war against its controllers.',
+      },
+      {
+        title: 'Mad Max: Fury Road',
+        description:
+          'In a post-apocalyptic wasteland, Max teams up with Furiosa to flee a tyrant.',
       },
     ]);
   }

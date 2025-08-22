@@ -125,7 +125,7 @@ UI tests depend on the seeded movies **Inception** and **The Dark Knight**.
     
     `docker compose down`
 
-4. **Reset the database (optional)**
+4. **Reset the database (if needed)**
     
     `docker compose down -v`
 
