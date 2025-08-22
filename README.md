@@ -69,9 +69,9 @@ They currently cover:
 
 - **Movies list**: renders seeded movies with stable IDs and titles (`Inception`, `The Dark Knight`).  
 - **Movie detail**:  
-  - **Associate Song**: opens the editor, lists seeded songs, enables **Save** when a song is selected, then **cancels**.  
-  - **Change Status**: opens the editor, allows changing the status and enables **Save**, then **cancels**.  
-  - Ensures seeded state (e.g., `Inception` title, scenes, and `Time — Hans Zimmer` track with its initial status) remains unchanged after the run.
+- **Associate Song**: opens the editor, lists seeded songs, enables **Save** when a song is selected, then **cancels**.  
+- **Change Status**: opens the editor, allows changing the status and enables **Save**, then **cancels**.  
+- Ensures seeded state (e.g., `Inception` title, scenes, and `Time — Hans Zimmer` track with its initial status) remains unchanged after the run.
 
 #### Rationale
 
@@ -102,6 +102,7 @@ UI tests depend on the seeded movies **Inception** and **The Dark Knight**.
 - Add pagination, search, and filtering for large datasets.
 - **Scale real‑time with Redis (Pub/Sub)** – use Redis as the subscriptions backplane so events fan out across multiple backend instances; optionally cache hot queries (e.g., movies list).
 - **Domain event streaming with Kafka** - (durable log, multiple consumers, replay & audit trail).
+- **Indexes**: No extra indexes were added because the dataset is small and the focus was on functionality. 
 
 ## 📋 Requirements
 - Docker & Docker Compose

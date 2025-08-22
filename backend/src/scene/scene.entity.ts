@@ -8,10 +8,11 @@ import {
 import { ObjectType, Field, ID } from '@nestjs/graphql';
 import { Movie } from '../movie/movie.entity';
 import { Track } from '../track/track.entity';
+import { BaseEntityTimestamps } from '../common/base-entity';
 
 @ObjectType()
-@Entity()
-export class Scene {
+@Entity('scenes')
+export class Scene extends BaseEntityTimestamps {
   @Field(() => ID)
   @PrimaryGeneratedColumn('uuid')
   id!: string;

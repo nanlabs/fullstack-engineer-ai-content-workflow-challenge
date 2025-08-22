@@ -1,9 +1,10 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 import { ObjectType, Field, ID, Int } from '@nestjs/graphql';
+import { BaseEntityTimestamps } from '../common/base-entity';
 
 @ObjectType()
 @Entity('songs')
-export class Song {
+export class Song extends BaseEntityTimestamps {
   @Field(() => ID)
   @PrimaryGeneratedColumn('uuid')
   id!: string;

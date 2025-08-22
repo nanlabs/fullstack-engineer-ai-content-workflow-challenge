@@ -8,6 +8,7 @@ import {
 import { ObjectType, Field, ID, Int, registerEnumType } from '@nestjs/graphql';
 import { Scene } from '../scene/scene.entity';
 import { Song } from '../song/song.entity';
+import { BaseEntityTimestamps } from '../common/base-entity';
 
 export enum LicenseStatus {
   PENDING = 'pending',
@@ -21,7 +22,7 @@ registerEnumType(LicenseStatus, { name: 'LicenseStatus' });
 
 @ObjectType()
 @Entity('tracks')
-export class Track {
+export class Track extends BaseEntityTimestamps {
   @Field(() => ID)
   @PrimaryGeneratedColumn('uuid')
   id!: string;
