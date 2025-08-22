@@ -1,0 +1,58 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: mlw_db
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $DB_USER -d $DB_NAME"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
+
+  backend:
+    build:
+      context: ./backend
+    container_name: mlw_backend
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: >
+      sh -c "
+      until pg_isready -h $$DB_HOST -p $$DB_PORT -U $$DB_USER -d $$DB_NAME; do
+        echo 'Waiting for PostgreSQL...'
+        sleep 2
+      done &&
+      npm run start:dev
+      "
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: mlw_frontend
+    env_file:
+      - .env
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: ["npm","run","dev","--","-p","3000"]
+
+volumes:
+  db_data:

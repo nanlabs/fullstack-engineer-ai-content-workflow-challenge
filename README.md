@@ -1,132 +1,140 @@
-# 🚀 Fullstack Engineer Challenge – Music Licensing Workflow
+# 🎬 Music Licensing Workflow Challenge
 
-Welcome to the **Fullstack Engineer Challenge!** 🎸🎬  
-In this challenge, you'll help the fictional company **ACME BROS PICTURES** build a system to manage the **music licensing process** for their movies.
+## 🛠️ Tech Decisions & Trade-offs
 
-## 🎯 Context
+This project was built as part of a technical challenge for a position that requested a stack based on **NestJS** and **Next.js**.  
 
-Each movie scene can contain **multiple music tracks**, and each track requires licensing. The licensing process involves back-and-forth negotiations with rights holders (artists or labels), which makes tracking each license's progress essential.
+My background is mainly with **Vue** on the frontend and **Django/Express** on the backend, but for this challenge I wanted to stick to the tools they use. It was a good opportunity to get hands-on with Nest and Next, and to show that I can adapt quickly to new stacks.
 
-Your task is to create a simple system to:
+Because this stack came with a learning curve for me, some parts of the implementation were approached with pragmatism—balancing learning, speed, and quality. My main goal was to meet the requirements while keeping the code as clear and maintainable as possible, knowing there’s always room to improve with more time and experience on this stack.
 
-- Manage **tracks** for each movie scene.
-- Associate a **song** to each track, specifying its start and end time.
-- Track the **licensing status** of each song via a stateful workflow.
-- Provide a way for other users to **immediately see updates** in licensing status (real-time or near real-time visibility).
+## 📐 Implementation Overview
 
-## 📌 Requirements
+### 🎨 Frontend
+- **Movies list** – shows all movies in the system.  
+- **Movie detail view** with:
+  - Scene creation  
+  - Track creation  
+  - Track status update  
+  - Track–Song association  
+- **Real-time updates** – the UI reacts instantly to **scene creation**, **track creation**, **track–song association**, and **status changes** via GraphQL subscriptions.
 
-### ⚙️ Tech Stack
+### 🔌 Real-time events
+The frontend subscribes to domain events so all users see changes immediately:
+- **SCENE_CREATED** – a new scene is added to a movie.
+- **TRACK_CREATED** – a new track is added to a scene.
+- **TRACK_SONG_SET** – a song gets linked to a track.
+- **TRACK_STATUS_UPDATED** – licensing workflow updates.
 
-> ⚡ **Must Include** - Use the following technologies, aligned with our tech stack:
+These are delivered through GraphQL Subscriptions.
 
-- **Backend:** You can use any stack you're comfortable with, but we recommend using any of the following:
-  - TypeScript + NestJS (you can use Fastify or Koa if you prefer)
-  - Python + FastAPI (you can use Flask or Django if you prefer)
-  - Go + Fiber (you can use Gin or Echo if you prefer)
-- **API:** REST and/or GraphQL (you choose, and justify your choice if you only use one)
-- **Frontend:** React (using any framework such as Next.js, Remix, or bare metal with Vite)
-- **Database:** PostgreSQL (primary), MongoDB (optional if needed)
-- **Containerization:** Docker (required)
-- **Bonus:** Kafka, Redis, ArgoCD, Kubernetes (if you want to go further)
+### 📊 Why GraphQL (kept simple)
 
-### 📦 Deliverables
+I used **GraphQL only** to keep the project small and consistent:
 
-> 📥 **Your submission must be a Pull Request that includes:**
+- **One schema, one client**: queries, mutations, and subscriptions share the same types definitions.
+- **Real-time built-in**: subscriptions handle scene/track creation, song association, and status changes without extra plumbing.
+- **No over/under-fetching**: nested data (movie → scenes → tracks → songs) comes in exactly the shape the UI needs.
 
-- A **backend** exposing the required APIs.
-- A **data model** to manage:
-  - Movies, scenes, tracks, songs, and their licensing states.
-- Endpoints or queries/mutations to:
-  - Create a track and associate a song.
-  - Update the licensing state of a track.
-  - Query all tracks for a given scene/movie, including licensing status.
-- A **frontend built with React** to:
-  - Visualize the movie scenes and associated tracks.
-  - Show licensing status.
-  - Allow status updates (basic UI).
-- Suggest a real-time implementation using WebSockets, GraphQL Subscriptions, or Server-Sent Events.
-- Docker setup to run the entire app locally.
-- A `README.md` with:
-  - Setup instructions
-  - Tech decisions and tradeoffs
-  - If applicable, your reasoning for using REST, GraphQL, or both
+### ⚙️ Backend
+- **PostgreSQL database**
+- **GraphQL API** – chosen instead of REST to simplify the schema, leverage type safety, and support real-time GraphQL Subscriptions.  
 
-> [!TIP]
-> Use the `docs` folder to store any additional documentation or diagrams that help explain your solution.
-> Mention any assumptions or constraints in your `README.md`.
+### 📦 Containerization
+- **Docker & Docker Compose** – one command to run the full stack (frontend, backend, and database).
 
-### 📂 Folder Suggestions
+### ✅ Unit Tests
 
-You can organize your project like this (suggested but not mandatory):
+All backend unit tests live under `backend/test/`.
 
-```txt
-/
-├── .github/
-│   ├── workflows/
-│   └── PULL_REQUEST_TEMPLATE.md
-├── docs/
-├── backend/
-│   ├── src/
-│   ├── test/
-│   └── Dockerfile
-├── frontend/
-│   ├── src/
-│   ├── public/
-│   └── Dockerfile
-├── compose.yml
-├── .env.example
-├── README.md
-├── .prettierrc.js
-├── eslint.config.mjs
-└── . . .
+#### Naming convention
+
+Tests follow a naming convention of `<resolver>.<method>.spec.ts` for unit tests that focus on a single resolver method.
+
+Example:  
+- `track.resolver.setTrackSong.spec.ts` → tests only `setTrackSong` in `TrackResolver`.
+
+#### Running tests
+
+Run **all tests**:
+```bash
+cd backend
+npm test
 ```
 
-## 🌟 Nice to Have
+### 🧪 UI Tests
 
-> 💡 **Bonus Points For:**
+The UI tests validate that the main user flows exist and are actionable **without mutating the database**.  
+They currently cover:
 
-- Automated testing and CI pipeline using GitHub Actions.
-- Unit or integration tests for API or key logic.
-- Use of MongoDB for unstructured metadata (if justified).
-- Real-time suggestion implemented (e.g., via GraphQL subscriptions or WebSockets).
-- Basic usage of **Kafka or Redis** (e.g., async event messaging).
-- Usage of ArgoCD or Kubernetes (not expected, but definitely cool).
+- **Movies list**: renders seeded movies with stable IDs and titles (`Inception`, `The Dark Knight`).  
+- **Movie detail**:  
+- **Associate Song**: opens the editor, lists seeded songs, enables **Save** when a song is selected, then **cancels**.  
+- **Change Status**: opens the editor, allows changing the status and enables **Save**, then **cancels**.  
+- Ensures seeded state (e.g., `Inception` title, scenes, and `Time — Hans Zimmer` track with its initial status) remains unchanged after the run.
 
-> [!TIP]
-> Looking for inspiration or additional ideas to earn extra points? Check out our **[Awesome NaNLABS repository](https://github.com/nanlabs/awesome-nan)** for reference projects and best practices! 🚀
+#### Rationale
 
-## 🧪 Submission Guidelines
+To keep E2E tests stable and repeatable, they currently simulate user actions but do not persist changes in the database.
+In the future, a mutating variant with automatic cleanup could be added to exercise the full workflow end-to-end.
 
-> 📌 **Follow these steps to submit your solution:**
+#### Running tests
 
-1. **Fork this repository.**
-2. **Create a feature branch** for your implementation.
-3. **Commit your changes** with meaningful commit messages.
-4. **Open a Pull Request** following the provided template.
-5. **Our team will review** and provide feedback.
+Run **all tests**:
+```bash
+cd frontend
+npm run test:ui
+```
 
-## ✅ Evaluation Criteria
+#### ⚠️ Important
 
-> 🔍 **What we'll be looking at:**
+UI tests depend on the seeded movies **Inception** and **The Dark Knight**.  
+- Do not modify or delete these seeds if you want the tests to pass.  
+- If you change them, reset the database (drop & reseed) before running the tests again.
 
-- Ability to **work across the stack** (NestJS, PostgreSQL, React/Next.js/. . .).
-- Clean, modular and maintainable code with proper Git usage.
-- A good understanding of **data modeling and workflow management**.
-- Clear written communication in your README.
-- Ability to **propose real-time solutions**, even if not implemented.
+### 🔮 Future Improvements
 
-## 💬 Final Notes
+- **Optimize nested queries with DataLoader** – current resolvers may suffer from the **N+1 query problem** (e.g. fetching scenes for each movie separately). Using [DataLoader](https://github.com/graphql/dataloader) would batch and cache requests, turning multiple small queries into a single query, improving performance on deeply nested queries (movies → scenes → tracks → songs).
+- **Optimize updates on the frontend** – currently, after a real-time event (like a track status change), the app does a full refetch of the list. A better approach would be to update only the affected item (e.g., insert a new track, update a status field) so the UI feels instant and uses less network.
+- **CRUD completeness** – extend functionality to cover creation and modification of movies, modification of scenes, modification of tracks, and creation/modification of songs.
+- **Testing improvements** – add more unit and integration tests, expand UI tests, and integrate both into an **automated CI pipeline with GitHub Actions** to ensure stability
+- Improve error handling and input validation.    
+- Add pagination, search, and filtering for large datasets.
+- **Scale real‑time with Redis (Pub/Sub)** – use Redis as the subscriptions backplane so events fan out across multiple backend instances; optionally cache hot queries (e.g., movies list).
+- **Domain event streaming with Kafka** - (durable log, multiple consumers, replay & audit trail).
+- **Indexes**: No extra indexes were added because the dataset is small and the focus was on functionality. 
+- **Entities and GraphQL Types** - For simplicity, this project reuses the same classes for both. If the domain evolves (e.g., entity shape diverges from API shape), adding dedicated DTOs and mappers would improve maintainability and safety.
 
-> [!TIP]
-> This challenge is designed to be flexible!
+## 📋 Requirements
+- Docker & Docker Compose
 
-Here are some tips to help you succeed:
+---
 
-- If you feel confident on the backend but less on the frontend, focus there—but try to show some basic UI.
-- Likewise, if you're stronger on the frontend, make sure your backend has clean structure and endpoints.
-- Time-box it: we don’t expect perfection. We want to see **how you think and solve problems**.
+## 🚀 Setup
 
-## 🏁 Good luck and have fun building
+1. **Build & start services**
+    
+    `docker compose up --build`
 
-If you have any questions, feel free to reach out.
+    Services available:
+    - **Frontend** → http://localhost:3000  
+    - **Backend** → http://localhost:3001
+    - **Postgres** → localhost:5432
+
+2. **Seed the database**
+    
+    `docker compose exec backend npm run seed:data`
+
+3. **Stop the services**
+    
+    `docker compose down`
+
+4. **Reset the database (if needed)**
+    
+    `docker compose down -v`
+
+---
+
+## 🗒️ Notes
+- The `.env` file is already included in the repository root.
+- Database data is persisted in the `db_data` volume.
