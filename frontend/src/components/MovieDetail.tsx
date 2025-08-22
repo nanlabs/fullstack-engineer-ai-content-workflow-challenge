@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery, useMutation, useSubscription } from '@apollo/client';
+import { useQuery, useMutation, useSubscription, useLazyQuery } from '@apollo/client';
 import { GET_SONGS } from '@/graphql/songs';
 import { SET_TRACK_SONG, UPDATE_TRACK_STATUS } from '@/graphql/tracks';
 import { GET_MOVIE, MOVIE_EVENTS_SUB } from '@/graphql/movies';
@@ -18,7 +18,7 @@ const STATUS_OPTIONS = ['PENDING', 'NEGOTIATION', 'APPROVED', 'REJECTED'] as con
 type LicenseStatusGQL = typeof STATUS_OPTIONS[number];
 
 function formatEventMessage(kind: string, at: Date): string {
-  const time = at.toLocaleTimeString();
+  const time = at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   switch (kind) {
     case 'TRACK_CREATED':
@@ -36,9 +36,10 @@ function formatEventMessage(kind: string, at: Date): string {
   }
 }
 
-function Detail({ id }: { id: string }) {
+export default function MovieDetail({ id }: { id: string }) {
   const { data: movieData, loading, error, refetch } = useQuery<GetMovieData, GetMovieVars>(GET_MOVIE, { variables: { id } });
-  const { data: songsData } = useQuery<{ songs: Song[] }>(GET_SONGS);
+  // NOTE: Fetch songs on-demand only when user starts associating a song.
+  const [loadSongs, { data: songsData }] = useLazyQuery<{ songs: Song[] }>(GET_SONGS);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   // --- subscription for updates in real time ---
@@ -157,7 +158,7 @@ function Detail({ id }: { id: string }) {
           <div className="divide-y">
             {s.tracks.slice().sort((a,b) => a.startTime - b.startTime).map((t) =>{
               const hasSong = !!t.song;
-              const current: LicenseStatusGQL = (t.licenseStatus as string).toUpperCase() as LicenseStatusGQL;
+              const current: LicenseStatusGQL = t.licenseStatus as LicenseStatusGQL;
 
               const updatingStatus = editingStatusTrackId === t.id;
               const settingSong = editingSongTrackId === t.id;
@@ -257,7 +258,7 @@ function Detail({ id }: { id: string }) {
                       ) : (
                         <button
                           className="text-xs px-2 py-1 rounded border"
-                          onClick={() => { setEditingSongTrackId(t.id); setSelectedSongId(null); }}
+                          onClick={() => { setEditingSongTrackId(t.id); setSelectedSongId(null); loadSongs(); }}
                           data-testid="track-assoc-btn"
                         >
                           Associate song
@@ -273,8 +274,4 @@ function Detail({ id }: { id: string }) {
       ))}
     </main>
   );
-}
-
-export default function MovieDetail({ id }: { id: string }) {
-  return <Detail id={id} />;
 }
