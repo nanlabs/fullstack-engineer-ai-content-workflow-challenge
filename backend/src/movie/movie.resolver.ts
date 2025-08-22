@@ -10,19 +10,29 @@ import {
   Parent,
 } from '@nestjs/graphql';
 import { Movie, MovieSummary } from './movie.entity';
+import { LicenseStatus } from '../track/track.entity';
+
+type MovieSummaryRaw = {
+  totalScenes?: string;
+  totalTracks?: string;
+  withSong?: string;
+  pending?: string;
+  negotiation?: string;
+  approved?: string;
+  rejected?: string;
+};
 
 @Resolver(() => Movie)
 export class MovieResolver {
   constructor(
     @InjectRepository(Movie)
-    private movieRepository: Repository<Movie>,
+    private movieRepo: Repository<Movie>,
   ) {}
 
-  @Query(() => Movie, { nullable: true })
-  async movie(
-    @Args('id', { type: () => ID }) id: string,
-  ): Promise<Movie | null> {
-    const m = await this.movieRepository
+  @Query(() => Movie, { nullable: false })
+  async movie(@Args('id', { type: () => ID }) id: string): Promise<Movie> {
+    // NOTE: Using QueryBuilder to order nested relations for deterministic UI rendering
+    const movie = await this.movieRepo
       .createQueryBuilder('m')
       .leftJoinAndSelect('m.scenes', 's')
       .leftJoinAndSelect('s.tracks', 't')
@@ -32,27 +42,22 @@ export class MovieResolver {
       .addOrderBy('t.startTime', 'ASC')
       .getOne();
 
-    if (!m) throw new NotFoundException('Movie not found');
+    if (!movie) throw new NotFoundException('Movie not found');
 
-    return m as unknown as Movie;
+    return movie;
   }
 
   @Query(() => [Movie])
   async movies(): Promise<Movie[]> {
-    return this.movieRepository.find({
+    return this.movieRepo.find({
       select: { id: true, title: true, description: true },
-      relations: {
-        scenes: {
-          tracks: { song: true },
-        },
-      },
       order: { title: 'ASC' },
     });
   }
 
   @ResolveField(() => MovieSummary)
   async summary(@Parent() movie: Movie): Promise<MovieSummary> {
-    const qb = this.movieRepository
+    const qb = this.movieRepo
       .createQueryBuilder('m')
       .leftJoin('m.scenes', 's')
       .leftJoin('s.tracks', 't')
@@ -80,22 +85,14 @@ export class MovieResolver {
         'rejected',
       )
       .setParameters({
-        pending: 'pending',
-        negotiation: 'negotiation',
-        approved: 'approved',
-        rejected: 'rejected',
+        pending: LicenseStatus.PENDING,
+        negotiation: LicenseStatus.NEGOTIATION,
+        approved: LicenseStatus.APPROVED,
+        rejected: LicenseStatus.REJECTED,
       })
       .groupBy('m.id');
 
-    const raw = await qb.getRawOne<{
-      totalScenes?: string;
-      totalTracks?: string;
-      withSong?: string;
-      pending?: string;
-      negotiation?: string;
-      approved?: string;
-      rejected?: string;
-    }>();
+    const raw = await qb.getRawOne<MovieSummaryRaw>();
 
     return {
       totalScenes: Number(raw?.totalScenes ?? 0),

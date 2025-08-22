@@ -6,11 +6,11 @@ import { Song } from './song.entity';
 @Resolver(() => Song)
 export class SongResolver {
   constructor(
-    @InjectRepository(Song) private readonly songRepository: Repository<Song>,
+    @InjectRepository(Song) private readonly songRepo: Repository<Song>,
   ) {}
 
-  @Query(() => [Song], { name: 'songs' })
-  findAll(): Promise<Song[]> {
-    return this.songRepository.find({ order: { title: 'ASC', artist: 'ASC' } });
+  @Query(() => [Song])
+  songs(): Promise<Song[]> {
+    return this.songRepo.find({ order: { title: 'ASC', artist: 'ASC' } });
   }
 }

@@ -8,6 +8,7 @@ import { PubSub } from 'graphql-subscriptions';
 
 export const movieTopic = (movieId: string) => `movie:${movieId}`;
 export const ALL_MOVIES_TOPIC = 'movies:all';
+
 export enum MovieEventKind {
   TRACK_CREATED = 'TRACK_CREATED',
   TRACK_STATUS_UPDATED = 'TRACK_STATUS_UPDATED',
@@ -24,6 +25,13 @@ export class MovieEvent {
   @Field(() => GraphQLISODateTime)
   at!: Date;
 }
+
+@ObjectType()
+export class AllMoviesEvent extends MovieEvent {
+  @Field()
+  movieTitle!: string;
+}
+
 export async function emitMovieEvent(
   pubSub: PubSub,
   movieId: string,

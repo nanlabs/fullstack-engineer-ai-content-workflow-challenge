@@ -36,28 +36,28 @@ class CreateTrackInput {
 @Resolver(() => Track)
 export class TrackResolver {
   constructor(
-    @InjectRepository(Track) private readonly tracks: Repository<Track>,
-    @InjectRepository(Song) private readonly songs: Repository<Song>,
-    @InjectRepository(Scene) private readonly scenes: Repository<Scene>,
+    @InjectRepository(Track) private readonly trackRepo: Repository<Track>,
+    @InjectRepository(Song) private readonly songRepo: Repository<Song>,
+    @InjectRepository(Scene) private readonly sceneRepo: Repository<Scene>,
     @Inject(PUB_SUB) private readonly pubSub: PubSub,
   ) {}
 
-  @Mutation(() => Track, { name: 'setTrackSong' })
+  @Mutation(() => Track)
   async setTrackSong(
     @Args('trackId', { type: () => ID }) trackId: string,
     @Args('songId', { type: () => ID }) songId: string,
   ): Promise<Track> {
-    const track = await this.tracks.findOne({
+    const track = await this.trackRepo.findOne({
       where: { id: trackId },
       relations: ['scene', 'scene.movie'],
     });
     if (!track) throw new NotFoundException('Track not found');
 
-    const song = await this.songs.findOne({ where: { id: songId } });
+    const song = await this.songRepo.findOne({ where: { id: songId } });
     if (!song) throw new NotFoundException('Song not found');
 
     track.song = song;
-    await this.tracks.save(track);
+    await this.trackRepo.save(track);
 
     // --- Emit real-time updates ---
     await emitMovieEvent(
@@ -74,12 +74,12 @@ export class TrackResolver {
     return track;
   }
 
-  @Mutation(() => Track, { name: 'updateTrackStatus' })
+  @Mutation(() => Track)
   async updateTrackStatus(
     @Args('trackId', { type: () => ID }) trackId: string,
     @Args('status', { type: () => LicenseStatus }) status: LicenseStatus,
   ): Promise<Track> {
-    const track = await this.tracks.findOne({
+    const track = await this.trackRepo.findOne({
       where: { id: trackId },
       relations: ['scene', 'scene.movie'],
     });
@@ -87,7 +87,7 @@ export class TrackResolver {
 
     // TODO: Validate allowed state transitions (e.g., PENDING -> NEGOTIATION/APPROVED/REJECTED)
     track.licenseStatus = status;
-    await this.tracks.save(track);
+    await this.trackRepo.save(track);
 
     // --- Emit real-time updates ---
     await emitMovieEvent(
@@ -104,7 +104,7 @@ export class TrackResolver {
     return track;
   }
 
-  @Mutation(() => Track, { name: 'createTrack' })
+  @Mutation(() => Track)
   async createTrack(@Args('input') input: CreateTrackInput): Promise<Track> {
     const { sceneId, startTime, endTime } = input;
 
@@ -115,14 +115,14 @@ export class TrackResolver {
       );
     }
 
-    const scene = await this.scenes.findOne({
+    const scene = await this.sceneRepo.findOne({
       where: { id: sceneId },
       relations: ['movie'],
     });
     if (!scene) throw new NotFoundException('Scene not found');
 
     // --- Detect overlaps within same scene (simple check) ---
-    const overlaps = await this.tracks.count({
+    const overlaps = await this.trackRepo.count({
       where: {
         scene: { id: sceneId },
         // overlap condition: NOT (end <= start OR start >= end)
@@ -137,14 +137,14 @@ export class TrackResolver {
       throw new BadRequestException('Overlapping track in this scene');
     }
 
-    const track = this.tracks.create({
+    const track = this.trackRepo.create({
       scene,
       startTime,
       endTime,
       licenseStatus: LicenseStatus.PENDING,
     });
 
-    const saved = await this.tracks.save(track);
+    const saved = await this.trackRepo.save(track);
 
     // --- Emit real-time updates ---
     await emitMovieEvent(

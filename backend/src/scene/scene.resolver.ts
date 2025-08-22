@@ -34,28 +34,39 @@ class CreateSceneInput {
 @Resolver(() => Scene)
 export class SceneResolver {
   constructor(
-    @InjectRepository(Scene) private readonly scenes: Repository<Scene>,
-    @InjectRepository(Movie) private readonly movies: Repository<Movie>,
+    @InjectRepository(Scene) private readonly sceneRepo: Repository<Scene>,
+    @InjectRepository(Movie) private readonly movieRepo: Repository<Movie>,
     @Inject(PUB_SUB) private readonly pubSub: PubSub,
   ) {}
 
-  @Mutation(() => Scene, { name: 'createScene' })
+  @Mutation(() => Scene)
   async createScene(@Args('input') input: CreateSceneInput): Promise<Scene> {
+    // --- Normalize inputs ---
     const name = input.name?.trim();
-    if (!name) {
-      throw new BadRequestException('Scene name is required');
+    const description = input.description?.trim() ?? null;
+
+    // Basic validations
+    if (!name) throw new BadRequestException('Scene name is required');
+    if (name.length > 255)
+      throw new BadRequestException('Scene name is too long (max 255 chars)');
+    if (description && description.length > 255) {
+      throw new BadRequestException(
+        'Scene description is too long (max 255 chars)',
+      );
     }
 
-    const movie = await this.movies.findOne({ where: { id: input.movieId } });
-    if (!movie) {
-      throw new NotFoundException('Movie not found');
-    }
+    // Load minimal movie fields needed
+    const movie = await this.movieRepo.findOne({
+      where: { id: input.movieId },
+      select: { id: true, title: true },
+    });
+    if (!movie) throw new NotFoundException('Movie not found');
 
     // OPTIONAL: enforce simple uniqueness by name within the movie (business rule-dependent)
-    const dup = await this.scenes.count({
+    const dup = await this.sceneRepo.exists({
       where: { movie: { id: movie.id }, name },
     });
-    if (dup > 0) {
+    if (dup) {
       // NOTE: Check with product if this should be an error or just allow duplicates.
       throw new BadRequestException(
         'A scene with this name already exists for this movie',
@@ -63,12 +74,12 @@ export class SceneResolver {
     }
 
     // Create and persist scene
-    const scene = this.scenes.create({
+    const scene = this.sceneRepo.create({
       name,
       movie,
-      description: input.description?.trim() ?? null,
+      description,
     });
-    const saved = await this.scenes.save(scene);
+    const saved = await this.sceneRepo.save(scene);
 
     // --- Emit real-time updates ---
     await emitMovieEvent(
