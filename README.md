@@ -103,6 +103,7 @@ UI tests depend on the seeded movies **Inception** and **The Dark Knight**.
 - **Scale real‑time with Redis (Pub/Sub)** – use Redis as the subscriptions backplane so events fan out across multiple backend instances; optionally cache hot queries (e.g., movies list).
 - **Domain event streaming with Kafka** - (durable log, multiple consumers, replay & audit trail).
 - **Indexes**: No extra indexes were added because the dataset is small and the focus was on functionality. 
+- **Entities and GraphQL Types** - For simplicity, this project reuses the same classes for both. If the domain evolves (e.g., entity shape diverges from API shape), adding dedicated DTOs and mappers would improve maintainability and safety.
 
 ## 📋 Requirements
 - Docker & Docker Compose
