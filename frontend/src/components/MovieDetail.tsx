@@ -119,6 +119,7 @@ export default function MovieDetail({ id }: { id: string }) {
           <CreateSceneForm
             movieId={movie.id}
             onCancel={() => setCreatingScene(false)}
+            onCreated={() => setCreatingScene(false)}
           />
         ) : (
           <button
@@ -143,6 +144,7 @@ export default function MovieDetail({ id }: { id: string }) {
               <CreateTrackForm
                 sceneId={s.id}
                 onCancel={() => setCreatingTrackSceneId(null)}
+                onCreated={() => setCreatingTrackSceneId(null)}
               />
             </div>
           ) : (

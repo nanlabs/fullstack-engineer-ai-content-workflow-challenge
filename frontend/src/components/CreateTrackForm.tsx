@@ -7,9 +7,10 @@ import { CREATE_TRACK } from '@/graphql/tracks';
 type Props = {
   sceneId: string;
   onCancel: () => void;
+  onCreated: () => void;
 };
 
-export default function CreateTrackForm({ sceneId, onCancel }: Props) {
+export default function CreateTrackForm({ sceneId, onCancel, onCreated }: Props) {
   // --- Local form state ---
   const [start, setStart] = useState<number>(0);
   const [end, setEnd] = useState<number>(0);
@@ -28,20 +29,26 @@ export default function CreateTrackForm({ sceneId, onCancel }: Props) {
       return;
     }
 
-    await createTrack({
-      variables: {
-        input: {
-          sceneId,
-          startTime: start,
-          endTime: end,
-          // NOTE: No songId here; association will be handled later via another flow.
+    try {
+      await createTrack({
+        variables: {
+          input: { sceneId, startTime: start, endTime: end },
         },
-      },
-    });
+      });
 
-    // --- Reset form ---
-    setStart(0);
-    setEnd(0);
+      // --- Reset form ---
+      setStart(0);
+      setEnd(0);
+
+      // --- Notify parent to close the form ---
+      onCreated();
+    } catch (e) {
+      // NOTE: Swallow the rejection so it doesn't log as "Uncaught".
+      // The hook's `error` state already renders the message in the UI.
+      // Optionally we could set a local toast here.
+      // As a future improvement we should have a better error handling.
+      console.debug('Create track failed', e);
+    }
   }
 
   return (

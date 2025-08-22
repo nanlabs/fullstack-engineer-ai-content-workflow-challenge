@@ -6,10 +6,11 @@ import { CREATE_SCENE } from '@/graphql/scenes';
 
 type Props = {
   movieId: string;
-  onCancel?: () => void;
+  onCancel: () => void;
+  onCreated: () => void;
 };
 
-export default function CreateSceneForm({ movieId, onCancel }: Props) {
+export default function CreateSceneForm({ movieId, onCancel, onCreated }: Props) {
   // --- Local form state ---
   const [name, setName] = useState<string>('');
   const [description, setDescription] = useState<string>('');
@@ -24,13 +25,24 @@ export default function CreateSceneForm({ movieId, onCancel }: Props) {
       return;
     }
 
-    await createScene({
-      variables: { input: { movieId, name: name.trim(), description: description.trim() || null } },
-    });
+    try {
+      await createScene({
+        variables: { input: { movieId, name: name.trim(), description: description.trim() || null } },
+      });
 
-    // --- Reset ---
-    setName('');
-    setDescription('');
+      // --- Reset form ---
+      setName('');
+      setDescription('');
+
+      // --- Notify parent to close the form ---
+      onCreated();
+    } catch (e) {
+      // NOTE: Swallow the rejection so it doesn't log as "Uncaught".
+      // The hook's `error` state already renders the message in the UI.
+      // Optionally we could set a local toast here.
+      // As a future improvement we should have a better error handling.
+      console.debug('Create scene failed', e);
+    }
   }
 
   return (
