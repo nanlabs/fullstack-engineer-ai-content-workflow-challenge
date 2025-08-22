@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ApolloProvider, useQuery, useMutation, useSubscription } from '@apollo/client';
-import { apollo } from '@/graphql/apollo';
+import { useQuery, useMutation, useSubscription } from '@apollo/client';
 import { GET_SONGS } from '@/graphql/songs';
 import { SET_TRACK_SONG, UPDATE_TRACK_STATUS } from '@/graphql/tracks';
 import { GET_MOVIE, MOVIE_EVENTS_SUB } from '@/graphql/movies';
@@ -10,7 +9,6 @@ import type { Movie, Song } from '@/types';
 import CreateTrackForm from '@/components/CreateTrackForm';
 import CreateSceneForm from '@/components/CreateSceneForm';
 import Toast from '@/components/Toast';
-import { formatEventMessage } from '@/helpers/formatEventMessage';
 
 type GetMovieVars = { id: string };
 type GetMovieData = { movie: Movie | null };
@@ -18,6 +16,25 @@ type GetMovieData = { movie: Movie | null };
 // GQL enum tokens (uppercase)
 const STATUS_OPTIONS = ['PENDING', 'NEGOTIATION', 'APPROVED', 'REJECTED'] as const;
 type LicenseStatusGQL = typeof STATUS_OPTIONS[number];
+
+function formatEventMessage(kind: string, at: Date): string {
+  const time = at.toLocaleTimeString();
+
+  switch (kind) {
+    case 'TRACK_CREATED':
+      return `🎵 New track created at ${time}`;
+    case 'TRACK_SONG_SET':
+      return `🎶 Song assigned to track at ${time}`;
+    case 'TRACK_STATUS_UPDATED':
+      return `✅ Track status updated at ${time}`;
+    case 'SCENE_CREATED':
+      return `🎬 New scene created at ${time}`;
+    case 'SUMMARY_CHANGED':
+      return `📊 Movie summary updated at ${time}`;
+    default:
+      return `ℹ️ Event: ${kind} at ${time}`;
+  }
+}
 
 function Detail({ id }: { id: string }) {
   const { data: movieData, loading, error, refetch } = useQuery<GetMovieData, GetMovieVars>(GET_MOVIE, { variables: { id } });
@@ -259,9 +276,5 @@ function Detail({ id }: { id: string }) {
 }
 
 export default function MovieDetail({ id }: { id: string }) {
-  return (
-    <ApolloProvider client={apollo}>
-      <Detail id={id} />
-    </ApolloProvider>
-  );
+  return <Detail id={id} />;
 }

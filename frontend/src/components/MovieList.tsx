@@ -2,16 +2,33 @@
 'use client';
 
 import { useState } from 'react';
-import { ApolloProvider, useQuery, useSubscription } from '@apollo/client';
+import { useQuery, useSubscription } from '@apollo/client';
 import Link from 'next/link';
-import { apollo } from '@/graphql/apollo';
 import { GET_MOVIES, ALL_MOVIES_EVENTS } from '@/graphql/movies';
 import type { MovieSummary } from '@/types';
 import StatusPill from '@/components/StatusPill';
-import { formatEventMessage } from '@/helpers/formatEventMessage';
 import Toast from '@/components/Toast';
 
 type GetMoviesData = { movies: MovieSummary[] };
+
+function formatEventMessage(kind: string, at: Date, movieTitle: string): string {
+  const time = at.toLocaleTimeString();
+
+  switch (kind) {
+    case 'TRACK_CREATED':
+      return `🎵 New track created in movie ${movieTitle} at ${time}`;
+    case 'TRACK_SONG_SET':
+      return `🎶 Song assigned to track in movie ${movieTitle} at ${time}`;
+    case 'TRACK_STATUS_UPDATED':
+      return `✅ Track status updated in movie ${movieTitle} at ${time}`;
+    case 'SCENE_CREATED':
+      return `🎬 New scene created in movie ${movieTitle} at ${time}`;
+    case 'SUMMARY_CHANGED':
+      return `📊 Movie summary updated in movie ${movieTitle} at ${time}`;
+    default:
+      return `ℹ️ Event: ${kind} in movie ${movieTitle} at ${time}`;
+  }
+}
 
 function List() {
   const { data: moviesData, loading, error, refetch } = useQuery<GetMoviesData>(GET_MOVIES);
@@ -30,7 +47,7 @@ function List() {
       const event = data.data?.allMoviesEvents;
       if (!event) return;
 
-      setToastMsg(formatEventMessage(event.kind, new Date(event.at)));
+      setToastMsg(formatEventMessage(event.kind, new Date(event.at), event.movieTitle));
       refetch();
     },
     onError: (e) => console.error('allMoviesEvents sub error', e),
@@ -88,9 +105,5 @@ function List() {
 }
 
 export default function MovieList() {
-  return (
-    <ApolloProvider client={apollo}>
-      <List />
-    </ApolloProvider>
-  );
+  return <List />;
 }

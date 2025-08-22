@@ -55,6 +55,7 @@ export const ALL_MOVIES_EVENTS = gql`
     allMoviesEvents {
       kind
       at
+      movieTitle
     }
   }
 `;
