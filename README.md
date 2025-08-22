@@ -99,7 +99,9 @@ UI tests depend on the seeded movies **Inception** and **The Dark Knight**.
 - **CRUD completeness** – extend functionality to cover creation and modification of movies, modification of scenes, modification of tracks, and creation/modification of songs.
 - **Testing improvements** – add more unit and integration tests, expand UI tests, and integrate both into an **automated CI pipeline with GitHub Actions** to ensure stability
 - Improve error handling and input validation.    
-- Add pagination, search, and filtering for large datasets.  
+- Add pagination, search, and filtering for large datasets.
+- **Scale real‑time with Redis (Pub/Sub)** – use Redis as the subscriptions backplane so events fan out across multiple backend instances; optionally cache hot queries (e.g., movies list).
+- **Domain event streaming with Kafka** - (durable log, multiple consumers, replay & audit trail).
 
 ## 📋 Requirements
 - Docker & Docker Compose
