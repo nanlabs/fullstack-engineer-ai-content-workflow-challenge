@@ -92,7 +92,7 @@ function Detail({ id }: { id: string }) {
       )}
 
       <header>
-        <h1 className="text-2xl font-bold">{movie.title}</h1>
+        <h1 className="text-2xl font-bold" data-testid="movie-title">{movie.title}</h1>
         <p className="text-gray-600">{movie.description ?? 'No description'}</p>
       </header>
 
@@ -115,7 +115,7 @@ function Detail({ id }: { id: string }) {
       {movie.scenes.length === 0 ? (
         <p className="text-sm text-gray-500">No scenes yet.</p>
       ) : movie.scenes.map((s) => (
-        <section key={s.id} className="border rounded p-4 space-y-2">
+        <section key={s.id} className="border rounded p-4 space-y-2" data-testid="scene-section">
           <h2 className="font-semibold">{s.name}</h2>
           <p className="text-gray-600">{s.description ?? 'No description'}</p>
 
@@ -146,7 +146,7 @@ function Detail({ id }: { id: string }) {
               const settingSong = editingSongTrackId === t.id;
 
               return (
-                <div key={t.id} className="py-2 flex items-center justify-between gap-3">
+                <div key={t.id} className="py-2 flex items-center justify-between gap-3" data-testid="track-row">
                   <div className="min-w-0">
                     <div className="text-sm font-medium truncate">
                       {t.song ? `${t.song.title} — ${t.song.artist}` : 'No song assigned'}
@@ -162,6 +162,7 @@ function Detail({ id }: { id: string }) {
                         <>
                           <select
                             className="border rounded px-2 py-1 text-xs"
+                            data-testid="track-status-select"
                             value={selectedStatus ?? current}
                             onChange={(e) => setSelectedStatus(e.target.value as LicenseStatusGQL)}
                             disabled={savingStatus || savingSong}
@@ -173,6 +174,7 @@ function Detail({ id }: { id: string }) {
                           </select>
                           <button
                             className="text-xs px-2 py-1 rounded bg-black text-white disabled:opacity-60"
+                            data-testid="track-save-status"
                             disabled={savingStatus || (selectedStatus ?? current) === current || savingSong}
                             onClick={() => saveStatus(t.id)}
                           >
@@ -180,6 +182,7 @@ function Detail({ id }: { id: string }) {
                           </button>
                           <button
                             className="text-xs px-2 py-1 rounded border"
+                            data-testid="track-cancel-status"
                             onClick={() => { setEditingStatusTrackId(null); setSelectedStatus(null); }}
                           >
                             Cancel
@@ -188,9 +191,10 @@ function Detail({ id }: { id: string }) {
                         </>
                       ) : (
                         <>
-                          <span className="text-xs px-2 py-1 rounded bg-gray-100">{current}</span>
+                          <span className="text-xs px-2 py-1 rounded bg-gray-100" data-testid="track-status">{current}</span>
                           <button
                             className="text-xs px-2 py-1 rounded border"
+                            data-testid="track-change-status"
                             onClick={() => { setEditingStatusTrackId(t.id); setSelectedStatus(current); }}
                           >
                             Change status
@@ -205,6 +209,7 @@ function Detail({ id }: { id: string }) {
                         <>
                           <select
                             className="border rounded px-2 py-1 text-sm"
+                            data-testid="track-song-select"
                             value={selectedSongId || ''}
                             onChange={(e) => setSelectedSongId(e.target.value)}
                           >
@@ -217,6 +222,7 @@ function Detail({ id }: { id: string }) {
                           </select>
                           <button
                             className="text-xs px-2 py-1 rounded bg-black text-white disabled:opacity-60"
+                            data-testid="track-save-song"
                             disabled={!selectedSongId || savingSong}
                             onClick={() => saveSong(t.id)}
                           >
@@ -224,6 +230,7 @@ function Detail({ id }: { id: string }) {
                           </button>
                           <button
                             className="text-xs px-2 py-1 rounded border"
+                            data-testid="track-cancel-assoc"
                             onClick={() => { setEditingSongTrackId(null); setSelectedSongId(null); }}
                           >
                             Cancel
@@ -234,6 +241,7 @@ function Detail({ id }: { id: string }) {
                         <button
                           className="text-xs px-2 py-1 rounded border"
                           onClick={() => { setEditingSongTrackId(t.id); setSelectedSongId(null); }}
+                          data-testid="track-assoc-btn"
                         >
                           Associate song
                         </button>

@@ -43,11 +43,12 @@ I used **GraphQL only** to keep the project small and consistent:
 ### Containerization
 - **Docker & Docker Compose** – one command to run the full stack (frontend, backend, and database).
 
-### 🧪 Tests
+### Unit Tests
 
 All backend unit tests live under `backend/test/`.
 
 #### Naming convention
+
 Tests follow a naming convention of `<resolver>.<method>.spec.ts` for unit tests that focus on a single resolver method.
 
 Example:  
@@ -57,8 +58,39 @@ Example:
 
 Run **all tests**:
 ```bash
+cd backend
 npm test
 ```
+
+### UI Tests
+
+The UI tests validate that the main user flows exist and are actionable **without mutating the database**.  
+They currently cover:
+
+- **Movies list**: renders seeded movies with stable IDs and titles (`Inception`, `The Dark Knight`).  
+- **Movie detail**:  
+  - **Associate Song**: opens the editor, lists seeded songs, enables **Save** when a song is selected, then **cancels**.  
+  - **Change Status**: opens the editor, allows changing the status and enables **Save**, then **cancels**.  
+  - Ensures seeded state (e.g., `Inception` title, scenes, and `Time — Hans Zimmer` track with its initial status) remains unchanged after the run.
+
+#### Rationale
+
+For this coding challenge we prefer **stability and repeatability** over exercising real mutations in E2E.  
+If needed, a mutating variant with cleanup can be added later.
+
+#### Running tests
+
+Run **all tests**:
+```bash
+cd frontend
+npm run test:ui
+```
+
+#### ⚠️ Important
+
+UI tests depend on the seeded movies **Inception** and **The Dark Knight**.  
+- Do not modify or delete these seeds if you want the tests to pass.  
+- If you change them, reset the database (drop & reseed) before running the tests again.
 
 ### Future Improvements
 
