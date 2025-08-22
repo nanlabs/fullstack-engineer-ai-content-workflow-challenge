@@ -16,17 +16,17 @@ function formatEventMessage(kind: string, at: Date, movieTitle: string): string 
 
   switch (kind) {
     case 'TRACK_CREATED':
-      return `🎵 New track created in movie ${movieTitle} at ${time}`;
+      return `🎵 New track created in movie "${movieTitle}" at ${time}`;
     case 'TRACK_SONG_SET':
-      return `🎶 Song assigned to track in movie ${movieTitle} at ${time}`;
+      return `🎶 Song assigned to track in movie "${movieTitle}" at ${time}`;
     case 'TRACK_STATUS_UPDATED':
-      return `✅ Track status updated in movie ${movieTitle} at ${time}`;
+      return `✅ Track status updated in movie "${movieTitle}" at ${time}`;
     case 'SCENE_CREATED':
-      return `🎬 New scene created in movie ${movieTitle} at ${time}`;
+      return `🎬 New scene created in movie "${movieTitle}" at ${time}`;
     case 'SUMMARY_CHANGED':
-      return `📊 Movie summary updated in movie ${movieTitle} at ${time}`;
+      return `📊 Movie summary updated in movie "${movieTitle}" at ${time}`;
     default:
-      return `ℹ️ Event: ${kind} in movie ${movieTitle} at ${time}`;
+      return `ℹ️ Event: ${kind} in movie "${movieTitle}" at ${time}`;
   }
 }
 
