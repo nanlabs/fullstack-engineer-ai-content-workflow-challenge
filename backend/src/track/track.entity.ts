@@ -4,6 +4,7 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  Check,
 } from 'typeorm';
 import { ObjectType, Field, ID, Int, registerEnumType } from '@nestjs/graphql';
 import { Scene } from '../scene/scene.entity';
@@ -21,6 +22,8 @@ export enum LicenseStatus {
 registerEnumType(LicenseStatus, { name: 'LicenseStatus' });
 
 @ObjectType()
+@Check('chk_track_time_order', `"endTime" > "startTime"`)
+@Check('chk_track_time_non_negative', `"startTime" >= 0`)
 @Entity('tracks')
 export class Track extends BaseEntityTimestamps {
   @Field(() => ID)
