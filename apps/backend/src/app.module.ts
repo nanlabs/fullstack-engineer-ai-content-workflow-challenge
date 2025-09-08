@@ -1,25 +1,43 @@
+import { join } from 'path';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
+import { GraphQLModule } from '@nestjs/graphql';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { CampaignsModule } from './campaigns/campaigns.module';
 import { ContentPiecesModule } from './content-pieces/content-pieces.module';
-import { ContentPieceTranslationModule } from './content-piece-translations/content-piece-translation.module';
+import { ContentPieceTranslationsModule } from './content-piece-translations/content-piece-translations.module';
+import { LangChainModule } from './langchain/langchain.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
-
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      url: process.env.DATABASE_URL,
-      autoLoadEntities: true, // Automatically load all entities
-      synchronize: true, // Auto-create database tables (for development only)
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        url: configService.get<string>('DATABASE_URL'),
+        autoLoadEntities: true,
+        synchronize: true, // In production, use migrations
+      }),
+      inject: [ConfigService],
+    }),
+    GraphQLModule.forRoot<ApolloDriverConfig>({
+      driver: ApolloDriver,
+      autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
+      sortSchema: true,
+      subscriptions: {
+        'graphql-ws': true,
+      },
     }),
 
     // Feature modules
     CampaignsModule,
     ContentPiecesModule,
-    ContentPieceTranslationModule,
+    ContentPieceTranslationsModule,
+    LangChainModule,
   ],
   controllers: [],
   providers: [],

@@ -4,17 +4,27 @@ import { Repository } from 'typeorm';
 import { ContentPiece } from './content-piece.entity';
 import { CreateContentPieceDto } from './dto/create-content-piece.dto';
 import { UpdateContentPieceDto } from './dto/update-content-piece.dto';
+import { PubSub } from 'graphql-subscriptions';
 
 @Injectable()
 export class ContentPiecesService {
   constructor(
     @InjectRepository(ContentPiece)
     private readonly contentPieceRepository: Repository<ContentPiece>,
+    private readonly pubSub: PubSub,
   ) {}
 
   async create(createContentPieceDto: CreateContentPieceDto): Promise<ContentPiece> {
-    const newContentPiece = this.contentPieceRepository.create(createContentPieceDto);
-    return this.contentPieceRepository.save(newContentPiece);
+    const entity = this.contentPieceRepository.create(createContentPieceDto);
+    const newContent = await this.contentPieceRepository.save(entity);
+
+    await this.pubSub.publish('onContentPieceUpdated', {
+      onContentPieceUpdated: {
+        ...newContent,
+        campaignId: newContent.campaign.id,
+      },
+    });
+    return newContent;
   }
 
   async findAll(campaignId: string | undefined = undefined): Promise<ContentPiece[]> {
@@ -42,13 +52,29 @@ export class ContentPiecesService {
   async update(id: string, updateContentPieceDto: UpdateContentPieceDto): Promise<ContentPiece> {
     const contentPiece = await this.findOne(id);
     this.contentPieceRepository.merge(contentPiece, updateContentPieceDto);
-    return this.contentPieceRepository.save(contentPiece);
+    const updatedContentPiece = await this.contentPieceRepository.save(contentPiece);
+
+    await this.pubSub.publish('onContentPieceUpdated', {
+      onContentPieceUpdated: {
+        ...updatedContentPiece,
+        campaignId: updatedContentPiece.campaign.id,
+      },
+    });
+    return updatedContentPiece;
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.contentPieceRepository.delete(id);
-    if (result.affected === 0) {
+    const contentPiece = await this.findOne(id);
+    if (!contentPiece) {
       throw new NotFoundException(`ContentPiece with ID ${id} not found`);
     }
+    await this.contentPieceRepository.delete(id);
+
+    await this.pubSub.publish('onContentPieceUpdated', {
+      onContentPieceUpdated: {
+        id,
+        campaignId: contentPiece.campaign.id,
+      },
+    });
   }
 }

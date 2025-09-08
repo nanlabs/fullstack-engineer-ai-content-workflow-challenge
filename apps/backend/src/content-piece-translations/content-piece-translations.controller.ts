@@ -1,9 +1,9 @@
 import { Controller, Get, Post, Body, Param, Patch, Delete, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam } from '@nestjs/swagger';
-import { ContentPieceTranslationService } from './content-piece-translation.service';
-import { ContentPieceTranslation } from './content-piece-translation.entity';
-import { CreateContentPieceTranslationDto } from './dto/create-content-piece-translation.dto';
-import { UpdateContentPieceTranslationDto } from './dto/update-content-piece-translation.dto';
+import { ContentPieceTranslationService } from './content-piece-translations.service';
+import { ContentPieceTranslation } from './content-piece-translations.entity';
+import { CreateContentPieceTranslationDto } from './dto/create-content-piece-translations.dto';
+import { UpdateContentPieceTranslationDto } from './dto/update-content-piece-translations.dto';
 import { ContentPiecesService } from 'src/content-pieces/content-pieces.service';
 
 @ApiTags('content-piece-translations')

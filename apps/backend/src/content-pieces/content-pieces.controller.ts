@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Body, Param, Patch, Delete, NotFoundException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBody, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { ContentPiecesService } from './content-pieces.service';
 import { ContentPiece } from './content-piece.entity';
 import { CreateContentPieceDto } from './dto/create-content-piece.dto';
@@ -39,10 +39,7 @@ export class ContentPiecesController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update a content piece by ID' })
   @ApiParam({ name: 'id', description: 'The ID of the content piece to update' })
-  async update(
-    @Param('id') id: string,
-    @Body() updateContentPieceDto: UpdateContentPieceDto,
-  ): Promise<ContentPiece> {
+  async update(@Param('id') id: string, @Body() updateContentPieceDto: UpdateContentPieceDto): Promise<ContentPiece> {
     return this.contentPiecesService.update(id, updateContentPieceDto);
   }
 

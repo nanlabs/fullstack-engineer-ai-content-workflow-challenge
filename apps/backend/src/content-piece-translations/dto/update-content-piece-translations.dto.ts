@@ -1,5 +1,5 @@
 import { PartialType } from '@nestjs/mapped-types';
-import { CreateContentPieceTranslationDto } from './create-content-piece-translation.dto';
+import { CreateContentPieceTranslationDto } from './create-content-piece-translations.dto';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsOptional, IsString, IsBoolean } from 'class-validator';
 
