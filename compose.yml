@@ -1,7 +1,6 @@
 services:
   db:
     image: postgres:14-alpine
-    restart: always
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
@@ -39,6 +38,8 @@ services:
     environment:
       VITE_BACKEND_URL: http://localhost:3000
       VITE_WS_URL: ws://localhost:3000/graphql
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:
