@@ -50,4 +50,11 @@ export class ContentPiece {
   @Field(() => [ContentPieceTranslation], { nullable: false })
   @OneToMany(() => ContentPieceTranslation, (translation): ContentPiece => translation.contentPiece)
   translations: ContentPieceTranslation[];
+
+  // For subscription purposes
+  @Field()
+  _type: string;
+
+  @Field()
+  campaignId: string;
 }

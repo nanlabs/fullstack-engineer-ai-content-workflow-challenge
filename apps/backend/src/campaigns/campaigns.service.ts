@@ -16,12 +16,16 @@ export class CampaignsService {
     const entity = this.campaignRepository.create(createCampaignDto);
     const newCampaign = await this.campaignRepository.save(entity);
 
-    await this.pubSub.publish('onCampaignUpdated', { onCampaignUpdated: newCampaign });
+    await this.pubSub.publish('campaignUpdated', { campaignUpdated: { ...newCampaign, _type: 'create' } });
     return newCampaign;
   }
 
   async findOne(id: string): Promise<Campaign> {
-    const campaign = await this.campaignRepository.findOne({ where: { id } });
+    const campaign = await this.campaignRepository.findOne({
+      where: { id },
+      order: { updatedAt: 'DESC' },
+      relations: ['contentPieces'],
+    });
     if (!campaign) {
       throw new NotFoundException(`Campaign with ID ${id} not found`);
     }
@@ -29,7 +33,10 @@ export class CampaignsService {
   }
 
   async findAll(): Promise<Campaign[]> {
-    return this.campaignRepository.find();
+    return this.campaignRepository.find({
+      relations: ['contentPieces'],
+      order: { updatedAt: 'ASC', createdAt: 'DESC' },
+    });
   }
 
   async update(id: string, updateCampaignDto: Partial<Campaign>): Promise<Campaign> {
@@ -37,14 +44,15 @@ export class CampaignsService {
     Object.assign(entity, updateCampaignDto);
     const campaign = await this.campaignRepository.save(entity);
 
-    await this.pubSub.publish('onCampaignUpdated', { onCampaignUpdated: campaign });
+    await this.pubSub.publish('campaignUpdated', { campaignUpdated: { ...campaign, _type: 'update' } });
     return campaign;
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string): Promise<Campaign> {
     const entity = await this.findOne(id);
-    await this.campaignRepository.remove(entity);
+    const result = await this.campaignRepository.remove(entity);
 
-    await this.pubSub.publish('onCampaignUpdated', { onCampaignUpdated: { id } });
+    await this.pubSub.publish('campaignUpdated', { campaignUpdated: { ...result, id: id, _type: 'remove' } });
+    return result;
   }
 }

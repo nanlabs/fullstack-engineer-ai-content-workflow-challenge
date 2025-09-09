@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, NotFoundException, Delete, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { CampaignsService } from './campaigns.service';
 import { CreateCampaignDto } from './dto/create-campaign.dto';
@@ -25,10 +25,26 @@ export class CampaignsController {
   @Get(':id')
   @ApiOperation({ summary: 'Get a campaign by ID' })
   @ApiParam({ name: 'id', description: 'The ID of the campaign' })
-  async findOne(@Param('id') id: string): Promise<Campaign> {
+  async findOne(@Param('id', new ParseUUIDPipe()) id: string): Promise<Campaign> {
     // This endpoint returns a single campaign by its ID.
     try {
       return await this.campaignsService.findOne(id);
+    } catch (error) {
+      // Handle the case where the campaign is not found.
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(error.message);
+      }
+      throw error;
+    }
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete a campaign by ID' })
+  @ApiParam({ name: 'id', description: 'The ID of the campaign' })
+  async remove(@Param('id', new ParseUUIDPipe()) id: string): Promise<Campaign> {
+    // This endpoint deletes a campaign by its ID.
+    try {
+      return await this.campaignsService.remove(id);
     } catch (error) {
       // Handle the case where the campaign is not found.
       if (error instanceof NotFoundException) {

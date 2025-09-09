@@ -28,4 +28,8 @@ export class Campaign {
   @Field(() => [ContentPiece], { defaultValue: [] })
   @OneToMany(() => ContentPiece, (contentPiece) => contentPiece.campaign)
   contentPieces: ContentPiece[];
+
+  // For subscription purposes
+  @Field()
+  _type: string;
 }

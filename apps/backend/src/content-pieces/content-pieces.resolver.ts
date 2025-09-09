@@ -1,20 +1,25 @@
-import { Injectable } from '@nestjs/common';
 import { PubSub } from 'graphql-subscriptions';
-import { ContentPiecesService } from './content-pieces.service';
-import { Subscription } from '@nestjs/graphql';
+import { Parent, ResolveField, Resolver, Subscription } from '@nestjs/graphql';
 import { ContentPiece } from './content-piece.entity';
+import { ContentPieceTranslation } from 'src/content-piece-translations/content-piece-translations.entity';
+import { ContentPieceTranslationService } from 'src/content-piece-translations/content-piece-translations.service';
 
-@Injectable()
+@Resolver(() => ContentPiece)
 export class ContentPiecesResolver {
   constructor(
-    private readonly contentPieceService: ContentPiecesService,
+    private readonly contentPieceTranslationsService: ContentPieceTranslationService,
     private readonly pubSub: PubSub,
   ) {}
 
   @Subscription(() => ContentPiece, {
-    name: 'onContentPieceUpdated',
+    name: 'contentPieceUpdated',
   })
-  onContentPieceUpdated() {
-    return this.pubSub.asyncIterableIterator<ContentPiece>('onContentPieceUpdated');
+  contentPieceUpdated() {
+    return this.pubSub.asyncIterableIterator<ContentPiece>('contentPieceUpdated');
+  }
+
+  @ResolveField(() => [ContentPieceTranslation])
+  async translations(@Parent() contentPiece: ContentPiece): Promise<ContentPieceTranslation[]> {
+    return await this.contentPieceTranslationsService.findAll(contentPiece.id);
   }
 }

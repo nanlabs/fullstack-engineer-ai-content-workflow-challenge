@@ -1,12 +1,15 @@
-import { Resolver, Query, Mutation, Args, ID, Subscription } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, ID, Subscription, ResolveField, Parent } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
 import { CampaignsService } from './campaigns.service';
 import { Campaign } from './campaign.entity';
+import { ContentPiece } from 'src/content-pieces/content-piece.entity';
+import { ContentPiecesService } from 'src/content-pieces/content-pieces.service';
 
 @Resolver(() => Campaign)
 export class CampaignResolver {
   constructor(
     private readonly campaignsService: CampaignsService,
+    private readonly contentPiecesService: ContentPiecesService,
     private readonly pubSub: PubSub,
   ) {}
 
@@ -21,10 +24,16 @@ export class CampaignResolver {
   }
 
   @Subscription(() => Campaign, {
-    name: 'onCampaignUpdated',
+    name: 'campaignUpdated',
   })
-  onCampaignUpdated() {
-    return this.pubSub.asyncIterableIterator<Campaign>('onCampaignUpdated');
+  campaignUpdated() {
+    return this.pubSub.asyncIterableIterator<Campaign>('campaignUpdated');
+  }
+
+  @ResolveField(() => [ContentPiece])
+  async contentPieces(@Parent() campaign: Campaign): Promise<ContentPiece[]> {
+    const data = await this.contentPiecesService.findAll(campaign.id);
+    return data;
   }
 
   @Mutation(() => Campaign)
