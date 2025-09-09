@@ -1,6 +1,9 @@
 {
   "name": "test",
   "scripts": {
+    "dev:build": "docker compose build",
+    "dev:clear": "docker compose down -v frontend backend",
+    "dev:run": "docker compose up",
     "build": "turbo run build",
     "format": "prettier --ignore-path .gitignore -u --write .",
     "lint": "turbo run lint",
