@@ -8,17 +8,16 @@ const CampaignTable = () => {
 
   return (
     <Table>
-      <TableCaption className="text-white">A list of your campaigns.</TableCaption>
+      <TableCaption className="text-gray-300">A list of your campaigns.</TableCaption>
       <TableHeader>
         <TableRow>
-          <TableHead className="w-30 text-white text-xl">ID</TableHead>
-          <TableHead className="w-[30rem] text-white text-xl">Name</TableHead>
-          <TableHead className="w-40 text-white text-xl">Created At</TableHead>
-          <TableHead className="w-40 text-white text-xl">Updated At</TableHead>
-          <TableHead className="w-40 text-white text-xl">Actions</TableHead>
+          <TableHead className="w-[30rem] text-gray-300 text-xl">Name</TableHead>
+          <TableHead className="w-40 text-gray-300 text-xl">Created At</TableHead>
+          <TableHead className="w-40 text-gray-300 text-xl">Updated At</TableHead>
+          <TableHead className="w-40 text-gray-300 text-center text-xl">Actions</TableHead>
         </TableRow>
       </TableHeader>
-      <TableBody className="text-white text-lg">
+      <TableBody className="text-gray-300 text-lg">
         {campaigns.map((campaign) => (
           <CampaignRow key={campaign.id} campaign={campaign} />
         ))}

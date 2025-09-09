@@ -5,19 +5,19 @@ export type Campaign = {
   createdAt: string;
   updatedAt: string;
 
-  contentPieces: Content[];
+  contentPieces: ContentPiece[];
 };
 
 export const ReviewState = {
-  draft: 'draft',
-  suggested_by_ai: 'suggested_by_ai',
-  reviewed: 'reviewed',
-  approved: 'approved',
-  rejected: 'rejected',
+  draft: 'Draft',
+  suggested_by_ai: 'SuggestedByAI',
+  reviewed: 'Reviewed',
+  approved: 'Approved',
+  rejected: 'Rejected',
 } as const;
 export type ReviewStateType = (typeof ReviewState)[keyof typeof ReviewState];
 
-export type Content = {
+export type ContentPiece = {
   id: string;
   reviewState: ReviewStateType;
   aiGeneratedDraft?: object;
@@ -26,16 +26,17 @@ export type Content = {
   createdAt: string;
   updatedAt: string;
 
-  translations: ContentTranslation[];
+  translations: ContentPieceTranslation[];
 };
 
-export type ContentTranslation = {
+export type ContentPieceTranslation = {
   id: string;
   languageCode: string;
   translatedTitle: string;
   translatedDescription: string;
   isAIGenerated: boolean;
   isHumanEdited: boolean;
+  modelProvider?: string;
 
   createdAt: string;
   updatedAt: string;

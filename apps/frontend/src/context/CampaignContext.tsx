@@ -1,4 +1,4 @@
-import type { Campaign, Content, ContentTranslation } from '@/lib/types';
+import type { Campaign, ContentPiece, ContentPieceTranslation } from '@/lib/types';
 import React, { createContext, use, useState, useMemo, type ReactNode, useEffect } from 'react';
 import { gql } from '@apollo/client';
 import { client } from '@/lib/apolloClient';
@@ -11,6 +11,10 @@ type CampaignContextType = {
 
 // Create the context
 const CampaignContext = createContext<CampaignContextType | undefined>(undefined);
+
+type UpdateInfo<T> = {
+  [K in keyof T]: T[K];
+} & { _type: 'create' | 'update' | 'remove' };
 
 // Define the subscription query
 const CAMPAIGN_GET_ALL_QUERY = gql`
@@ -30,6 +34,7 @@ const CAMPAIGN_GET_ALL_QUERY = gql`
         updatedAt
         translations {
           id
+          modelProvider
           languageCode
           translatedTitle
           translatedDescription
@@ -44,13 +49,14 @@ const CAMPAIGN_GET_ALL_QUERY = gql`
 `;
 
 const CAMPAIGN_UPDATED_SUBSCRIPTION = gql`
-  subscription OnCampaignUpdated {
+  subscription campaignUpdated {
     campaignUpdated {
       id
       name
       description
       createdAt
       updatedAt
+      _type
       contentPieces {
         id
         reviewState
@@ -60,6 +66,7 @@ const CAMPAIGN_UPDATED_SUBSCRIPTION = gql`
         updatedAt
         translations {
           id
+          modelProvider
           languageCode
           translatedTitle
           translatedDescription
@@ -74,7 +81,7 @@ const CAMPAIGN_UPDATED_SUBSCRIPTION = gql`
 `;
 
 const CONTENT_PIECE_UPDATED_SUBSCRIPTION = gql`
-  subscription onContentPieceUpdated {
+  subscription contentPieceUpdated {
     contentPieceUpdated {
       id
       campaignId
@@ -83,8 +90,10 @@ const CONTENT_PIECE_UPDATED_SUBSCRIPTION = gql`
       sourceLanguage
       createdAt
       updatedAt
+      _type
       translations {
         id
+        modelProvider
         languageCode
         translatedTitle
         translatedDescription
@@ -98,11 +107,10 @@ const CONTENT_PIECE_UPDATED_SUBSCRIPTION = gql`
 `;
 
 const CONTENT_PIECE_TRANSLATION_UPDATED_SUBSCRIPTION = gql`
-  subscription onContentPieceTranslationUpdated {
+  subscription contentPieceTranslationUpdated {
     contentPieceTranslationUpdated {
       id
-      campaignId
-      contentPieceId
+      modelProvider
       languageCode
       translatedTitle
       translatedDescription
@@ -110,6 +118,10 @@ const CONTENT_PIECE_TRANSLATION_UPDATED_SUBSCRIPTION = gql`
       isHumanEdited
       createdAt
       updatedAt
+
+      _type
+      campaignId
+      contentPieceId
     }
   }
 `;
@@ -137,7 +149,7 @@ export const CampaignProvider = ({ children }: { children: ReactNode }) => {
 
   // Subscribe to campaign updates
   useEffect(() => {
-    const campaignObservable = client.subscribe<{ campaignUpdated: Campaign }>({
+    const campaignObservable = client.subscribe<{ campaignUpdated: UpdateInfo<Campaign> }>({
       query: CAMPAIGN_UPDATED_SUBSCRIPTION,
     });
     const campaignSubscription = campaignObservable.subscribe({
@@ -152,8 +164,7 @@ export const CampaignProvider = ({ children }: { children: ReactNode }) => {
             return [...prevCampaigns, updatedCampaign];
           }
           const updatedCampaigns = [...prevCampaigns];
-          if (updatedCampaigns[index].name === undefined) {
-            // Remove campaign if name is undefined (indicating deletion)
+          if (updatedCampaign._type === 'remove') {
             updatedCampaigns.splice(index, 1);
             return updatedCampaigns;
           }
@@ -166,7 +177,7 @@ export const CampaignProvider = ({ children }: { children: ReactNode }) => {
 
     // Subscribe to content piece updates
     const contentPieceObservable = client.subscribe<{
-      contentPieceUpdated: Content & { campaignId: string };
+      contentPieceUpdated: UpdateInfo<ContentPiece & { campaignId: string }>;
     }>({
       query: CONTENT_PIECE_UPDATED_SUBSCRIPTION,
     });
@@ -180,21 +191,24 @@ export const CampaignProvider = ({ children }: { children: ReactNode }) => {
           if (campaignIndex === -1) return prevCampaigns; // Campaign not found
 
           const updatedCampaigns = [...prevCampaigns];
-          const contentPieces = updatedCampaigns[campaignIndex].contentPieces;
+          const contentPieces = [...updatedCampaigns[campaignIndex].contentPieces];
           const contentIndex = contentPieces.findIndex((cp) => cp.id === updatedContentPiece.id);
 
           if (contentIndex === -1) {
             // Add new content piece
             contentPieces.push(updatedContentPiece);
           } else {
-            if (updatedContentPiece.reviewState === undefined) {
-              // Remove content piece if reviewState is undefined (indicating deletion)
+            if (updatedContentPiece._type === 'remove') {
               contentPieces.splice(contentIndex, 1);
             } else {
               // Update existing content piece
               contentPieces[contentIndex] = updatedContentPiece;
             }
           }
+          updatedCampaigns[campaignIndex] = {
+            ...updatedCampaigns[campaignIndex],
+            contentPieces,
+          };
           return updatedCampaigns;
         });
       },
@@ -202,7 +216,9 @@ export const CampaignProvider = ({ children }: { children: ReactNode }) => {
 
     // Subscribe to content piece translation updates
     const contentPieceTranslationObservable = client.subscribe<{
-      contentPieceTranslationUpdated: ContentTranslation & { campaignId: string; contentPieceId: string };
+      contentPieceTranslationUpdated: UpdateInfo<
+        ContentPieceTranslation & { campaignId: string; contentPieceId: string }
+      >;
     }>({
       query: CONTENT_PIECE_TRANSLATION_UPDATED_SUBSCRIPTION,
     });
@@ -218,23 +234,34 @@ export const CampaignProvider = ({ children }: { children: ReactNode }) => {
           const updatedCampaigns = [...prevCampaigns];
           const contentPieces = updatedCampaigns[campaignIndex].contentPieces;
           const contentIndex = contentPieces.findIndex((cp) => cp.id === updatedTranslation.contentPieceId);
-          if (contentIndex === -1) return prevCampaigns; // Content piece not found
+          if (contentIndex === -1) return prevCampaigns; // ContentPiece piece not found
 
-          const translations = contentPieces[contentIndex].translations;
+          const translations = [...contentPieces[contentIndex].translations];
           const translationIndex = translations.findIndex((t) => t.id === updatedTranslation.id);
 
           if (translationIndex === -1) {
             // Add new translation
             translations.push(updatedTranslation);
           } else {
-            if (updatedTranslation.translatedTitle === undefined) {
-              // Remove translation if translatedTitle is undefined (indicating deletion)
+            if (updatedTranslation._type === 'remove') {
               translations.splice(translationIndex, 1);
             } else {
               // Update existing translation
               translations[translationIndex] = updatedTranslation;
             }
           }
+
+          updatedCampaigns[campaignIndex] = {
+            ...updatedCampaigns[campaignIndex],
+            contentPieces: [
+              ...contentPieces.slice(0, contentIndex),
+              {
+                ...contentPieces[contentIndex],
+                translations,
+              },
+              ...contentPieces.slice(contentIndex + 1),
+            ].sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+          };
           return updatedCampaigns;
         });
       },
