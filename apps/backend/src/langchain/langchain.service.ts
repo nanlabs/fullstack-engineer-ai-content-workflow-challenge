@@ -61,7 +61,6 @@ export class LangChainService {
     const result = await chain.invoke({
       topic,
       sourceLanguage,
-      json_example: JSON.stringify({ title: 'Exciting Title', description: 'Engaging description text.' }),
     });
 
     try {
@@ -88,8 +87,6 @@ export class LangChainService {
     const translatePrompt = PromptTemplate.fromTemplate(`Translate the following text into {locale}.
       title: "{title}". description: "{description}".
       Return the result as a JSON object with "title" and "description" keys.
-
-      response example: '{json_example}
     `);
 
     // Use LCEL again
@@ -99,7 +96,6 @@ export class LangChainService {
       title,
       description,
       locale,
-      json_example: JSON.stringify({ title: 'Exciting Title', description: 'Engaging description text.' }),
     });
 
     try {
