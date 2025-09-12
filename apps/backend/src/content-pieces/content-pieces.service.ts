@@ -105,9 +105,10 @@ export class ContentPiecesService {
     const existingTranslationIndex = contentPiece.translations.findIndex((t) => t.languageCode === locale);
     const existingTranslation = contentPiece.translations[existingTranslationIndex];
 
+    const topic = `${contentPiece.campaign.name} ${contentPiece.campaign.name}`;
     if (existingTranslation) {
       // Update existing translation
-      const generatedData = await this.langChainService.generateDraft(locale, 'random', modelProvider);
+      const generatedData = await this.langChainService.generateDraft(locale, topic, modelProvider);
       existingTranslation.translatedTitle = generatedData.title;
       existingTranslation.translatedDescription = generatedData.description;
       existingTranslation.isAIGenerated = true;
@@ -122,7 +123,7 @@ export class ContentPiecesService {
       if (!contentPiece.translations || contentPiece.translations.length === 0) {
         contentPiece.translations = [];
 
-        const generatedData = await this.langChainService.generateDraft(locale, 'random', modelProvider);
+        const generatedData = await this.langChainService.generateDraft(locale, topic, modelProvider);
         contentPiece.translations.push(
           await this.translationsService.create({
             modelProvider,
