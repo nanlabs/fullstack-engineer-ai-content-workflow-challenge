@@ -24,8 +24,8 @@ This document outlines the development workflow and best practices for working w
 
 | Script   | Description                                |
 | -------- | ------------------------------------------ |
-| `dev`    | Start all applications in development mode |
-| `build`  | Build all packages and applications        |
+| `dev:run`    | Start all applications in development mode |
+| `dev:build`  | Build all packages and applications        |
 | `test`   | Run tests across all packages              |
 | `lint`   | Run linting across all packages            |
 | `format` | Format all files with Prettier             |
@@ -60,36 +60,14 @@ Each package in `apps/` and `packages/` can have its own scripts. Common ones in
    npm run lint
    ```
 
-4. Create a changeset for versioning
-
-   ```bash
-   npm run changeset
-   ```
-
-5. Commit your changes
+4. Commit your changes
 
    ```bash
    git add .
    git commit -m "feat: your feature description"
    ```
 
-### 2. Working with Dependencies
-
-- **Adding a new dependency to a package**
-
-  ```bash
-  cd packages/your-package
-  npm run add package-name
-  ```
-
-- **Adding a workspace dependency**
-
-  ```bash
-  cd packages/your-package
-  npm run add @your-scope/package-name --workspace
-  ```
-
-### 3. Testing Changes
+### 2. Testing Changes
 
 - Run tests for all packages
 

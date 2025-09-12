@@ -6,6 +6,7 @@ This folder contains detailed documentation for the Turborepo Starter template. 
 
 - [Project Structure](./PROJECT_STRUCTURE.md) - Overview of the monorepo architecture and package organization
 - [Development Workflow](./DEVELOPMENT_WORKFLOW.md) - Best practices for development in a monorepo
+- [Project documentation for developers](./DEV_DOC.md) - Instructions on how to run and understand the project
 
 ## Monorepo Resources
 

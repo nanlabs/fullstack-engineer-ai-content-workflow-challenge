@@ -7,11 +7,14 @@ This document outlines the structure of the Turborepo monorepo template.
 ```txt
 root/
 ├── apps/                    # Application packages
-│   ├── web/                # Web application
-│   └── docs/               # Documentation site
-├── package.json           # Root package.json
-├── turbo.json            # Turborepo configuration
-└── pnpm-workspace.yaml   # PNPM workspace configuration
+│   ├── backend/             # Backend with NestJS
+│   └── frontend/            # Frontend with React
+├── docs/                    # Documentation
+├── package.json             # Root package.json
+├── turbo.json               # Turborepo configuration
+├── compose.yml              # Docker compose configuration
+└── pnpm-workspace.yaml      # PNPM workspace configuration
+
 ```
 
 ## Key Directories
@@ -20,14 +23,14 @@ root/
 
 Contains all the applications in the monorepo. Each application is a separate package that can be developed and deployed independently.
 
-- `web/`: The main web application
-- `docs/`: Documentation site (if applicable)
+- `bakcend/`: Backend application with NestJS + TS
+- `frontend/`: Frontend application with React + TS
 
 ### Configuration Files
 
 - `turbo.json`: Defines the pipeline and dependencies between packages
 - `pnpm-workspace.yaml`: Configures the PNPM workspace
-- `.changeset/`: Configuration for versioning and changelog generation
+- `compose.yml`: Docker compose configuration for local development
 
 ## Package Management
 
