@@ -2,7 +2,7 @@ import ContentTable from '@/components/ContentTable/ContentTable';
 import { useCampaigns } from '@/context/CampaignContext';
 import { isValidUUID } from '@/lib/validators';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowBigLeftDash, LoaderPinwheel, Plus } from 'lucide-react';
+import { ArrowBigLeftDash, LoaderPinwheel } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useGenerationConfig } from '@/context/GenerationConfigContext';
 import Spinner from '@/components/ui/spinner';
