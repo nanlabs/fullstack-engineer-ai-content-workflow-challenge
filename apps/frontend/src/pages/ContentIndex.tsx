@@ -66,10 +66,6 @@ const ContentIndex = () => {
           </div>
 
           <div className="flex flex-row items-center space-x-4">
-            <Link to={`/campaigns/${campaignId}/content/new`} className="text-white underline flex flex-row">
-              <Plus className="mr-2" /> Create
-            </Link>
-
             <button
               type="button"
               className={cn('text-white ml-8 flex flex-row', {
