@@ -1,0 +1,24 @@
+{
+  "name": "test",
+  "scripts": {
+    "dev:build": "docker compose build",
+    "dev:clear": "docker compose down -v frontend backend",
+    "dev:run": "docker compose up",
+    "build": "turbo run build",
+    "format": "prettier --ignore-path .gitignore -u --write .",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "test": "turbo run test",
+    "type-check": "turbo run type-check"
+  },
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=16.16.0"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "packageManager": "pnpm@10.13.1"
+}
