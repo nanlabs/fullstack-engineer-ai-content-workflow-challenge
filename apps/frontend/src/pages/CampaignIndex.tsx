@@ -7,11 +7,11 @@ function CampaignIndex() {
   return (
     <>
       <Header />
-      <h1 className="my-8 text-white">Campaigns</h1>
+      <h1 className="text-5xl my-8 text-white">Campaigns</h1>
 
       <div className="w-full p-8 rounded-xl border border-gray-600">
         <div className="flex items-center justify-between mb-8">
-          <div className="text-lg font-semibold text-gray-300">List of Campaigns</div>
+          <div className="text-2xl font-semibold text-gray-300">List of Campaigns</div>
           <Link to="/campaigns/new" className="flex items-center">
             <Plus className="mr-2" /> Create New Campaign
           </Link>
