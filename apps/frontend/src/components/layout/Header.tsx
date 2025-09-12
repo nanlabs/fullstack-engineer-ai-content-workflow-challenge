@@ -13,7 +13,7 @@ function Header() {
 
   return (
     <header className="w-full border-b border-gray-700 p-4 flex flex-row items-center justify-between">
-      <h1 className="text-white text-2xl! font-bold">ACME GLOBAL MEDIA</h1>
+      <h1 className="text-white text-2xl! font-bold mr-40">ACME GLOBAL MEDIA</h1>
 
       <div className="flex flex-row items-center justify-end gap-4 text-white">
         <div>
