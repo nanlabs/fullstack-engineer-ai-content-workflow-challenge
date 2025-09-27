@@ -1,0 +1,15 @@
+# Dependencias
+node_modules
+
+# Output de NestJS
+dist/
+
+# Variables de Entorno
+.env
+.env.local
+
+# Logs
+npm-debug.log*
+yarn-error.log
+
+/generated/prisma
