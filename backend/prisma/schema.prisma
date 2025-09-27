@@ -1,0 +1,181 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum ContentStatus {
+  DRAFT
+  AI_GENERATED
+  REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum ContentType {
+  SOCIAL_POST
+  EMAIL_SUBJECT
+  EMAIL_BODY
+  PRODUCT_DESCRIPTION
+  BLOG_POST
+  AD_COPY
+  AD_HEADLINE
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CHANGES_REQUESTED
+}
+
+enum UserRole {
+  CREATOR
+  REVIEWER
+  ADMIN
+}
+
+enum TranslationStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REVIEWED
+}
+
+// Models
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  email     String   @unique
+  role      UserRole @default(CREATOR)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  campaignsCreated Campaign[]
+  reviews          Review[]
+
+  @@map("users")
+  @@index([email])
+  @@index([role])
+}
+
+model Campaign {
+  id          String         @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  status      CampaignStatus @default(DRAFT)
+  createdById String         @map("created_by_id") @db.Uuid
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  createdBy     User           @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  contentPieces ContentPiece[]
+
+  @@map("campaigns")
+  @@index([status])
+  @@index([createdById])
+  @@index([createdAt])
+}
+
+model ContentPiece {
+  id           String        @id @default(uuid()) @db.Uuid
+  campaignId   String        @map("campaign_id") @db.Uuid
+  title        String
+  type         ContentType
+  content      String?       @db.Text
+  status       ContentStatus @default(DRAFT)
+  language     String        @default("en") // ISO 639-1 language code
+  aiGenerated  Boolean       @default(false) @map("ai_generated")
+  promptUsed   String?       @db.Text @map("prompt_used")
+  aiModelUsed  String?       @map("ai_model_used") // e.g., "gpt-4", "claude-3"
+  tokensUsed   Int?          @map("tokens_used")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  campaign     Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  translations Translation[]
+  reviews      Review[]
+
+  @@map("content_pieces")
+  @@index([campaignId])
+  @@index([status])
+  @@index([type])
+  @@index([language])
+  @@index([aiGenerated])
+  @@index([createdAt])
+}
+
+model Translation {
+  id              String            @id @default(uuid()) @db.Uuid
+  contentPieceId  String            @map("content_piece_id") @db.Uuid
+  language        String // ISO 639-1 language code
+  content         String            @db.Text
+  status          TranslationStatus @default(PENDING)
+  aiModelUsed     String?           @map("ai_model_used")
+  tokensUsed      Int?              @map("tokens_used")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  contentPiece ContentPiece @relation(fields: [contentPieceId], references: [id], onDelete: Cascade)
+
+  @@unique([contentPieceId, language])
+  @@map("translations")
+  @@index([contentPieceId])
+  @@index([language])
+  @@index([status])
+}
+
+model Review {
+  id             String       @id @default(uuid()) @db.Uuid
+  contentPieceId String       @map("content_piece_id") @db.Uuid
+  reviewerId     String       @map("reviewer_id") @db.Uuid
+  status         ReviewStatus @default(PENDING)
+  comments       String?      @db.Text
+  reviewedAt     DateTime?    @map("reviewed_at")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  contentPiece ContentPiece @relation(fields: [contentPieceId], references: [id], onDelete: Cascade)
+  reviewer     User         @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  @@map("reviews")
+  @@index([contentPieceId])
+  @@index([reviewerId])
+  @@index([status])
+  @@index([reviewedAt])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  entityType String   @map("entity_type") // "campaign", "content_piece", etc.
+  entityId   String   @map("entity_id") @db.Uuid
+  action     String   // "created", "updated", "status_changed", etc.
+  oldValues  Json?    @map("old_values")
+  newValues  Json?    @map("new_values")
+  userId     String?  @map("user_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("audit_logs")
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+}
