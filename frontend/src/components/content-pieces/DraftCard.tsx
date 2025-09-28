@@ -6,10 +6,9 @@ import { type Draft, ReviewState } from "@/types";
 import { TranslationModal } from "@/components/translation/TranslationModal";
 import { TranslationDisplay } from "@/components/translation/TranslationDisplay";
 import { translationApi } from "@/lib/api/client";
-import { useDraftUpdates } from "@/hooks/websocket/useDraftUpdates";
 import { useToast } from "@/components/ui/ToastProvider";
 import { OPERATION_MESSAGES } from "@/lib/api/errorHandler";
-import { ChevronDown, Languages, Trash } from "lucide-react";
+import { ChevronDown, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface DraftCardProps {
@@ -28,34 +27,14 @@ export const DraftCard: React.FC<DraftCardProps> = ({
   const [isExpanded, setIsExpanded] = useState(true); // Start expanded by default
   const { addToast } = useToast();
 
-  // Update local draft when prop changes
+  // Update local draft when prop changes (from centralized state)
   useEffect(() => {
     setLocalDraft(draft);
     setEditedContent(draft.content);
   }, [draft]);
 
-  // Handle WebSocket updates for this specific draft
-  const handleDraftUpdate = (updatedDraft: Draft) => {
-    setLocalDraft(updatedDraft);
-    setEditedContent(updatedDraft.content);
-    // Don't call onDraftUpdate to avoid refreshing the parent component
-  };
-
-  const handleTranslationStateUpdate = (language: string, state: string) => {
-    setLocalDraft((prev) => ({
-      ...prev,
-      translationStates: {
-        ...prev.translationStates,
-        [language]: state,
-      },
-    }));
-  };
-
-  useDraftUpdates({
-    draftId: draft.id,
-    onDraftUpdate: handleDraftUpdate,
-    onTranslationStateUpdate: handleTranslationStateUpdate,
-  });
+  // Note: WebSocket updates are now handled centrally by RealtimeStateContext
+  // The draft prop will automatically update when the centralized state changes
 
   const getReviewStateColor = (state: ReviewState) => {
     const colors = {

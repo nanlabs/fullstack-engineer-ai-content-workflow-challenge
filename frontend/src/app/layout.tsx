@@ -3,6 +3,8 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/ui/ToastProvider";
 import { WebSocketProvider } from "@/components/websocket/WebSocketProvider";
+import { ConnectionDebugger } from "@/components/websocket/ConnectionDebugger";
+import { RealtimeStateProvider } from "@/contexts/RealtimeStateContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,7 +26,10 @@ export default function RootLayout({
       <body className={`${geistSans.variable}  antialiased`}>
         <ToastProvider>
           <WebSocketProvider>
-            {children}
+            <RealtimeStateProvider>
+              {children}
+              <ConnectionDebugger />
+            </RealtimeStateProvider>
           </WebSocketProvider>
         </ToastProvider>
       </body>

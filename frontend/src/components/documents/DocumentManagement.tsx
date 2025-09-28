@@ -8,6 +8,7 @@ import { DocumentList } from "./DocumentList";
 import { documentApi } from "@/lib/api/client";
 import { Info, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useRealtimeState } from "@/contexts/RealtimeStateContext";
 
 interface DocumentManagementProps {
   campaignId: string;
@@ -16,9 +17,12 @@ interface DocumentManagementProps {
 export const DocumentManagement: React.FC<DocumentManagementProps> = ({
   campaignId,
 }) => {
-  const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
+  const { getDocumentsForCampaign, dispatch } = useRealtimeState();
+  
+  // Get documents from centralized state
+  const documents = getDocumentsForCampaign(campaignId);
 
   const loadDocuments = useCallback(async () => {
     try {
@@ -33,30 +37,56 @@ export const DocumentManagement: React.FC<DocumentManagementProps> = ({
           : Array.isArray(responseData.data)
           ? responseData.data
           : [];
-        setDocuments(documentsData as Document[]);
+        
+        // Store documents in centralized state
+        dispatch({
+          type: "SET_DOCUMENTS",
+          payload: {
+            campaignId: campaignId,
+            documents: documentsData as Document[],
+          },
+        });
       } else {
-        // If no documents or error, set empty array
-        setDocuments([]);
+        // If no documents or error, set empty array in centralized state
+        dispatch({
+          type: "SET_DOCUMENTS",
+          payload: {
+            campaignId: campaignId,
+            documents: [],
+          },
+        });
       }
     } catch (error) {
       console.error("Error loading documents:", error);
-      setDocuments([]); // Set empty array on error
+      // Set empty array in centralized state on error
+      dispatch({
+        type: "SET_DOCUMENTS",
+        payload: {
+          campaignId: campaignId,
+          documents: [],
+        },
+      });
     } finally {
       setIsLoading(false);
     }
-  }, [campaignId]);
+  }, [campaignId, dispatch]);
 
   useEffect(() => {
     loadDocuments();
   }, [loadDocuments]);
 
+  // Note: WebSocket updates are now handled centrally by RealtimeStateContext
+  // The documents will automatically update when the centralized state changes
+
   const handleUploadSuccess = () => {
     setShowUpload(false);
-    loadDocuments(); // Refresh the document list
+    
+    // Don't call loadDocuments() here - centralized state will handle the real-time update
+    // The WebSocket event will be received and handled by RealtimeStateContext
   };
 
   const handleDocumentDeleted = () => {
-    loadDocuments(); // Refresh the document list
+    // Don't call loadDocuments() here - centralized state will handle the real-time update
   };
 
   return (

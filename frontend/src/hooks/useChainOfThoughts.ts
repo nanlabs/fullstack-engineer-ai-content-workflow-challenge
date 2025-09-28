@@ -64,10 +64,7 @@ export const useChainOfThoughts = () => {
     return () => {
       socketService.off(
         "chain-of-thoughts",
-        handleChainOfThoughts as (data: {
-          contentPieceId: string;
-          thought: { step: string; message: string; progress: number };
-        }) => void
+        handleChainOfThoughts as (...args: unknown[]) => void
       );
     };
   }, [state.contentPieceId]);

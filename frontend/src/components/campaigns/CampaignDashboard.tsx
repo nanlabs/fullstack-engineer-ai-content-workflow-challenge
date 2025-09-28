@@ -10,9 +10,9 @@ import { DocumentManagement } from "@/components/documents/DocumentManagement";
 import { useToast } from "@/components/ui/ToastProvider";
 import { OPERATION_MESSAGES } from "@/lib/api/errorHandler";
 import { Button } from "@/components/ui/button";
+import { useRealtimeState } from "@/contexts/RealtimeStateContext";
 
 export const CampaignDashboard: React.FC = () => {
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(
@@ -24,10 +24,27 @@ export const CampaignDashboard: React.FC = () => {
     "content"
   );
   const { addToast } = useToast();
+  const { state, dispatch } = useRealtimeState();
+  
+  // Get campaigns from the realtime state
+  const campaigns = state.campaigns;
 
   useEffect(() => {
     loadCampaigns();
   }, []);
+
+  // Update selected campaign when campaigns change
+  useEffect(() => {
+    if (selectedCampaign) {
+      const updatedCampaign = campaigns.find(c => c.id === selectedCampaign.id);
+      if (updatedCampaign) {
+        setSelectedCampaign(updatedCampaign);
+      } else {
+        // Campaign was deleted
+        setSelectedCampaign(null);
+      }
+    }
+  }, [campaigns, selectedCampaign]);
 
   const loadCampaigns = useCallback(async () => {
     try {
@@ -35,7 +52,7 @@ export const CampaignDashboard: React.FC = () => {
       const response = await campaignApi.getAll();
 
       if (response.success && response.data) {
-        setCampaigns(response.data as Campaign[]);
+        dispatch({ type: 'SET_CAMPAIGNS', payload: response.data as Campaign[] });
         setError(null);
       } else {
         setError(response.error?.message || "Failed to load campaigns");
@@ -58,7 +75,7 @@ export const CampaignDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [addToast]);
+  }, [addToast, dispatch]);
 
   const handleCreateCampaign = async (data: {
     name: string;
@@ -69,12 +86,7 @@ export const CampaignDashboard: React.FC = () => {
 
       if (response.success) {
         setShowCreateForm(false);
-        loadCampaigns();
-        addToast({
-          type: "success",
-          title: "Success",
-          message: OPERATION_MESSAGES.CREATE_CAMPAIGN.success,
-        });
+        // No API-based toast - WebSocket will handle all notifications
       } else {
         addToast({
           type: "error",
@@ -104,18 +116,7 @@ export const CampaignDashboard: React.FC = () => {
 
       if (response.success) {
         setEditingCampaign(null);
-        loadCampaigns();
-
-        // Update selected campaign if it's the one being edited
-        if (selectedCampaign && selectedCampaign.id === editingCampaign.id) {
-          setSelectedCampaign({ ...selectedCampaign, ...data });
-        }
-
-        addToast({
-          type: "success",
-          title: "Success",
-          message: OPERATION_MESSAGES.UPDATE_CAMPAIGN.success,
-        });
+        // No API-based toast - WebSocket will handle all notifications
       } else {
         addToast({
           type: "error",
@@ -147,18 +148,7 @@ export const CampaignDashboard: React.FC = () => {
       const response = await campaignApi.delete(campaignId);
 
       if (response.success) {
-        loadCampaigns();
-
-        // Clear selected campaign if it was deleted
-        if (selectedCampaign && selectedCampaign.id === campaignId) {
-          setSelectedCampaign(null);
-        }
-
-        addToast({
-          type: "success",
-          title: "Success",
-          message: OPERATION_MESSAGES.DELETE_CAMPAIGN.success,
-        });
+        // No API-based toast - WebSocket will handle all notifications
       } else {
         addToast({
           type: "error",

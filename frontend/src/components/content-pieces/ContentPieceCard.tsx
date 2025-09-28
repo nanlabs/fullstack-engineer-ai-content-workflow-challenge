@@ -11,6 +11,7 @@ import { contentPieceApi, aiGenerationApi } from "@/lib/api/client";
 import { OPERATION_MESSAGES } from "@/lib/api/errorHandler";
 import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useRealtimeState } from "@/contexts/RealtimeStateContext";
 
 interface ContentPieceCardProps {
   contentPiece: ContentPiece;
@@ -28,6 +29,10 @@ export const ContentPieceCard: React.FC<ContentPieceCardProps> = ({
   const [showDrafts, setShowDrafts] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const { addToast } = useToast();
+  const { getDraftsForContentPiece } = useRealtimeState();
+  
+  // Get drafts from centralized state
+  const drafts = getDraftsForContentPiece(contentPiece.id);
 
   const getContentTypeColor = (type: string) => {
     const colors = {
@@ -52,11 +57,7 @@ export const ContentPieceCard: React.FC<ContentPieceCardProps> = ({
       if (response.success) {
         setShowEditForm(false);
         onRefresh();
-        addToast({
-          type: "success",
-          title: "Success",
-          message: OPERATION_MESSAGES.UPDATE_CONTENT_PIECE.success,
-        });
+        // No API-based toast - WebSocket will handle all notifications
       } else {
         addToast({
           type: "error",
@@ -88,11 +89,7 @@ export const ContentPieceCard: React.FC<ContentPieceCardProps> = ({
       if (response.success) {
         setShowAIGenerationForm(null);
         onRefresh();
-        addToast({
-          type: "success",
-          title: "Success",
-          message: OPERATION_MESSAGES.GENERATE_DRAFT.success,
-        });
+        // No API-based toast - WebSocket will handle all notifications
       } else {
         addToast({
           type: "error",
@@ -125,11 +122,7 @@ export const ContentPieceCard: React.FC<ContentPieceCardProps> = ({
 
       if (response.success) {
         onRefresh();
-        addToast({
-          type: "success",
-          title: "Success",
-          message: OPERATION_MESSAGES.DELETE_CONTENT_PIECE.success,
-        });
+        // No API-based toast - WebSocket will handle all notifications
       } else {
         addToast({
           type: "error",
@@ -207,14 +200,14 @@ export const ContentPieceCard: React.FC<ContentPieceCardProps> = ({
       <div className="flex justify-between items-center border-t border-gray-300 pt-2">
         <div className="text-sm text-gray-500">
           Created: {new Date(contentPiece.createdAt).toLocaleDateString()}
-          {contentPiece.drafts && contentPiece.drafts.length > 0 && (
+          {drafts && drafts.length > 0 && (
             <span
               className="ml-2 text-blue-600 cursor-pointer"
               onClick={() => setShowDrafts(!showDrafts)}
             >
-              • {showDrafts ? "Hide" : "Show"} {contentPiece.drafts.length}{" "}
+              • {showDrafts ? "Hide" : "Show"} {drafts.length}{" "}
               draft
-              {contentPiece.drafts.length !== 1 ? "s" : ""}
+              {drafts.length !== 1 ? "s" : ""}
             </span>
           )}
         </div>
@@ -234,13 +227,13 @@ export const ContentPieceCard: React.FC<ContentPieceCardProps> = ({
         </div>
       </div>
 
-      {showDrafts && contentPiece.drafts && contentPiece.drafts.length > 0 && (
+      {showDrafts && drafts && drafts.length > 0 && (
         <div className="mt-2 pt-4 border-t border-gray-300">
           <h5 className="text-sm font-medium text-gray-900 mb-2">
             AI Generated Drafts
           </h5>
           <div className="space-y-2">
-            {contentPiece.drafts.map((draft) => (
+            {drafts.map((draft) => (
               <DraftCard
                 key={draft.id}
                 draft={draft}
