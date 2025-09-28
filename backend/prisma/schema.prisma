@@ -65,7 +65,6 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  // Relations
   campaignsCreated Campaign[]
   reviews          Review[]
 
@@ -83,7 +82,6 @@ model Campaign {
   createdAt   DateTime       @default(now()) @map("created_at")
   updatedAt   DateTime       @updatedAt @map("updated_at")
 
-  // Relations
   createdBy     User           @relation(fields: [createdById], references: [id], onDelete: Cascade)
   contentPieces ContentPiece[]
 
@@ -100,15 +98,14 @@ model ContentPiece {
   type         ContentType
   content      String?       @db.Text
   status       ContentStatus @default(DRAFT)
-  language     String        @default("en") // ISO 639-1 language code
+  language     String        @default("en")
   aiGenerated  Boolean       @default(false) @map("ai_generated")
   promptUsed   String?       @db.Text @map("prompt_used")
-  aiModelUsed  String?       @map("ai_model_used") // e.g., "gpt-4", "claude-3"
+  aiModelUsed  String?       @map("ai_model_used")
   tokensUsed   Int?          @map("tokens_used")
   createdAt    DateTime      @default(now()) @map("created_at")
   updatedAt    DateTime      @updatedAt @map("updated_at")
 
-  // Relations
   campaign     Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   translations Translation[]
   reviews      Review[]
@@ -125,7 +122,7 @@ model ContentPiece {
 model Translation {
   id              String            @id @default(uuid()) @db.Uuid
   contentPieceId  String            @map("content_piece_id") @db.Uuid
-  language        String // ISO 639-1 language code
+  language        String 
   content         String            @db.Text
   status          TranslationStatus @default(PENDING)
   aiModelUsed     String?           @map("ai_model_used")
@@ -133,7 +130,6 @@ model Translation {
   createdAt       DateTime          @default(now()) @map("created_at")
   updatedAt       DateTime          @updatedAt @map("updated_at")
 
-  // Relations
   contentPiece ContentPiece @relation(fields: [contentPieceId], references: [id], onDelete: Cascade)
 
   @@unique([contentPieceId, language])
@@ -153,7 +149,6 @@ model Review {
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime     @updatedAt @map("updated_at")
 
-  // Relations
   contentPiece ContentPiece @relation(fields: [contentPieceId], references: [id], onDelete: Cascade)
   reviewer     User         @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
 
@@ -162,20 +157,4 @@ model Review {
   @@index([reviewerId])
   @@index([status])
   @@index([reviewedAt])
-}
-
-model AuditLog {
-  id         String   @id @default(uuid()) @db.Uuid
-  entityType String   @map("entity_type") // "campaign", "content_piece", etc.
-  entityId   String   @map("entity_id") @db.Uuid
-  action     String   // "created", "updated", "status_changed", etc.
-  oldValues  Json?    @map("old_values")
-  newValues  Json?    @map("new_values")
-  userId     String?  @map("user_id") @db.Uuid
-  createdAt  DateTime @default(now()) @map("created_at")
-
-  @@map("audit_logs")
-  @@index([entityType, entityId])
-  @@index([userId])
-  @@index([createdAt])
 }

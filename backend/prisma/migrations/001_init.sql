@@ -89,20 +89,6 @@ CREATE TABLE "reviews" (
     CONSTRAINT "reviews_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "audit_logs" (
-    "id" UUID NOT NULL,
-    "entity_type" TEXT NOT NULL,
-    "entity_id" UUID NOT NULL,
-    "action" TEXT NOT NULL,
-    "old_values" JSONB,
-    "new_values" JSONB,
-    "user_id" UUID,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "audit_logs_pkey" PRIMARY KEY ("id")
-);
-
 -- CreateIndex
 CREATE INDEX "users_email_idx" ON "users"("email");
 
@@ -162,15 +148,6 @@ CREATE INDEX "reviews_status_idx" ON "reviews"("status");
 
 -- CreateIndex
 CREATE INDEX "reviews_reviewed_at_idx" ON "reviews"("reviewed_at");
-
--- CreateIndex
-CREATE INDEX "audit_logs_entity_type_entity_id_idx" ON "audit_logs"("entity_type", "entity_id");
-
--- CreateIndex
-CREATE INDEX "audit_logs_user_id_idx" ON "audit_logs"("user_id");
-
--- CreateIndex
-CREATE INDEX "audit_logs_created_at_idx" ON "audit_logs"("created_at");
 
 -- AddForeignKey
 ALTER TABLE "campaigns" ADD CONSTRAINT "campaigns_created_by_id_fkey" FOREIGN KEY ("created_by_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

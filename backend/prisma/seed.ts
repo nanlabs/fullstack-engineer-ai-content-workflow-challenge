@@ -217,29 +217,14 @@ async function main() {
 
   console.log('Reviews created');
 
-  // Create some audit logs for tracking
-  await prisma.auditLog.create({
-    data: {
-      entityType: 'content_piece',
-      entityId: socialPost1.id,
-      action: 'status_changed',
-      oldValues: { status: 'AI_GENERATED' },
-      newValues: { status: 'APPROVED' },
-      userId: reviewer2.id,
-    },
-  });
-
-  await prisma.auditLog.create({
-    data: {
-      entityType: 'campaign',
-      entityId: campaign1.id,
-      action: 'created',
-      newValues: { name: 'Summer Product Launch 2024', status: 'ACTIVE' },
-      userId: creator1.id,
-    },
-  });
-
-  console.log('Audit logs created');
+  // Summary
+  const stats = {
+    users: await prisma.user.count(),
+    campaigns: await prisma.campaign.count(),
+    contentPieces: await prisma.contentPiece.count(),
+    translations: await prisma.translation.count(),
+    reviews: await prisma.review.count(),
+  };
 
   console.log('Database seeded successfully!');
 

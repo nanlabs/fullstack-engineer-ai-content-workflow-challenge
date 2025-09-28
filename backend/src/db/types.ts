@@ -104,17 +104,6 @@ export interface Review extends BaseEntity {
   reviewer?: User;
 }
 
-export interface AuditLog {
-  id: string;
-  entityType: string;
-  entityId: string;
-  action: string;
-  oldValues?: any;
-  newValues?: any;
-  userId?: string;
-  createdAt: Date;
-}
-
 // Utility types for API operations
 export interface CreateCampaignInput {
   name: string;
