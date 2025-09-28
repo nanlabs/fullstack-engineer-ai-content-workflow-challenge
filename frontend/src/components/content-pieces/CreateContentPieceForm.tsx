@@ -1,6 +1,15 @@
 ﻿"use client";
 
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface CreateContentPieceFormProps {
   onSubmit: (data: {
@@ -31,9 +40,7 @@ export const CreateContentPieceForm: React.FC<CreateContentPieceFormProps> = ({
   };
 
   const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     setFormData({
       ...formData,
@@ -41,8 +48,15 @@ export const CreateContentPieceForm: React.FC<CreateContentPieceFormProps> = ({
     });
   };
 
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
+
   return (
-    <div className="bg-white border rounded-lg p-6 shadow-sm">
+    <div className="bg-white border rounded-lg p-6 shadow-sm w-full min-w-6xl max-w-6xl">
       <h4 className="text-lg font-semibold text-gray-900 mb-4">
         Create Content Piece
       </h4>
@@ -93,20 +107,23 @@ export const CreateContentPieceForm: React.FC<CreateContentPieceFormProps> = ({
             >
               Content Type *
             </label>
-            <select
-              id="contentType"
-              name="contentType"
+            <Select
               value={formData.contentType}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onValueChange={(value) =>
+                handleSelectChange("contentType", value)
+              }
             >
-              <option value="headline">Headline</option>
-              <option value="description">Description</option>
-              <option value="translation">Translation</option>
-              <option value="tagline">Tagline</option>
-              <option value="call-to-action">Call to Action</option>
-            </select>
+              <SelectTrigger className="w-full cursor-pointer">
+                <SelectValue placeholder="Select content type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="headline">Headline</SelectItem>
+                <SelectItem value="description">Description</SelectItem>
+                <SelectItem value="translation">Translation</SelectItem>
+                <SelectItem value="tagline">Tagline</SelectItem>
+                <SelectItem value="call-to-action">Call to Action</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
@@ -116,36 +133,31 @@ export const CreateContentPieceForm: React.FC<CreateContentPieceFormProps> = ({
             >
               Language
             </label>
-            <select
-              id="language"
-              name="language"
+            <Select
               value={formData.language}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onValueChange={(value) => handleSelectChange("language", value)}
             >
-              <option value="en">English</option>
-              <option value="es">Spanish</option>
-              <option value="fr">French</option>
-              <option value="de">German</option>
-              <option value="it">Italian</option>
-            </select>
+              <SelectTrigger className="w-full cursor-pointer">
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="es">Spanish</SelectItem>
+                <SelectItem value="fr">French</SelectItem>
+                <SelectItem value="de">German</SelectItem>
+                <SelectItem value="it">Italian</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
         <div className="flex justify-end space-x-3 pt-4">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-          >
+          <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
+          </Button>
+          <Button type="submit" variant="default">
             Create Content Piece
-          </button>
+          </Button>
         </div>
       </form>
     </div>

@@ -1,7 +1,18 @@
 ﻿"use client";
 
-import React, { useState } from "react";
-import { ContentPiece } from "@/types";
+import type React from "react";
+import { useState } from "react";
+import type { ContentPiece } from "@/types";
+import { ChainOfThoughtsSidebar } from "@/components/ui/ChainOfThoughtsSidebar";
+import { useChainOfThoughts } from "@/hooks/useChainOfThoughts";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface AIGenerationFormProps {
   contentPiece: ContentPiece;
@@ -23,12 +34,18 @@ export const AIGenerationForm: React.FC<AIGenerationFormProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [contentType, setContentType] = useState(contentPiece.contentType);
   const [language, setLanguage] = useState(contentPiece.language);
+  const { showChainOfThoughts, hideChainOfThoughts, ...chainOfThoughtsState } =
+    useChainOfThoughts();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
 
     setIsGenerating(true);
+
+    // Show chain of thoughts UI
+    showChainOfThoughts(contentPiece.id);
+
     try {
       onSubmit({
         contentPieceId: contentPiece.id,
@@ -82,7 +99,7 @@ export const AIGenerationForm: React.FC<AIGenerationFormProps> = ({
   };
 
   return (
-    <div className="bg-white border rounded-lg p-6 shadow-sm">
+    <div className="bg-white border rounded-lg p-6 shadow-sm w-full min-w-6xl max-w-6xl">
       <h4 className="text-lg font-semibold text-gray-900 mb-4">
         Generate AI Draft
       </h4>
@@ -125,18 +142,18 @@ export const AIGenerationForm: React.FC<AIGenerationFormProps> = ({
             >
               Content Type
             </label>
-            <select
-              id="contentType"
-              value={contentType}
-              onChange={(e) => setContentType(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="headline">Headline</option>
-              <option value="description">Description</option>
-              <option value="tagline">Tagline</option>
-              <option value="call-to-action">Call to Action</option>
-              <option value="translation">Translation</option>
-            </select>
+            <Select value={contentType} onValueChange={setContentType}>
+              <SelectTrigger className="w-full cursor-pointer">
+                <SelectValue placeholder="Select content type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="headline">Headline</SelectItem>
+                <SelectItem value="description">Description</SelectItem>
+                <SelectItem value="tagline">Tagline</SelectItem>
+                <SelectItem value="call-to-action">Call to Action</SelectItem>
+                <SelectItem value="translation">Translation</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
@@ -146,19 +163,19 @@ export const AIGenerationForm: React.FC<AIGenerationFormProps> = ({
             >
               Language
             </label>
-            <select
-              id="language"
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="en">English</option>
-              <option value="es">Spanish</option>
-              <option value="fr">French</option>
-              <option value="de">German</option>
-              <option value="it">Italian</option>
-              <option value="pt">Portuguese</option>
-            </select>
+            <Select value={language} onValueChange={setLanguage}>
+              <SelectTrigger className="w-full cursor-pointer">
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="es">Spanish</SelectItem>
+                <SelectItem value="fr">French</SelectItem>
+                <SelectItem value="de">German</SelectItem>
+                <SelectItem value="it">Italian</SelectItem>
+                <SelectItem value="pt">Portuguese</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -181,23 +198,32 @@ export const AIGenerationForm: React.FC<AIGenerationFormProps> = ({
         </div>
 
         <div className="flex justify-end space-x-3 pt-4">
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={onCancel}
-            className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
             disabled={isGenerating}
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
-            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            variant="default"
             disabled={isGenerating || !prompt.trim()}
           >
             {isGenerating ? "Generating..." : "Generate Draft"}
-          </button>
+          </Button>
         </div>
       </form>
+
+      {/* Chain of Thoughts Sidebar */}
+      <ChainOfThoughtsSidebar
+        isVisible={chainOfThoughtsState.isVisible}
+        currentStep={chainOfThoughtsState.currentStep}
+        message={chainOfThoughtsState.message}
+        progress={chainOfThoughtsState.progress}
+        onComplete={hideChainOfThoughts}
+      />
     </div>
   );
 };

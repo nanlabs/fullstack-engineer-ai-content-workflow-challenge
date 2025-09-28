@@ -22,6 +22,7 @@ interface RealtimeUpdateCallbacks {
   onAIGenerationFailed?: (data: { contentPieceId: string; error: string }) => void;
   onDocumentUploaded?: (data: { campaignId: string; document: Document }) => void;
   onDocumentDeleted?: (data: { campaignId: string; documentId: string }) => void;
+  onChainOfThoughts?: (data: { contentPieceId: string; thought: { step: string; message: string; progress: number } }) => void;
 }
 
 export const useRealtimeUpdates = (callbacks: RealtimeUpdateCallbacks = {}) => {
@@ -36,36 +37,20 @@ export const useRealtimeUpdates = (callbacks: RealtimeUpdateCallbacks = {}) => {
         message: `Campaign "${campaign.name}" was created`,
       });
     },
-    onCampaignUpdated: (campaign) => {
-      addToast({
-        type: 'info',
-        title: 'Campaign Updated',
-        message: `Campaign "${campaign.name}" was updated`,
-      });
+    onCampaignUpdated: () => {
+      // Don't show toast for campaign updates - handled by direct API calls
     },
     onCampaignDeleted: () => {
-      addToast({
-        type: 'info',
-        title: 'Campaign Deleted',
-        message: 'A campaign was deleted',
-      });
+      // Don't show toast for campaign deletions - handled by direct API calls
     },
-    onContentPieceCreated: (contentPiece) => {
-      addToast({
-        type: 'success',
-        title: 'New Content Piece',
-        message: `Content piece "${contentPiece.title}" was created`,
-      });
+    onContentPieceCreated: () => {
+      // Don't show toast for content piece creation - handled by direct API calls
     },
     onContentPieceUpdated: () => {
       // Don't show toast for content piece updates - too noisy
     },
     onContentPieceDeleted: () => {
-      addToast({
-        type: 'info',
-        title: 'Content Piece Deleted',
-        message: 'A content piece was deleted',
-      });
+      // Don't show toast for content piece deletions - handled by direct API calls
     },
     onDraftGenerated: () => {
       addToast({
@@ -78,11 +63,7 @@ export const useRealtimeUpdates = (callbacks: RealtimeUpdateCallbacks = {}) => {
       // Don't show toast for draft updates - handled by individual components
     },
     onDraftDeleted: () => {
-      addToast({
-        type: 'info',
-        title: 'Draft Deleted',
-        message: 'A draft was deleted',
-      });
+      // Don't show toast for draft deletions - handled by direct API calls
     },
     onAIGenerationStarted: () => {
       // Don't show toast for AI generation start - too noisy
@@ -97,19 +78,14 @@ export const useRealtimeUpdates = (callbacks: RealtimeUpdateCallbacks = {}) => {
         message: data.error,
       });
     },
-    onDocumentUploaded: (data) => {
-      addToast({
-        type: 'success',
-        title: 'Document Uploaded',
-        message: `Document uploaded and processed successfully`,
-      });
+    onDocumentUploaded: () => {
+      // Don't show toast for document uploads - handled by direct API calls
     },
     onDocumentDeleted: () => {
-      addToast({
-        type: 'info',
-        title: 'Document Deleted',
-        message: 'Document was deleted',
-      });
+      // Don't show toast for document deletions - handled by direct API calls
+    },
+    onChainOfThoughts: () => {
+      // Don't show toast for chain of thoughts - handled by UI component
     },
   };
 
@@ -132,6 +108,7 @@ export const useRealtimeUpdates = (callbacks: RealtimeUpdateCallbacks = {}) => {
     socketService.onAIGenerationFailed(mergedCallbacks.onAIGenerationFailed!);
     socketService.onDocumentUploaded(mergedCallbacks.onDocumentUploaded!);
     socketService.onDocumentDeleted(mergedCallbacks.onDocumentDeleted!);
+    socketService.onChainOfThoughts(mergedCallbacks.onChainOfThoughts!);
 
     // Cleanup on unmount
     return () => {

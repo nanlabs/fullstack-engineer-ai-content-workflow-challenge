@@ -1,20 +1,26 @@
 ﻿"use client";
 
-import React, { useState, useEffect } from "react";
-import { Draft, ReviewState } from "@/types";
+import type React from "react";
+import { useState, useEffect } from "react";
+import { type Draft, ReviewState } from "@/types";
 import { TranslationModal } from "@/components/translation/TranslationModal";
 import { TranslationDisplay } from "@/components/translation/TranslationDisplay";
 import { translationApi } from "@/lib/api/client";
 import { useDraftUpdates } from "@/hooks/websocket/useDraftUpdates";
 import { useToast } from "@/components/ui/ToastProvider";
 import { OPERATION_MESSAGES } from "@/lib/api/errorHandler";
+import { ChevronDown, Languages, Trash } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface DraftCardProps {
   draft: Draft;
   onDraftUpdate?: () => void;
 }
 
-export const DraftCard: React.FC<DraftCardProps> = ({ draft, onDraftUpdate }) => {
+export const DraftCard: React.FC<DraftCardProps> = ({
+  draft,
+  onDraftUpdate,
+}) => {
   const [showTranslationModal, setShowTranslationModal] = useState(false);
   const [isEditingOriginal, setIsEditingOriginal] = useState(false);
   const [editedContent, setEditedContent] = useState(draft.content);
@@ -67,35 +73,85 @@ export const DraftCard: React.FC<DraftCardProps> = ({ draft, onDraftUpdate }) =>
       case ReviewState.SUGGESTED_BY_AI:
         return (
           <div className="flex space-x-2">
-            <button
+            <Button
               onClick={handleApproveDraft}
-              className="text-green-600 hover:text-green-800 text-sm font-medium"
+              variant="ghost"
+              size="sm"
+              className="text-green-600 hover:text-green-800"
             >
               Approve
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleRejectDraft}
-              className="text-red-600 hover:text-red-800 text-sm font-medium"
+              variant="ghost"
+              size="sm"
+              className="text-red-600 hover:text-red-800"
             >
               Reject
-            </button>
+            </Button>
           </div>
         );
       case ReviewState.REVIEWED:
         return (
           <div className="flex space-x-2">
-            <button
+            <Button
               onClick={handleApproveDraft}
-              className="text-green-600 hover:text-green-800 text-sm font-medium"
+              variant="ghost"
+              size="sm"
+              className="text-green-600 hover:text-green-800"
             >
               Approve
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleRejectDraft}
-              className="text-red-600 hover:text-red-800 text-sm font-medium"
+              variant="ghost"
+              size="sm"
+              className="text-red-600 hover:text-red-800"
             >
               Reject
-            </button>
+            </Button>
+          </div>
+        );
+      case ReviewState.APPROVED:
+        return (
+          <div className="flex space-x-2">
+            <Button
+              onClick={handleRejectDraft}
+              variant="ghost"
+              size="sm"
+              className="text-red-600 hover:text-red-800"
+            >
+              Reject
+            </Button>
+            <Button
+              onClick={handleResetToReview}
+              variant="ghost"
+              size="sm"
+              className="text-gray-600 hover:text-gray-800"
+            >
+              Reset to Review
+            </Button>
+          </div>
+        );
+      case ReviewState.REJECTED:
+        return (
+          <div className="flex space-x-2">
+            <Button
+              onClick={handleApproveDraft}
+              variant="ghost"
+              size="sm"
+              className="text-green-600 hover:text-green-800"
+            >
+              Approve
+            </Button>
+            <Button
+              onClick={handleResetToReview}
+              variant="ghost"
+              size="sm"
+              className="text-gray-600 hover:text-gray-800"
+            >
+              Reset to Review
+            </Button>
           </div>
         );
       default:
@@ -181,8 +237,33 @@ export const DraftCard: React.FC<DraftCardProps> = ({ draft, onDraftUpdate }) =>
     }
   };
 
+  const handleResetToReview = async () => {
+    try {
+      const response = await translationApi.updateDraftReviewState(
+        localDraft.id,
+        "SUGGESTED_BY_AI"
+      );
+      if (response.success) {
+        // Update local state immediately
+        setLocalDraft((prev) => ({
+          ...prev,
+          reviewState: "SUGGESTED_BY_AI" as ReviewState,
+        }));
+        // Don't call onDraftUpdate to avoid refreshing parent
+      } else {
+        console.error("Failed to reset draft:", response.error);
+      }
+    } catch (error) {
+      console.error("Error resetting draft:", error);
+    }
+  };
+
   const handleDeleteDraft = async () => {
-    if (!window.confirm("Are you sure you want to delete this draft? This action cannot be undone.")) {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this draft? This action cannot be undone."
+      )
+    ) {
       return;
     }
 
@@ -202,7 +283,8 @@ export const DraftCard: React.FC<DraftCardProps> = ({ draft, onDraftUpdate }) =>
         addToast({
           type: "error",
           title: "Error",
-          message: response.error?.message || OPERATION_MESSAGES.DELETE_DRAFT.error,
+          message:
+            response.error?.message || OPERATION_MESSAGES.DELETE_DRAFT.error,
         });
       }
     } catch (error) {
@@ -233,21 +315,12 @@ export const DraftCard: React.FC<DraftCardProps> = ({ draft, onDraftUpdate }) =>
             onClick={toggleExpanded}
             className="flex items-center space-x-2 text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors"
           >
-            <svg
+            <ChevronDown
               className={`w-4 h-4 transition-transform ${
-                isExpanded ? "rotate-90" : ""
+                isExpanded ? "" : "-rotate-90"
               }`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
+            />
+
             <span>
               Language:{" "}
               {languageNames[localDraft.language] ||
@@ -271,48 +344,25 @@ export const DraftCard: React.FC<DraftCardProps> = ({ draft, onDraftUpdate }) =>
               {localDraft.reviewState.replace("_", " ")}
             </span>
 
-            {/* Translation Button */}
-            <button
+            <Button
               onClick={() => setShowTranslationModal(true)}
-              className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center space-x-1 cursor-pointer"
+              size="sm"
+              variant="default"
+              className="h-7"
             >
-              <svg
-                className="w-3 h-3"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
-                />
-              </svg>
-              <span>Translate</span>
-            </button>
+              <Languages className="w-3 h-3 mr-1" />
+              Translate
+            </Button>
 
-            {/* Delete Draft Button */}
-            <button
+            <Button
               onClick={handleDeleteDraft}
-              className="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors flex items-center space-x-1 cursor-pointer"
+              size="sm"
+              variant="destructive"
+              className="h-7"
               title="Delete this draft"
             >
-              <svg
-                className="w-3 h-3"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                />
-              </svg>
-              <span>Delete</span>
-            </button>
+              Delete
+            </Button>
           </div>
         </div>
 
@@ -329,18 +379,20 @@ export const DraftCard: React.FC<DraftCardProps> = ({ draft, onDraftUpdate }) =>
                   rows={4}
                 />
                 <div className="flex space-x-2">
-                  <button
+                  <Button
                     onClick={handleSaveOriginal}
-                    className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                    size="sm"
+                    variant="default"
                   >
                     Save
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={handleCancelEdit}
-                    className="text-xs px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+                    size="sm"
+                    variant="outline"
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : (
@@ -348,12 +400,14 @@ export const DraftCard: React.FC<DraftCardProps> = ({ draft, onDraftUpdate }) =>
                 <p className="text-gray-900 text-sm flex-1">
                   {localDraft.content}
                 </p>
-                <button
+                <Button
                   onClick={handleEditOriginal}
-                  className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors ml-2"
+                  size="sm"
+                  variant="outline"
+                  className="ml-2 bg-transparent"
                 >
                   Edit
-                </button>
+                </Button>
               </div>
             )}
 

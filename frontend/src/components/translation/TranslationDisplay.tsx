@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import type React from "react";
+import { useState, useEffect } from "react";
 import { translationApi } from "@/lib/api/client";
-import { Draft } from "@/types";
+import type { Draft } from "@/types";
 import { useDraftUpdates } from "@/hooks/websocket/useDraftUpdates";
+import { ChevronDown, Languages, Pencil, Trash } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface TranslationDisplayProps {
   draft: Draft;
@@ -181,19 +184,7 @@ export const TranslationDisplay: React.FC<TranslationDisplayProps> = ({
     <div className="mt-4 border-t pt-4">
       <div className="flex items-center justify-between mb-3">
         <h4 className="text-sm font-medium text-gray-900 flex items-center">
-          <svg
-            className="w-4 h-4 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
-            />
-          </svg>
+          <Languages className="w-4 h-4 mr-2" />
           Translations ({Object.keys(translations).length})
         </h4>
       </div>
@@ -214,61 +205,42 @@ export const TranslationDisplay: React.FC<TranslationDisplayProps> = ({
                     onClick={() => handleTranslationToggle(languageCode)}
                     className="flex items-center space-x-2 text-sm font-medium text-gray-900 hover:text-blue-600"
                   >
-                    <svg
+                    <ChevronDown
                       className={`w-4 h-4 transition-transform ${
-                        isExpanded ? "rotate-90" : ""
+                        isExpanded ? "" : "-rotate-90"
                       }`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
+                    />
                     <span>
                       {languageNames[languageCode] ||
                         languageCode.toUpperCase()}
                     </span>
                   </button>
-
-                  {/* <span
-                    className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStateColor(
-                      state
-                    )}`}
-                  >
-                    {getStateIcon(state)}
-                    <span className="ml-1">{state.replace("_", " ")}</span>
-                  </span> */}
                 </div>
 
                 {/* State Actions */}
                 <div className="flex items-center space-x-1">
-                  <button
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      if (!isExpanded) {
+                        handleTranslationToggle(languageCode);
+                      }
+                      handleEditTranslation(languageCode);
+                    }}
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
                     onClick={() => handleDeleteTranslation(languageCode)}
-                    className="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors flex items-center space-x-1"
                     title={`Delete ${
                       languageNames[languageCode] || languageCode.toUpperCase()
                     } translation`}
                   >
-                    <svg
-                      className="w-3 h-3"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      />
-                    </svg>
-                    <span>Delete</span>
-                  </button>
+                    <Trash className="w-3 h-3" />
+                  </Button>
                 </div>
               </div>
 
@@ -288,34 +260,29 @@ export const TranslationDisplay: React.FC<TranslationDisplayProps> = ({
                         className="w-full p-2 border border-gray-300 rounded-md text-sm text-gray-700 resize-none"
                         rows={4}
                       />
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleSaveTranslation(languageCode)}
-                          className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                        >
-                          Save
-                        </button>
-                        <button
+                      <div className="flex space-x-2 justify-end">
+                        <Button
+                          size="sm"
+                          variant="outline"
                           onClick={() =>
                             handleCancelEditTranslation(languageCode)
                           }
-                          className="text-xs px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
                         >
                           Cancel
-                        </button>
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleSaveTranslation(languageCode)}
+                        >
+                          Save
+                        </Button>
                       </div>
                     </div>
                   ) : (
                     <div className="flex items-start justify-between">
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap flex-1">
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap flex-1 pr-4">
                         {content}
                       </p>
-                      <button
-                        onClick={() => handleEditTranslation(languageCode)}
-                        className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors ml-2"
-                      >
-                        Edit
-                      </button>
                     </div>
                   )}
                 </div>

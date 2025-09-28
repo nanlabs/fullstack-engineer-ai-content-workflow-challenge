@@ -1,26 +1,32 @@
 ﻿"use client";
 
-import React, { useState } from "react";
-import { ContentPiece } from "@/types";
+import type React from "react";
+import { useState } from "react";
+import type { ContentPiece } from "@/types";
 import { DraftCard } from "./DraftCard";
 import { EditContentPieceForm } from "./EditContentPieceForm";
 import { AIGenerationForm } from "./AIGenerationForm";
 import { useToast } from "@/components/ui/ToastProvider";
 import { contentPieceApi, aiGenerationApi } from "@/lib/api/client";
 import { OPERATION_MESSAGES } from "@/lib/api/errorHandler";
+import { Pencil } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface ContentPieceCardProps {
   contentPiece: ContentPiece;
   onRefresh: () => void;
+  setShowAIGenerationForm: (contentPieceId: string | null) => void;
+  showAIGenerationForm: boolean;
 }
 
 export const ContentPieceCard: React.FC<ContentPieceCardProps> = ({
   contentPiece,
   onRefresh,
+  setShowAIGenerationForm,
+  showAIGenerationForm,
 }) => {
   const [showDrafts, setShowDrafts] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
-  const [showAIGenerationForm, setShowAIGenerationForm] = useState(false);
   const { addToast } = useToast();
 
   const getContentTypeColor = (type: string) => {
@@ -80,7 +86,7 @@ export const ContentPieceCard: React.FC<ContentPieceCardProps> = ({
       const response = await aiGenerationApi.generateDraft(data);
 
       if (response.success) {
-        setShowAIGenerationForm(false);
+        setShowAIGenerationForm(null);
         onRefresh();
         addToast({
           type: "success",
@@ -158,13 +164,13 @@ export const ContentPieceCard: React.FC<ContentPieceCardProps> = ({
       <AIGenerationForm
         contentPiece={contentPiece}
         onSubmit={handleAIGeneration}
-        onCancel={() => setShowAIGenerationForm(false)}
+        onCancel={() => setShowAIGenerationForm(null)}
       />
     );
   }
 
   return (
-    <div className="bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow w-full min-w-6xl max-w-6xl">
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1">
           <h4 className="text-lg font-semibold text-gray-900 mb-1">
@@ -176,63 +182,60 @@ export const ContentPieceCard: React.FC<ContentPieceCardProps> = ({
             </p>
           )}
         </div>
-        <div className="flex space-x-2">
+        <div className="flex space-x-2 items-center justify-center border bg-gray-50/50 border-gray-300 rounded-md px-2 py-1">
+          <button
+            onClick={() => setShowEditForm(true)}
+            className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 text-sm py-1 transition-all rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-1 cursor-pointer"
+          >
+            <Pencil className="w-3 h-3 text-gray-500 hover:text-gray-900" />
+            <span className="text-gray-500 text-xs">Default settings</span>
+          </button>
+          <div className="flex items-center border-r border-gray-300 h-4" />
           <span
-            className={`px-2 py-1 rounded-full text-xs font-medium ${getContentTypeColor(
+            className={`px-2 py-px rounded-sm text-xs font-medium ${getContentTypeColor(
               contentPiece.contentType
             )}`}
           >
             {contentPiece.contentType}
           </span>
-          <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
+          <span className="px-2 py-px bg-gray-100 text-gray-600 rounded-sm text-xs">
             {contentPiece.language.toUpperCase()}
           </span>
         </div>
       </div>
 
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center border-t border-gray-300 pt-2">
         <div className="text-sm text-gray-500">
           Created: {new Date(contentPiece.createdAt).toLocaleDateString()}
           {contentPiece.drafts && contentPiece.drafts.length > 0 && (
-            <span className="ml-2 text-blue-600">
-              • {contentPiece.drafts.length} draft
+            <span
+              className="ml-2 text-blue-600 cursor-pointer"
+              onClick={() => setShowDrafts(!showDrafts)}
+            >
+              • {showDrafts ? "Hide" : "Show"} {contentPiece.drafts.length}{" "}
+              draft
               {contentPiece.drafts.length !== 1 ? "s" : ""}
             </span>
           )}
         </div>
 
-        <div className="flex space-x-2">
-          {contentPiece.drafts && contentPiece.drafts.length > 0 && (
-            <button
-              onClick={() => setShowDrafts(!showDrafts)}
-              className="text-blue-600 hover:text-blue-800 text-sm ml-2 mr-2 border border-blue-300 rounded-md px-2 py-1 hover:bg-blue-100 transition-colors hover:border-blue-400 cursor-pointer"
-            >
-              {showDrafts ? "Hide" : "Show"} Drafts
-            </button>
-          )}
-          <button
-            onClick={() => setShowEditForm(true)}
-            className="text-gray-600 hover:text-gray-800 text-sm ml-2 mr-2 border border-gray-300 rounded-md px-2 py-1 hover:bg-gray-100 transition-colors hover:border-gray-400 cursor-pointer"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => setShowAIGenerationForm(true)}
-            className="text-purple-600 hover:text-purple-800 text-sm ml-2 mr-2 border border-purple-300 rounded-md px-2 py-1 hover:bg-purple-100 transition-colors hover:border-purple-400 cursor-pointer"
+        <div className="flex space-x-3 items-center">
+          <Button
+            onClick={() => setShowAIGenerationForm(contentPiece.id)}
+            variant="default"
+            size="sm"
           >
             Generate AI Draft
-          </button>
-          <button
-            onClick={handleDelete}
-            className="text-red-600 hover:text-red-800 text-sm mr-2 border border-red-300 rounded-md px-2 py-1 hover:bg-red-100 transition-colors hover:border-red-400 cursor-pointer"
-          >
+          </Button>
+
+          <Button onClick={handleDelete} variant="destructive" size="sm">
             Delete
-          </button>
+          </Button>
         </div>
       </div>
 
       {showDrafts && contentPiece.drafts && contentPiece.drafts.length > 0 && (
-        <div className="mt-4 pt-4 border-t">
+        <div className="mt-2 pt-4 border-t border-gray-300">
           <h5 className="text-sm font-medium text-gray-900 mb-2">
             AI Generated Drafts
           </h5>

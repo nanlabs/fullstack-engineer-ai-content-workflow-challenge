@@ -23,21 +23,16 @@ class SocketService {
     });
 
     this.socket.on("connect", () => {
-      console.log("🔌 Connected to WebSocket server");
       this.isConnected = true;
     });
 
     this.socket.on("disconnect", () => {
-      console.log("🔌 Disconnected from WebSocket server");
       this.isConnected = false;
     });
 
-    this.socket.on("connected", (data) => {
-      console.log("🎉 WebSocket connection established:", data);
-    });
+    this.socket.on("connected", (data) => {});
 
     this.socket.on("connect_error", (error) => {
-      console.error("❌ WebSocket connection error:", error);
       this.isConnected = false;
     });
 
@@ -150,6 +145,15 @@ class SocketService {
     callback: (data: { campaignId: string; documentId: string }) => void
   ): void {
     this.socket?.on("document-deleted", callback);
+  }
+
+  onChainOfThoughts(
+    callback: (data: {
+      contentPieceId: string;
+      thought: { step: string; message: string; progress: number };
+    }) => void
+  ): void {
+    this.socket?.on("chain-of-thoughts", callback);
   }
 
   // Remove event listeners

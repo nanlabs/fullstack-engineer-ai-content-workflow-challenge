@@ -127,6 +127,13 @@ export class WebsocketsGateway implements OnGatewayConnection, OnGatewayDisconne
     this.logger.log(`Notified clients about document deletion: ${documentId}`);
   }
 
+  // Chain of Thoughts Events
+  notifyChainOfThoughts(contentPieceId: string, thought: { step: string; message: string; progress: number }) {
+    console.log(`Emitting chain-of-thoughts event for content piece: ${contentPieceId}`, thought);
+    this.server.emit('chain-of-thoughts', { contentPieceId, thought });
+    this.logger.log(`Notified clients about chain of thoughts for content piece: ${contentPieceId} - ${thought.step}`);
+  }
+
   // Utility method to get connected clients count
   getConnectedClientsCount(): number {
     return this.connectedClients.size;

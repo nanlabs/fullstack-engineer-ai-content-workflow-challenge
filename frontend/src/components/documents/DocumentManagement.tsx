@@ -1,10 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import { Document } from "@/types";
+import type React from "react";
+import { useState, useEffect, useCallback } from "react";
+import type { Document } from "@/types";
 import { DocumentUpload } from "./DocumentUpload";
 import { DocumentList } from "./DocumentList";
 import { documentApi } from "@/lib/api/client";
+import { Info, Plus, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface DocumentManagementProps {
   campaignId: string;
@@ -21,15 +24,15 @@ export const DocumentManagement: React.FC<DocumentManagementProps> = ({
     try {
       setIsLoading(true);
       const response = await documentApi.getDocumentsByCampaign(campaignId);
-      
+
       if (response.success && response.data) {
         // Handle nested data structure: response.data.data
         const responseData = response.data as Document[] | { data: Document[] };
-        const documentsData = Array.isArray(responseData) 
-          ? responseData 
-          : Array.isArray(responseData.data) 
-            ? responseData.data 
-            : [];
+        const documentsData = Array.isArray(responseData)
+          ? responseData
+          : Array.isArray(responseData.data)
+          ? responseData.data
+          : [];
         setDocuments(documentsData as Document[]);
       } else {
         // If no documents or error, set empty array
@@ -57,7 +60,7 @@ export const DocumentManagement: React.FC<DocumentManagementProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full max-w-6xl min-w-6xl">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -68,30 +71,22 @@ export const DocumentManagement: React.FC<DocumentManagementProps> = ({
             Upload documents to provide context for AI content generation
           </p>
         </div>
-        <button
+        <Button
           onClick={() => setShowUpload(!showUpload)}
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          variant={showUpload ? "outline" : "default"}
         >
-          <svg
-            className="w-4 h-4 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-            />
-          </svg>
+          {showUpload ? (
+            <X className="w-4 h-4 mr-2" />
+          ) : (
+            <Plus className="w-4 h-4 mr-2" />
+          )}
           {showUpload ? "Cancel Upload" : "Upload Document"}
-        </button>
+        </Button>
       </div>
 
       {/* Upload Section */}
       {showUpload && (
-        <div className="bg-gray-50 rounded-lg p-6">
+        <div className="bg-gray-50 rounded-lg ">
           <h3 className="text-md font-medium text-gray-900 mb-4">
             Upload New Document
           </h3>
@@ -132,27 +127,18 @@ export const DocumentManagement: React.FC<DocumentManagementProps> = ({
       <div className="bg-blue-50 rounded-lg p-4">
         <div className="flex items-start space-x-3">
           <div className="flex-shrink-0">
-            <svg
-              className="w-5 h-5 text-blue-600"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                clipRule="evenodd"
-              />
-            </svg>
+            <Info className="w-5 h-5 text-blue-600" />
           </div>
           <div>
             <h4 className="text-sm font-medium text-blue-900">
               How Document Context Works
             </h4>
             <p className="text-sm text-blue-700 mt-1">
-              When you generate AI content, the system will automatically use relevant
-              information from your uploaded documents to create more accurate and
-              contextually-aware content. Documents are processed and chunked to
-              provide the most relevant context for each generation request.
+              When you generate AI content, the system will automatically use
+              relevant information from your uploaded documents to create more
+              accurate and contextually-aware content. Documents are processed
+              and chunked to provide the most relevant context for each
+              generation request.
             </p>
           </div>
         </div>

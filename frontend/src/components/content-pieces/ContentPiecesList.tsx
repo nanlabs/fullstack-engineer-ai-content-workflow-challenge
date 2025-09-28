@@ -1,13 +1,15 @@
 ﻿"use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import type React from "react";
+import { useState, useEffect, useCallback } from "react";
 import { contentPieceApi } from "@/lib/api/client";
-import { ContentPiece, Campaign } from "@/types";
+import type { ContentPiece, Campaign } from "@/types";
 import { CreateContentPieceForm } from "./CreateContentPieceForm";
 import { ContentPieceCard } from "./ContentPieceCard";
 import { useToast } from "@/components/ui/ToastProvider";
 import { useLanguage } from "@/components/translation/LanguageProvider";
 import { OPERATION_MESSAGES } from "@/lib/api/errorHandler";
+import { Button } from "@/components/ui/button";
 
 interface ContentPiecesListProps {
   campaign: Campaign;
@@ -24,6 +26,9 @@ export const ContentPiecesList: React.FC<ContentPiecesListProps> = ({
   const [showCreateForm, setShowCreateForm] = useState(false);
   const { addToast } = useToast();
   const { userLanguage } = useLanguage();
+  const [showAIGenerationForm, setShowAIGenerationForm] = useState<
+    string | null
+  >(null);
 
   const loadContentPieces = useCallback(async () => {
     try {
@@ -113,12 +118,11 @@ export const ContentPiecesList: React.FC<ContentPiecesListProps> = ({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold text-gray-900">Content Pieces</h3>
-        <button
-          onClick={() => setShowCreateForm(true)}
-          className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 text-sm"
-        >
-          Add Content Piece
-        </button>
+        {!showAIGenerationForm && (
+          <Button onClick={() => setShowCreateForm(true)} variant="default">
+            Add Content Piece
+          </Button>
+        )}
       </div>
 
       {showCreateForm && (
@@ -147,15 +151,18 @@ export const ContentPiecesList: React.FC<ContentPiecesListProps> = ({
         </div>
       ) : (
         <div className="space-y-3">
-          {contentPieces.map((piece) => (
-            <ContentPieceCard
-              key={piece.id}
-              contentPiece={piece}
-              onRefresh={() => {
-                loadContentPieces();
-              }}
-            />
-          ))}
+          {!showCreateForm &&
+            contentPieces.map((piece) => (
+              <ContentPieceCard
+                key={piece.id}
+                contentPiece={piece}
+                setShowAIGenerationForm={setShowAIGenerationForm}
+                showAIGenerationForm={showAIGenerationForm === piece.id}
+                onRefresh={() => {
+                  loadContentPieces();
+                }}
+              />
+            ))}
         </div>
       )}
     </div>

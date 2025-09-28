@@ -46,6 +46,16 @@ export class AgentOrchestrationService {
     try {
       this.logger.log(`Starting agent orchestration for content piece: ${request.contentPieceId}`);
 
+      // Emit: Starting analysis
+      this.websocketsGateway.notifyChainOfThoughts(request.contentPieceId, {
+        step: 'analyzing',
+        message: 'Analyzing your request...',
+        progress: 10
+      });
+
+      // Add small delay to make steps visible
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       // Get content piece details
       const contentPiece = await this.prisma.contentPiece.findUnique({
         where: { id: request.contentPieceId },
@@ -55,6 +65,16 @@ export class AgentOrchestrationService {
       if (!contentPiece) {
         throw new Error('Content piece not found');
       }
+
+      // Emit: Checking documents
+      this.websocketsGateway.notifyChainOfThoughts(request.contentPieceId, {
+        step: 'documents',
+        message: 'Reviewing uploaded documents...',
+        progress: 20
+      });
+
+      // Add small delay
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       // Get document context for RAG
       const documentChunks = await this.documentsService.getRelevantDocumentChunks(
@@ -74,6 +94,16 @@ export class AgentOrchestrationService {
         documentContext,
       };
 
+      // Emit: Orchestrator analysis
+      this.websocketsGateway.notifyChainOfThoughts(request.contentPieceId, {
+        step: 'orchestrator',
+        message: 'Determining the best approach...',
+        progress: 30
+      });
+
+      // Add small delay
+      await new Promise(resolve => setTimeout(resolve, 300));
+
       // Step 1: Orchestrator Agent - Analyze request and decide workflow
       const orchestratorDecision = await this.orchestratorAgent(context);
       
@@ -82,9 +112,30 @@ export class AgentOrchestrationService {
       
       if (orchestratorDecision.needsResearch) {
         this.logger.log('Orchestrator decided research is needed');
+        
+        // Emit: Research step
+        this.websocketsGateway.notifyChainOfThoughts(request.contentPieceId, {
+          step: 'research',
+          message: 'Searching for latest information...',
+          progress: 50
+        });
+        
+        // Add small delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         // Phase 2: Implement research agent
         finalContext = await this.researchAgent(context);
       }
+
+      // Emit: Content generation
+      this.websocketsGateway.notifyChainOfThoughts(request.contentPieceId, {
+        step: 'generating',
+        message: 'Generating your content...',
+        progress: 80
+      });
+
+      // Add small delay
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       // Step 3: Draft Agent - Generate the content
       const draftResult = await this.draftAgent(finalContext);
@@ -100,6 +151,13 @@ export class AgentOrchestrationService {
         },
       });
 
+      // Emit: Completion
+      this.websocketsGateway.notifyChainOfThoughts(request.contentPieceId, {
+        step: 'completed',
+        message: 'Content generated successfully!',
+        progress: 100
+      });
+
       // Notify WebSocket clients
       this.websocketsGateway.notifyAIGenerationCompleted(request.contentPieceId, draft);
       this.websocketsGateway.notifyDraftGenerated(request.contentPieceId, draft);
@@ -109,6 +167,14 @@ export class AgentOrchestrationService {
 
     } catch (error) {
       this.logger.error('Error in agent orchestration:', error);
+      
+      // Emit: Error
+      this.websocketsGateway.notifyChainOfThoughts(request.contentPieceId, {
+        step: 'error',
+        message: 'Something went wrong. Please try again.',
+        progress: 0
+      });
+      
       this.websocketsGateway.notifyAIGenerationFailed(request.contentPieceId, error.message);
       throw error;
     }

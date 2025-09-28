@@ -1,13 +1,15 @@
 ﻿"use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import type React from "react";
+import { useState, useEffect, useCallback } from "react";
 import { campaignApi } from "@/lib/api/client";
-import { Campaign } from "@/types";
+import type { Campaign } from "@/types";
 import { ContentPiecesList } from "@/components/content-pieces/ContentPiecesList";
 import { CampaignForm } from "./CampaignForm";
 import { DocumentManagement } from "@/components/documents/DocumentManagement";
 import { useToast } from "@/components/ui/ToastProvider";
 import { OPERATION_MESSAGES } from "@/lib/api/errorHandler";
+import { Button } from "@/components/ui/button";
 
 export const CampaignDashboard: React.FC = () => {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -18,7 +20,9 @@ export const CampaignDashboard: React.FC = () => {
   );
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
-  const [activeTab, setActiveTab] = useState<'content' | 'documents'>('content');
+  const [activeTab, setActiveTab] = useState<"content" | "documents">(
+    "content"
+  );
   const { addToast } = useToast();
 
   useEffect(() => {
@@ -198,7 +202,7 @@ export const CampaignDashboard: React.FC = () => {
   if (showCreateForm) {
     return (
       <div>
-        <div className="flex flex-col items-start mb-6 justify-start">
+        <div className="flex flex-col items-start mb-6 justify-start w-full min-w-6xl max-w-6xl">
           <button
             onClick={() => setShowCreateForm(false)}
             className="text-blue-600 hover:text-blue-800 mr-4"
@@ -221,7 +225,7 @@ export const CampaignDashboard: React.FC = () => {
   if (editingCampaign) {
     return (
       <div>
-        <div className="flex flex-col items-start mb-6 justify-start">
+        <div className="flex flex-col items-start mb-6 justify-start w-full min-w-6xl max-w-6xl">
           <button
             onClick={() => setEditingCampaign(null)}
             className="text-blue-600 hover:text-blue-800 mr-4"
@@ -242,31 +246,32 @@ export const CampaignDashboard: React.FC = () => {
 
   if (selectedCampaign) {
     return (
-      <div>
-        <div className="flex flex-col items-start justify-between mb-6">
+      <div className="flex flex-col items-start justify-between mb-6 w-full min-w-6xl max-w-6xl">
         <div className="flex justify-between w-full items-start gap-2 border-b border-gray-200 pb-2">
           <button
             onClick={() => {
               setSelectedCampaign(null);
-              setActiveTab('content'); // Reset tab when going back
+              setActiveTab("content"); // Reset tab when going back
             }}
             className="text-blue-600 hover:text-blue-800 mr-4"
           >
             ← Back to Campaigns
           </button>
           <div className="flex space-x-2">
-            <button
+            <Button
               onClick={() => setEditingCampaign(selectedCampaign)}
-              className="text-blue-600 hover:text-blue-800 text-sm ml-2 mr-2 border border-blue-300 rounded-md px-2 py-1 hover:bg-blue-100 transition-colors hover:border-blue-400 cursor-pointer"
+              variant="outline"
+              size="sm"
             >
               Edit Campaign
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => handleDeleteCampaign(selectedCampaign.id)}
-              className="text-red-600 hover:text-red-800 text-sm ml-2 mr-2 border border-red-300 rounded-md px-2 py-1 hover:bg-red-100 transition-colors hover:border-red-400 cursor-pointer"
+              variant="destructive"
+              size="sm"
             >
               Delete Campaign
-            </button>
+            </Button>
           </div>
         </div>
         <div className="mt-2">
@@ -282,21 +287,21 @@ export const CampaignDashboard: React.FC = () => {
         <div className="mt-6 border-b border-gray-200">
           <nav className="-mb-px flex space-x-8">
             <button
-              onClick={() => setActiveTab('content')}
+              onClick={() => setActiveTab("content")}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'content'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                activeTab === "content"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
               Content Pieces
             </button>
             <button
-              onClick={() => setActiveTab('documents')}
+              onClick={() => setActiveTab("documents")}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'documents'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                activeTab === "documents"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
               Documents
@@ -305,8 +310,8 @@ export const CampaignDashboard: React.FC = () => {
         </div>
 
         {/* Tab Content */}
-        <div className="mt-6">
-          {activeTab === 'content' ? (
+        <div className="mt-6 w-full min-w-6xl max-w-6xl">
+          {activeTab === "content" ? (
             <ContentPiecesList
               campaign={selectedCampaign}
               onRefresh={loadCampaigns}
@@ -314,7 +319,6 @@ export const CampaignDashboard: React.FC = () => {
           ) : (
             <DocumentManagement campaignId={selectedCampaign.id} />
           )}
-        </div>
         </div>
       </div>
     );
@@ -324,19 +328,22 @@ export const CampaignDashboard: React.FC = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Campaigns</h2>
-        <button
-          onClick={() => setShowCreateForm(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-        >
-          Create Campaign
-        </button>
+        <Button onClick={() => setShowCreateForm(true)} variant="default">
+          Create New Campaign
+        </Button>
       </div>
 
       {campaigns.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-gray-500 text-lg">No campaigns yet</div>
           <div className="text-gray-400 text-sm mt-2">
-            Create your first campaign to get started
+            <Button
+              variant="outline"
+              className="p-2"
+              onClick={() => setShowCreateForm(true)}
+            >
+              Create your first campaign to get started
+            </Button>
           </div>
         </div>
       ) : (
@@ -367,24 +374,27 @@ export const CampaignDashboard: React.FC = () => {
               <div>
                 <hr className="my-2 border-gray-200 " />
                 <div className="flex space-x-2 justify-end pt-2">
-                  <button
+                  <Button
                     onClick={() => setSelectedCampaign(campaign)}
-                    className="text-blue-600 hover:text-blue-800 text-sm ml-2 mr-2 border border-blue-300 rounded-md px-2 py-1 hover:bg-blue-100 transition-colors hover:border-blue-400 cursor-pointer"
+                    variant="default"
+                    size="sm"
                   >
                     View Details
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => setEditingCampaign(campaign)}
-                    className="text-gray-600 hover:text-gray-800 text-sm ml-2 mr-2 border border-gray-300 rounded-md px-2 py-1 hover:bg-gray-100 transition-colors hover:border-gray-400 cursor-pointer"
+                    variant="outline"
+                    size="sm"
                   >
                     Edit
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => handleDeleteCampaign(campaign.id)}
-                    className="text-red-600 hover:text-red-800 text-sm ml-2 mr-2 border border-red-300 rounded-md px-2 py-1 hover:bg-red-100 transition-colors hover:border-red-400 cursor-pointer"
+                    variant="destructive"
+                    size="sm"
                   >
                     Delete
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

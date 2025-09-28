@@ -1,7 +1,9 @@
 ﻿"use client";
 
-import React, { useState } from "react";
-import { Campaign } from "@/types";
+import type React from "react";
+import { useState } from "react";
+import type { Campaign } from "@/types";
+import { Button } from "@/components/ui/button";
 
 interface CampaignFormProps {
   campaign?: Campaign;
@@ -34,7 +36,7 @@ export const CampaignForm: React.FC<CampaignFormProps> = ({
   };
 
   return (
-    <div className="bg-white border rounded-lg p-6 shadow-sm">
+    <div className="bg-white border rounded-lg p-6 shadow-sm w-full min-w-6xl max-w-6xl">
       <h4 className="text-lg font-semibold text-gray-900 mb-4">
         {campaign ? "Edit Campaign" : "Create Campaign"}
       </h4>
@@ -72,25 +74,18 @@ export const CampaignForm: React.FC<CampaignFormProps> = ({
             value={formData.description}
             onChange={handleChange}
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 max-h-48"
             placeholder="Enter campaign description (optional)"
           />
         </div>
 
         <div className="flex justify-end space-x-3 pt-4">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-          >
+          <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
+          </Button>
+          <Button type="submit" variant="default">
             {campaign ? "Update Campaign" : "Create Campaign"}
-          </button>
+          </Button>
         </div>
       </form>
     </div>
