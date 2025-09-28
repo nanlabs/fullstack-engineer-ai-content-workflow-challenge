@@ -5,6 +5,7 @@ import { campaignApi } from "@/lib/api/client";
 import { Campaign } from "@/types";
 import { ContentPiecesList } from "@/components/content-pieces/ContentPiecesList";
 import { CampaignForm } from "./CampaignForm";
+import { DocumentManagement } from "@/components/documents/DocumentManagement";
 import { useToast } from "@/components/ui/ToastProvider";
 import { OPERATION_MESSAGES } from "@/lib/api/errorHandler";
 
@@ -17,6 +18,7 @@ export const CampaignDashboard: React.FC = () => {
   );
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
+  const [activeTab, setActiveTab] = useState<'content' | 'documents'>('content');
   const { addToast } = useToast();
 
   useEffect(() => {
@@ -242,42 +244,78 @@ export const CampaignDashboard: React.FC = () => {
     return (
       <div>
         <div className="flex flex-col items-start justify-between mb-6">
-          <div className="flex justify-between w-full items-start gap-2 border-b border-gray-200 pb-2">
+        <div className="flex justify-between w-full items-start gap-2 border-b border-gray-200 pb-2">
+          <button
+            onClick={() => {
+              setSelectedCampaign(null);
+              setActiveTab('content'); // Reset tab when going back
+            }}
+            className="text-blue-600 hover:text-blue-800 mr-4"
+          >
+            ← Back to Campaigns
+          </button>
+          <div className="flex space-x-2">
             <button
-              onClick={() => setSelectedCampaign(null)}
-              className="text-blue-600 hover:text-blue-800 mr-4"
+              onClick={() => setEditingCampaign(selectedCampaign)}
+              className="text-blue-600 hover:text-blue-800 text-sm ml-2 mr-2 border border-blue-300 rounded-md px-2 py-1 hover:bg-blue-100 transition-colors hover:border-blue-400 cursor-pointer"
             >
-              ← Back to Campaigns
+              Edit Campaign
             </button>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setEditingCampaign(selectedCampaign)}
-                className="text-blue-600 hover:text-blue-800 text-sm ml-2 mr-2 border border-blue-300 rounded-md px-2 py-1 hover:bg-blue-100 transition-colors hover:border-blue-400 cursor-pointer"
-              >
-                Edit Campaign
-              </button>
-              <button
-                onClick={() => handleDeleteCampaign(selectedCampaign.id)}
-                className="text-red-600 hover:text-red-800 text-sm ml-2 mr-2 border border-red-300 rounded-md px-2 py-1 hover:bg-red-100 transition-colors hover:border-red-400 cursor-pointer"
-              >
-                Delete Campaign
-              </button>
-            </div>
-          </div>
-          <div className="mt-2">
-            <h2 className="text-2xl font-bold text-gray-900">
-              {selectedCampaign.name}
-            </h2>
-            {selectedCampaign.description && (
-              <p className="text-gray-600">{selectedCampaign.description}</p>
-            )}
+            <button
+              onClick={() => handleDeleteCampaign(selectedCampaign.id)}
+              className="text-red-600 hover:text-red-800 text-sm ml-2 mr-2 border border-red-300 rounded-md px-2 py-1 hover:bg-red-100 transition-colors hover:border-red-400 cursor-pointer"
+            >
+              Delete Campaign
+            </button>
           </div>
         </div>
+        <div className="mt-2">
+          <h2 className="text-2xl font-bold text-gray-900">
+            {selectedCampaign.name}
+          </h2>
+          {selectedCampaign.description && (
+            <p className="text-gray-600">{selectedCampaign.description}</p>
+          )}
+        </div>
 
-        <ContentPiecesList
-          campaign={selectedCampaign}
-          onRefresh={loadCampaigns}
-        />
+        {/* Tab Navigation */}
+        <div className="mt-6 border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('content')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'content'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Content Pieces
+            </button>
+            <button
+              onClick={() => setActiveTab('documents')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'documents'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Documents
+            </button>
+          </nav>
+        </div>
+
+        {/* Tab Content */}
+        <div className="mt-6">
+          {activeTab === 'content' ? (
+            <ContentPiecesList
+              campaign={selectedCampaign}
+              onRefresh={loadCampaigns}
+            />
+          ) : (
+            <DocumentManagement campaignId={selectedCampaign.id} />
+          )}
+        </div>
+        </div>
       </div>
     );
   }

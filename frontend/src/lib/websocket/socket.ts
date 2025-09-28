@@ -140,6 +140,18 @@ class SocketService {
     this.socket?.on("ai-generation-failed", callback);
   }
 
+  onDocumentUploaded(
+    callback: (data: { campaignId: string; document: Document }) => void
+  ): void {
+    this.socket?.on("document-uploaded", callback);
+  }
+
+  onDocumentDeleted(
+    callback: (data: { campaignId: string; documentId: string }) => void
+  ): void {
+    this.socket?.on("document-deleted", callback);
+  }
+
   // Remove event listeners
   off(event: string, callback?: (...args: unknown[]) => void): void {
     this.socket?.off(event, callback);

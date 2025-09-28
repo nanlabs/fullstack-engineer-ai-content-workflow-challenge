@@ -4,6 +4,7 @@ import { WebsocketsGateway } from '../websockets/websockets.gateway';
 import { ChatOpenAI } from '@langchain/openai';
 import { PromptTemplate } from '@langchain/core/prompts';
 import { WebSearchService } from './web-search.service';
+import { DocumentsService } from '../documents/documents.service';
 
 export interface GenerationRequest {
   contentPieceId: string;
@@ -19,6 +20,7 @@ export interface GenerationRequest {
 export interface AgentContext {
   originalRequest: GenerationRequest;
   researchFindings?: string;
+  documentContext?: string;
   contentPiece: any;
 }
 
@@ -31,6 +33,7 @@ export class AgentOrchestrationService {
     private prisma: PrismaService,
     private websocketsGateway: WebsocketsGateway,
     private webSearchService: WebSearchService,
+    private documentsService: DocumentsService,
   ) {
     this.openai = new ChatOpenAI({
       openAIApiKey: process.env.OPENAI_API_KEY,
@@ -53,10 +56,22 @@ export class AgentOrchestrationService {
         throw new Error('Content piece not found');
       }
 
+      // Get document context for RAG
+      const documentChunks = await this.documentsService.getRelevantDocumentChunks(
+        contentPiece.campaignId,
+        request.prompt,
+        3 // Get top 3 most relevant chunks
+      );
+
+      const documentContext = documentChunks.length > 0 
+        ? documentChunks.map(chunk => chunk.text).join('\n\n')
+        : undefined;
+
       // Create agent context
       const context: AgentContext = {
         originalRequest: request,
         contentPiece,
+        documentContext,
       };
 
       // Step 1: Orchestrator Agent - Analyze request and decide workflow
@@ -173,10 +188,14 @@ USER REQUEST:
 RESEARCH CONTEXT:
 {researchContext}
 
+DOCUMENT CONTEXT:
+{documentContext}
+
 INSTRUCTIONS:
 - Generate professional, engaging content that matches the campaign's tone and objectives
 - Ensure the content is appropriate for the specified language and content type
 - If research context is provided, incorporate relevant information naturally
+- If document context is provided, use it to enhance the content with specific details and facts
 - Keep the content concise and impactful
 - Focus on the user's specific request while maintaining brand consistency
 
@@ -193,6 +212,7 @@ CONTENT:
         description: context.contentPiece.description || 'No description provided',
         userPrompt: context.originalRequest.prompt,
         researchContext: context.researchFindings || 'No additional research context available',
+        documentContext: context.documentContext || 'No document context available',
       });
 
       const content = typeof response === 'string' ? response : 

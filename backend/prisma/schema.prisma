@@ -31,6 +31,7 @@ model Campaign {
 
   // Relations
   contentPieces ContentPiece[]
+  documents     Document[]
 
   @@map("campaigns")
 }
@@ -71,4 +72,23 @@ model Draft {
   contentPiece   ContentPiece @relation(fields: [contentPieceId], references: [id], onDelete: Cascade)
 
   @@map("drafts")
+}
+
+// Document model for RAG-based context enrichment
+model Document {
+  id          String   @id @default(cuid())
+  filename    String
+  originalName String  // Original filename from upload
+  fileType    String   // "pdf", "txt", etc.
+  fileSize    Int      // File size in bytes
+  content     String   // Extracted text content
+  chunks      Json?    // Document chunks for vector search: [{ "text": "...", "embedding": [...], "metadata": {...} }]
+  uploadedAt  DateTime @default(now())
+  processedAt DateTime? // When document was processed for chunks/embeddings
+
+  // Relations
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
 }

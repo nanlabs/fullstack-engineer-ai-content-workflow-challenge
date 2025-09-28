@@ -136,23 +136,23 @@ export const contentPieceApi = {
 
 // AI Generation API functions
 export const aiGenerationApi = {
-    // Generate AI draft
-    generateDraft: async (data: {
-      contentPieceId: string;
-      prompt: string;
-      contentType?: string;
-      language?: string;
-    }): Promise<ApiResponse> => {
-      return apiRequest(
-        `${apiConfig.baseURL}/ai-generation/generate-draft`,
-        {
-          method: "POST",
-          headers: apiConfig.headers,
-          body: JSON.stringify(data),
-        },
-        OPERATION_MESSAGES.GENERATE_DRAFT
-      );
-    },
+  // Generate AI draft
+  generateDraft: async (data: {
+    contentPieceId: string;
+    prompt: string;
+    contentType?: string;
+    language?: string;
+  }): Promise<ApiResponse> => {
+    return apiRequest(
+      `${apiConfig.baseURL}/ai-generation/generate-draft`,
+      {
+        method: "POST",
+        headers: apiConfig.headers,
+        body: JSON.stringify(data),
+      },
+      OPERATION_MESSAGES.GENERATE_DRAFT
+    );
+  },
 };
 
 // Translation API functions
@@ -173,70 +173,119 @@ export const translationApi = {
     );
   },
 
+  // Get supported languages
+  getSupportedLanguages: async (): Promise<
+    ApiResponse<SupportedLanguagesResponse>
+  > => {
+    return apiRequest(
+      `${apiConfig.baseURL}/translation/supported-languages`,
+      { method: "GET" },
+      OPERATION_MESSAGES.LOAD_SUPPORTED_LANGUAGES
+    );
+  },
 
-    // Get supported languages
-    getSupportedLanguages: async (): Promise<ApiResponse<SupportedLanguagesResponse>> => {
-      return apiRequest(
-        `${apiConfig.baseURL}/translation/supported-languages`,
-        { method: "GET" },
-        OPERATION_MESSAGES.LOAD_SUPPORTED_LANGUAGES
-      );
-    },
+  // Update draft content
+  updateDraftContent: async (
+    draftId: string,
+    content: string
+  ): Promise<ApiResponse> => {
+    return apiRequest(
+      `${apiConfig.baseURL}/translation/${draftId}/content`,
+      {
+        method: "PATCH",
+        headers: apiConfig.headers,
+        body: JSON.stringify({ content }),
+      },
+      OPERATION_MESSAGES.UPDATE_DRAFT_CONTENT
+    );
+  },
 
-    // Update draft content
-    updateDraftContent: async (draftId: string, content: string): Promise<ApiResponse> => {
-      return apiRequest(
-        `${apiConfig.baseURL}/translation/${draftId}/content`,
-        {
-          method: "PATCH",
-          headers: apiConfig.headers,
-          body: JSON.stringify({ content }),
-        },
-        OPERATION_MESSAGES.UPDATE_DRAFT_CONTENT
-      );
-    },
+  // Update draft review state
+  updateDraftReviewState: async (
+    draftId: string,
+    reviewState: string
+  ): Promise<ApiResponse> => {
+    return apiRequest(
+      `${apiConfig.baseURL}/translation/${draftId}/review-state/${reviewState}`,
+      { method: "PATCH" },
+      OPERATION_MESSAGES.UPDATE_DRAFT_REVIEW_STATE
+    );
+  },
 
-    // Update draft review state
-    updateDraftReviewState: async (draftId: string, reviewState: string): Promise<ApiResponse> => {
-      return apiRequest(
-        `${apiConfig.baseURL}/translation/${draftId}/review-state/${reviewState}`,
-        { method: "PATCH" },
-        OPERATION_MESSAGES.UPDATE_DRAFT_REVIEW_STATE
-      );
-    },
+  // Update translation content
+  updateTranslationContent: async (
+    draftId: string,
+    language: string,
+    content: string
+  ): Promise<ApiResponse> => {
+    return apiRequest(
+      `${apiConfig.baseURL}/translation/${draftId}/translation/${language}`,
+      {
+        method: "PATCH",
+        headers: apiConfig.headers,
+        body: JSON.stringify({ content }),
+      },
+      OPERATION_MESSAGES.UPDATE_TRANSLATION_CONTENT
+    );
+  },
 
-    // Update translation content
-    updateTranslationContent: async (
-      draftId: string,
-      language: string,
-      content: string
-    ): Promise<ApiResponse> => {
-      return apiRequest(
-        `${apiConfig.baseURL}/translation/${draftId}/translation/${language}`,
-        {
-          method: "PATCH",
-          headers: apiConfig.headers,
-          body: JSON.stringify({ content }),
-        },
-        OPERATION_MESSAGES.UPDATE_TRANSLATION_CONTENT
-      );
-    },
+  // Delete translation content
+  deleteTranslation: async (
+    draftId: string,
+    language: string
+  ): Promise<ApiResponse> => {
+    return apiRequest(
+      `${apiConfig.baseURL}/translation/${draftId}/translation/${language}`,
+      { method: "DELETE" },
+      OPERATION_MESSAGES.DELETE_TRANSLATION
+    );
+  },
 
-    // Delete translation content
-    deleteTranslation: async (draftId: string, language: string): Promise<ApiResponse> => {
-      return apiRequest(
-        `${apiConfig.baseURL}/translation/${draftId}/translation/${language}`,
-        { method: "DELETE" },
-        OPERATION_MESSAGES.DELETE_TRANSLATION
-      );
-    },
+  // Delete draft
+  deleteDraft: async (draftId: string): Promise<ApiResponse> => {
+    return apiRequest(
+      `${apiConfig.baseURL}/translation/${draftId}`,
+      { method: "DELETE" },
+      OPERATION_MESSAGES.DELETE_DRAFT
+    );
+  },
+};
 
-    // Delete draft
-    deleteDraft: async (draftId: string): Promise<ApiResponse> => {
-      return apiRequest(
-        `${apiConfig.baseURL}/translation/${draftId}`,
-        { method: "DELETE" },
-        OPERATION_MESSAGES.DELETE_DRAFT
-      );
-    },
-  };
+// Document API functions
+export const documentApi = {
+  // Upload document
+  uploadDocument: async (
+    campaignId: string,
+    file: File
+  ): Promise<ApiResponse> => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    return apiRequest(
+      `${apiConfig.baseURL}/documents/upload/${campaignId}`,
+      {
+        method: "POST",
+        body: formData,
+      },
+      OPERATION_MESSAGES.UPLOAD_DOCUMENT
+    );
+  },
+
+  // Get documents by campaign
+  getDocumentsByCampaign: async (campaignId: string): Promise<ApiResponse> => {
+    return apiRequest(
+      `${apiConfig.baseURL}/documents/campaign/${campaignId}`,
+      { method: "GET" },
+      OPERATION_MESSAGES.LOAD_DOCUMENTS
+    );
+  },
+
+  // Delete document
+  deleteDocument: async (documentId: string): Promise<ApiResponse> => {
+    return apiRequest(
+      `${apiConfig.baseURL}/documents/${documentId}`,
+      { method: "DELETE" },
+      OPERATION_MESSAGES.DELETE_DOCUMENT
+    );
+  },
+};

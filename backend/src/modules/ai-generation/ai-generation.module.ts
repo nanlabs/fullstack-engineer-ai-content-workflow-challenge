@@ -4,9 +4,10 @@ import { AiGenerationController } from './ai-generation.controller';
 import { AgentOrchestrationService } from './agent-orchestration.service';
 import { WebSearchService } from './web-search.service';
 import { WebsocketsModule } from '../websockets/websockets.module';
+import { DocumentsModule } from '../documents/documents.module';
 
 @Module({
-  imports: [WebsocketsModule],
+  imports: [WebsocketsModule, DocumentsModule],
   controllers: [AiGenerationController],
   providers: [AiGenerationService, AgentOrchestrationService, WebSearchService],
   exports: [AiGenerationService, AgentOrchestrationService, WebSearchService],

@@ -116,6 +116,17 @@ export class WebsocketsGateway implements OnGatewayConnection, OnGatewayDisconne
     this.logger.log(`Notified clients about translation state update: ${language} -> ${state}`);
   }
 
+  // Document Events
+  notifyDocumentUploaded(campaignId: string, document: any) {
+    this.server.emit('document-uploaded', { campaignId, document });
+    this.logger.log(`Notified clients about document upload for campaign: ${campaignId}`);
+  }
+
+  notifyDocumentDeleted(campaignId: string, documentId: string) {
+    this.server.emit('document-deleted', { campaignId, documentId });
+    this.logger.log(`Notified clients about document deletion: ${documentId}`);
+  }
+
   // Utility method to get connected clients count
   getConnectedClientsCount(): number {
     return this.connectedClients.size;

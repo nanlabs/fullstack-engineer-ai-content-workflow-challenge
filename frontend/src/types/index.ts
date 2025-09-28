@@ -6,6 +6,7 @@ export interface Campaign {
   createdAt: string;
   updatedAt: string;
   contentPieces?: ContentPiece[];
+  documents?: Document[];
 }
 
 export interface ContentPiece {
@@ -33,6 +34,30 @@ export interface Draft {
   updatedAt: string;
   contentPieceId: string;
   contentPiece?: ContentPiece;
+}
+
+export interface Document {
+  id: string;
+  filename: string;
+  originalName: string;
+  fileType: string;
+  fileSize: number;
+  content: string;
+  chunks?: DocumentChunk[];
+  uploadedAt: string;
+  processedAt?: string;
+  campaignId: string;
+  campaign?: Campaign;
+}
+
+export interface DocumentChunk {
+  text: string;
+  embedding?: number[];
+  metadata: {
+    chunkIndex: number;
+    startChar: number;
+    endChar: number;
+  };
 }
 
 export enum ReviewState {

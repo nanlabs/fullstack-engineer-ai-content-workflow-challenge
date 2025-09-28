@@ -20,6 +20,8 @@ interface RealtimeUpdateCallbacks {
   onAIGenerationStarted?: (data: { contentPieceId: string; prompt: string }) => void;
   onAIGenerationCompleted?: (data: { contentPieceId: string; draft: WebSocketDraftEvent }) => void;
   onAIGenerationFailed?: (data: { contentPieceId: string; error: string }) => void;
+  onDocumentUploaded?: (data: { campaignId: string; document: Document }) => void;
+  onDocumentDeleted?: (data: { campaignId: string; documentId: string }) => void;
 }
 
 export const useRealtimeUpdates = (callbacks: RealtimeUpdateCallbacks = {}) => {
@@ -95,6 +97,20 @@ export const useRealtimeUpdates = (callbacks: RealtimeUpdateCallbacks = {}) => {
         message: data.error,
       });
     },
+    onDocumentUploaded: (data) => {
+      addToast({
+        type: 'success',
+        title: 'Document Uploaded',
+        message: `Document uploaded and processed successfully`,
+      });
+    },
+    onDocumentDeleted: () => {
+      addToast({
+        type: 'info',
+        title: 'Document Deleted',
+        message: 'Document was deleted',
+      });
+    },
   };
 
   useEffect(() => {
@@ -114,6 +130,8 @@ export const useRealtimeUpdates = (callbacks: RealtimeUpdateCallbacks = {}) => {
     socketService.onAIGenerationStarted(mergedCallbacks.onAIGenerationStarted!);
     socketService.onAIGenerationCompleted(mergedCallbacks.onAIGenerationCompleted!);
     socketService.onAIGenerationFailed(mergedCallbacks.onAIGenerationFailed!);
+    socketService.onDocumentUploaded(mergedCallbacks.onDocumentUploaded!);
+    socketService.onDocumentDeleted(mergedCallbacks.onDocumentDeleted!);
 
     // Cleanup on unmount
     return () => {

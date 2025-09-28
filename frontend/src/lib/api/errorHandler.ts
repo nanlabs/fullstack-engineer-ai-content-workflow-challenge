@@ -84,6 +84,18 @@ export const OPERATION_MESSAGES = {
         success: "Draft deleted successfully!",
         error: "Failed to delete draft. Please try again.",
       },
+      UPLOAD_DOCUMENT: {
+        success: "Document uploaded and processed successfully!",
+        error: "Failed to upload document. Please try again.",
+      },
+      LOAD_DOCUMENTS: {
+        success: "Documents loaded successfully!",
+        error: "Failed to load documents. Please try again.",
+      },
+      DELETE_DOCUMENT: {
+        success: "Document deleted successfully!",
+        error: "Failed to delete document. Please try again.",
+      },
       LOAD_CAMPAIGNS: {
         success: "Campaigns loaded successfully!",
         error: "Failed to load campaigns. Please try again.",
