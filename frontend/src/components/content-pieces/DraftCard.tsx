@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/ToastProvider";
 import { OPERATION_MESSAGES } from "@/lib/api/errorHandler";
 import { ChevronDown, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CostDisplay } from "@/components/ui/CostDisplay";
 
 interface DraftCardProps {
   draft: Draft;
@@ -315,6 +316,13 @@ export const DraftCard: React.FC<DraftCardProps> = ({
           </button>
 
           <div className="flex items-center space-x-2">
+            <CostDisplay 
+              cost={localDraft.cost || 0} 
+              type="draft" 
+              size="sm" 
+              showLabel={false}
+            />
+            
             <span
               className={`px-2 py-1 rounded-full text-xs font-medium ${getReviewStateColor(
                 localDraft.reviewState

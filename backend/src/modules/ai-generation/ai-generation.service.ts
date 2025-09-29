@@ -13,11 +13,19 @@ export class AiGenerationService {
     private agentOrchestrationService: AgentOrchestrationService
   ) {}
 
+  // Mapa de costos por modelo
+  private modelCostMap: Record<string, number> = {
+    openai: 0.02,
+    anthropic: 0.05,
+    llama: 0.01,
+  };
+
   async generateDraft(
-    contentPieceId: string, 
-    prompt: string, 
-    contentType?: string, 
-    language?: string
+    contentPieceId: string,
+    prompt: string,
+    contentType?: string,
+    language?: string,
+    modelName?: string
   ) {
     try {
       // Get the content piece details for context
@@ -39,20 +47,26 @@ export class AiGenerationService {
         prompt,
         contentType,
         language,
+        modelName,
         campaignContext: {
           name: contentPiece.campaign.name,
           description: contentPiece.campaign.description,
         },
       });
 
-      this.logger.log(`AI draft generated successfully for content piece: ${contentPieceId}`);
+      this.logger.log(
+        `AI draft generated successfully for content piece: ${contentPieceId}`
+      );
       return draft;
     } catch (error) {
-      this.logger.error('Error generating AI draft:', error);
-      
+      this.logger.error("Error generating AI draft:", error);
+
       // Notify clients that AI generation has failed
-      this.websocketsGateway.notifyAIGenerationFailed(contentPieceId, error.message);
-      
+      this.websocketsGateway.notifyAIGenerationFailed(
+        contentPieceId,
+        error.message
+      );
+
       throw error;
     }
   }

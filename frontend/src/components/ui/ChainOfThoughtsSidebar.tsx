@@ -1,6 +1,6 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { Check, X, AlertCircle } from "lucide-react";
 import React, { useState, useEffect } from "react";
 
 interface ChainOfThoughtsSidebarProps {
@@ -9,6 +9,7 @@ interface ChainOfThoughtsSidebarProps {
   message: string;
   progress: number;
   onComplete?: () => void;
+  onClose?: () => void;
 }
 
 interface ThoughtStep {
@@ -69,18 +70,29 @@ export const ChainOfThoughtsSidebar: React.FC<ChainOfThoughtsSidebarProps> = ({
   message,
   progress,
   onComplete,
+  onClose,
 }) => {
   const [displayedSteps, setDisplayedSteps] = useState<string[]>([]);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     if (!isVisible) {
       setDisplayedSteps([]);
+      setHasError(false);
       return;
     }
 
-    // Add current step to displayed steps
-    if (currentStep) {
+    // Handle error state
+    if (currentStep === "error") {
+      setHasError(true);
+      // Stop all animations when error occurs
+      setIsAnimating(false);
+      return;
+    }
+
+    // Add current step to displayed steps (but not for error)
+    if (currentStep && currentStep !== "error") {
       setDisplayedSteps((prev) => {
         if (!prev.includes(currentStep)) {
           setIsAnimating(true);
@@ -108,22 +120,41 @@ export const ChainOfThoughtsSidebar: React.FC<ChainOfThoughtsSidebarProps> = ({
       <div className="p-6">
         {/* Header */}
         <div className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            AI is thinking...
-          </h3>
-          <p className="text-sm text-gray-600">{message}</p>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className={`text-lg font-semibold ${
+              hasError ? 'text-red-900' : 'text-gray-900'
+            }`}>
+              {hasError ? 'AI Generation Failed' : 'AI is thinking...'}
+            </h3>
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                title="Close"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            )}
+          </div>
+          <p className={`text-sm ${
+            hasError ? 'text-red-600' : 'text-gray-600'
+          }`}>
+            {message}
+          </p>
         </div>
 
         {/* Progress Bar */}
         <div className="mb-6">
           <div className="flex justify-between text-xs text-gray-500 mb-1">
             <span>Progress</span>
-            <span>{progress}%</span>
+            <span>{hasError ? '0%' : `${progress}%`}</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-500 ease-out"
-              style={{ width: `${progress}%` }}
+              className={`h-2 rounded-full transition-all duration-500 ease-out ${
+                hasError ? 'bg-red-500' : 'bg-blue-600'
+              }`}
+              style={{ width: hasError ? '0%' : `${progress}%` }}
             />
           </div>
         </div>
@@ -133,23 +164,26 @@ export const ChainOfThoughtsSidebar: React.FC<ChainOfThoughtsSidebarProps> = ({
           {Object.values(THOUGHT_STEPS).map((step) => {
             const isActive = displayedSteps.includes(step.id);
             const isCurrent = currentStep === step.id;
-            const isCompleted = displayedSteps.includes(step.id) && !isCurrent;
+            const isCompleted = displayedSteps.includes(step.id) && !isCurrent && !hasError;
+            const isError = hasError && step.id === "error";
 
             return (
               <div
                 key={step.id}
                 className={`flex items-center space-x-3 p-3 rounded-lg transition-all duration-300 ${
-                  isCurrent
+                  isError
+                    ? "bg-red-50 border border-red-200"
+                    : isCurrent && !hasError
                     ? "bg-blue-50 border border-blue-200"
                     : isCompleted
                     ? "bg-green-50 border border-green-200"
                     : "bg-gray-50 border border-gray-200"
-                } ${isAnimating && isCurrent ? "animate-pulse" : ""}`}
+                } ${isAnimating && isCurrent && !hasError ? "animate-pulse" : ""}`}
               >
                 {/* Icon */}
                 <div
                   className={`text-xl transition-all duration-300 ${
-                    isCurrent ? "animate-bounce" : ""
+                    isCurrent && !hasError ? "animate-bounce" : ""
                   }`}
                 >
                   {step.icon}
@@ -160,7 +194,9 @@ export const ChainOfThoughtsSidebar: React.FC<ChainOfThoughtsSidebarProps> = ({
                   <div className="flex items-center space-x-2">
                     <h4
                       className={`font-medium text-sm ${
-                        isCurrent
+                        isError
+                          ? "text-red-900"
+                          : isCurrent && !hasError
                           ? "text-blue-900"
                           : isCompleted
                           ? "text-green-900"
@@ -169,7 +205,7 @@ export const ChainOfThoughtsSidebar: React.FC<ChainOfThoughtsSidebarProps> = ({
                     >
                       {step.label}
                     </h4>
-                    {isCurrent && (
+                    {isCurrent && !hasError && (
                       <div className="flex space-x-1">
                         <div
                           className="w-1 h-1 bg-blue-600 rounded-full animate-bounce"
@@ -188,7 +224,9 @@ export const ChainOfThoughtsSidebar: React.FC<ChainOfThoughtsSidebarProps> = ({
                   </div>
                   <p
                     className={`text-xs ${
-                      isCurrent
+                      isError
+                        ? "text-red-700"
+                        : isCurrent && !hasError
                         ? "text-blue-700"
                         : isCompleted
                         ? "text-green-700"
@@ -206,9 +244,14 @@ export const ChainOfThoughtsSidebar: React.FC<ChainOfThoughtsSidebarProps> = ({
                       <Check className="w-3 h-3 text-white" />
                     </div>
                   )}
-                  {isCurrent && (
+                  {isCurrent && !hasError && (
                     <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
                       <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                    </div>
+                  )}
+                  {isError && (
+                    <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                      <AlertCircle className="w-3 h-3 text-white" />
                     </div>
                   )}
                 </div>
@@ -219,9 +262,25 @@ export const ChainOfThoughtsSidebar: React.FC<ChainOfThoughtsSidebarProps> = ({
 
         {/* Footer */}
         <div className="mt-6 text-center">
-          <p className="text-xs text-gray-500">
-            This may take a few moments...
-          </p>
+          {hasError ? (
+            <div className="space-y-3">
+              <p className="text-xs text-red-600 font-medium">
+                Generation failed. Please try again.
+              </p>
+              {onClose && (
+                <button
+                  onClick={onClose}
+                  className="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors"
+                >
+                  Close
+                </button>
+              )}
+            </div>
+          ) : (
+            <p className="text-xs text-gray-500">
+              This may take a few moments...
+            </p>
+          )}
         </div>
       </div>
     </div>

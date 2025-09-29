@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/ToastProvider";
 import { OPERATION_MESSAGES } from "@/lib/api/errorHandler";
 import { Button } from "@/components/ui/button";
 import { useRealtimeState } from "@/contexts/RealtimeStateContext";
+import { CostDisplay } from "@/components/ui/CostDisplay";
 
 export const CampaignDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -359,6 +360,15 @@ export const CampaignDashboard: React.FC = () => {
                         {campaign.contentPieces.length !== 1 ? "s" : ""}
                       </span>
                     )}
+                </div>
+                
+                <div className="flex items-center justify-between mb-2">
+                  <CostDisplay 
+                    cost={campaign.totalCost || 0} 
+                    type="campaign" 
+                    size="sm" 
+                    showLabel={true}
+                  />
                 </div>
               </div>
               <div>

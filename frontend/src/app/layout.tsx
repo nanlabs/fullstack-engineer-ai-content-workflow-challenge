@@ -28,7 +28,7 @@ export default function RootLayout({
           <WebSocketProvider>
             <RealtimeStateProvider>
               {children}
-              <ConnectionDebugger />
+              {/* <ConnectionDebugger /> */}
             </RealtimeStateProvider>
           </WebSocketProvider>
         </ToastProvider>

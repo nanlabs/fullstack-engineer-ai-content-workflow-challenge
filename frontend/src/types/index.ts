@@ -7,6 +7,7 @@ export interface Campaign {
   updatedAt: string;
   contentPieces?: ContentPiece[];
   documents?: Document[];
+  totalCost?: number;
 }
 
 export interface ContentPiece {
@@ -20,6 +21,7 @@ export interface ContentPiece {
   campaignId: string;
   campaign?: Campaign;
   drafts?: Draft[];
+  totalCost?: number;
 }
 
 export interface Draft {
@@ -34,6 +36,7 @@ export interface Draft {
   updatedAt: string;
   contentPieceId: string;
   contentPiece?: ContentPiece;
+  cost?: number;
 }
 
 export interface Document {

@@ -2,15 +2,19 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { WebsocketsGateway } from '../websockets/websockets.gateway';
 import { ChatOpenAI } from '@langchain/openai';
+import { ChatAnthropic } from '@langchain/anthropic';
+import { BaseLanguageModel } from '@langchain/core/language_models/base';
 import { PromptTemplate } from '@langchain/core/prompts';
 import { WebSearchService } from './web-search.service';
 import { DocumentsService } from '../documents/documents.service';
+import { AiCostService, TokenUsage } from './ai-cost.service';
 
 export interface GenerationRequest {
   contentPieceId: string;
   prompt: string;
   contentType?: string;
   language?: string;
+  modelName?: string; // Allow model selection
   campaignContext?: {
     name: string;
     description?: string;
@@ -27,17 +31,45 @@ export interface AgentContext {
 @Injectable()
 export class AgentOrchestrationService {
   private readonly logger = new Logger(AgentOrchestrationService.name);
-  private openai: ChatOpenAI;
+  private totalTokenUsage: TokenUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
 
   constructor(
     private prisma: PrismaService,
     private websocketsGateway: WebsocketsGateway,
     private webSearchService: WebSearchService,
     private documentsService: DocumentsService,
-  ) {
-    this.openai = new ChatOpenAI({
+    private aiCostService: AiCostService,
+  ) {}
+
+  /**
+   * Create a language model instance with the specified model
+   */
+  private createLanguageModel(modelName: string): BaseLanguageModel {
+    const model = modelName || 'gpt-3.5-turbo';
+    
+    // Check if it's an Anthropic model
+    if (model.startsWith('claude-')) {
+      if (!process.env.ANTHROPIC_API_KEY) {
+        throw new Error('ANTHROPIC_API_KEY environment variable is required for Claude models');
+      }
+      
+      this.logger.log(`Creating Anthropic model: ${model}`);
+      return new ChatAnthropic({
+        anthropicApiKey: process.env.ANTHROPIC_API_KEY,
+        modelName: model,
+        temperature: 0.7,
+      });
+    }
+    
+    // Default to OpenAI
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY environment variable is required for OpenAI models');
+    }
+    
+    this.logger.log(`Creating OpenAI model: ${model}`);
+    return new ChatOpenAI({
       openAIApiKey: process.env.OPENAI_API_KEY,
-      modelName: 'gpt-3.5-turbo',
+      modelName: model,
       temperature: 0.7,
     });
   }
@@ -45,11 +77,18 @@ export class AgentOrchestrationService {
   async orchestrateGeneration(request: GenerationRequest) {
     try {
       this.logger.log(`Starting agent orchestration for content piece: ${request.contentPieceId}`);
+      
+      // Reset token usage tracking
+      this.totalTokenUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+      
+      // Determine model to use (default to gpt-3.5-turbo if not specified)
+      const modelName = request.modelName || 'gpt-3.5-turbo';
+      this.logger.log(`Using AI model: ${modelName}`);
 
       // Emit: Starting analysis
       this.websocketsGateway.notifyChainOfThoughts(request.contentPieceId, {
         step: 'analyzing',
-        message: 'Analyzing your request...',
+        message: `Analyzing your request with ${modelName}...`,
         progress: 10
       });
 
@@ -105,7 +144,7 @@ export class AgentOrchestrationService {
       await new Promise(resolve => setTimeout(resolve, 300));
 
       // Step 1: Orchestrator Agent - Analyze request and decide workflow
-      const orchestratorDecision = await this.orchestratorAgent(context);
+      const orchestratorDecision = await this.orchestratorAgent(context, modelName);
       
       // Step 2: Execute workflow based on orchestrator decision
       let finalContext = context;
@@ -124,7 +163,7 @@ export class AgentOrchestrationService {
         await new Promise(resolve => setTimeout(resolve, 500));
         
         // Phase 2: Implement research agent
-        finalContext = await this.researchAgent(context);
+        finalContext = await this.researchAgent(context, modelName);
       }
 
       // Emit: Content generation
@@ -138,18 +177,24 @@ export class AgentOrchestrationService {
       await new Promise(resolve => setTimeout(resolve, 300));
 
       // Step 3: Draft Agent - Generate the content
-      const draftResult = await this.draftAgent(finalContext);
+      const draftResult = await this.draftAgent(finalContext, modelName);
 
-      // Step 4: Create draft in database
+      // Step 4: Calculate cost and create draft in database
+      const costCalculation = this.aiCostService.calculateCost(modelName, this.totalTokenUsage);
+      
       const draft = await this.prisma.draft.create({
         data: {
           content: draftResult.content,
           language: request.language || contentPiece.language,
           reviewState: 'SUGGESTED_BY_AI',
-          aiModel: 'openai-gpt-3.5-turbo-orchestrated',
+          aiModel: modelName,
+          cost: costCalculation.totalCost,
           contentPieceId: request.contentPieceId,
         },
       });
+
+      // Update cost aggregations
+      await this.aiCostService.updateDraftCost(draft.id, costCalculation);
 
       // Emit: Completion
       this.websocketsGateway.notifyChainOfThoughts(request.contentPieceId, {
@@ -180,7 +225,34 @@ export class AgentOrchestrationService {
     }
   }
 
-  private async orchestratorAgent(context: AgentContext): Promise<{ needsResearch: boolean; reasoning: string }> {
+  /**
+   * Track token usage from LLM responses
+   */
+  private trackTokenUsage(response: any): void {
+    try {
+      if (response.response_metadata?.token_usage) {
+        const usage = response.response_metadata.token_usage;
+        this.totalTokenUsage.promptTokens += usage.prompt_tokens || 0;
+        this.totalTokenUsage.completionTokens += usage.completion_tokens || 0;
+        this.totalTokenUsage.totalTokens += usage.total_tokens || 0;
+        
+        this.logger.log(`Token usage tracked - Prompt: ${usage.prompt_tokens}, Completion: ${usage.completion_tokens}, Total: ${usage.total_tokens}`);
+      } else {
+        // Fallback: estimate tokens (rough approximation: 1 token ≈ 4 characters)
+        const responseText = typeof response === 'string' ? response : 
+          Array.isArray(response.content) ? (response.content[0] as any).text : response.content || '';
+        const estimatedTokens = Math.ceil(responseText.length / 4);
+        this.totalTokenUsage.completionTokens += estimatedTokens;
+        this.totalTokenUsage.totalTokens += estimatedTokens;
+        
+        this.logger.log(`Estimated token usage - Completion: ${estimatedTokens} (estimated from text length)`);
+      }
+    } catch (error) {
+      this.logger.error('Error tracking token usage:', error);
+    }
+  }
+
+  private async orchestratorAgent(context: AgentContext, modelName: string): Promise<{ needsResearch: boolean; reasoning: string }> {
     const orchestratorPrompt = PromptTemplate.fromTemplate(`
 You are an AI Orchestrator Agent responsible for analyzing content generation requests and deciding the optimal workflow.
 
@@ -210,7 +282,8 @@ Provide your analysis in the following JSON format:
 ANALYSIS:
 `);
 
-    const chain = orchestratorPrompt.pipe(this.openai);
+    const llm = this.createLanguageModel(modelName);
+    const chain = orchestratorPrompt.pipe(llm);
 
     try {
       const response = await chain.invoke({
@@ -220,6 +293,11 @@ ANALYSIS:
         userPrompt: context.originalRequest.prompt,
         description: context.contentPiece.description || 'No description provided',
       });
+
+      console.log('= = = Orchestrator response = = = ', response);
+
+      // Track token usage
+      this.trackTokenUsage(response);
 
       // Parse the JSON response
       const responseContent = typeof response === 'string' ? response : 
@@ -235,7 +313,7 @@ ANALYSIS:
     }
   }
 
-  private async draftAgent(context: AgentContext): Promise<{ content: string }> {
+  private async draftAgent(context: AgentContext, modelName: string): Promise<{ content: string }> {
     const draftPrompt = PromptTemplate.fromTemplate(`
 You are a professional content writer for ACME GLOBAL MEDIA Marketing Agency.
 ACME GLOBAL MEDIA produces ads, micro-sites, and marketing materials in multiple languages.
@@ -268,7 +346,8 @@ INSTRUCTIONS:
 CONTENT:
 `);
 
-    const chain = draftPrompt.pipe(this.openai);
+    const llm = this.createLanguageModel(modelName);
+    const chain = draftPrompt.pipe(llm);
 
     try {
       const response = await chain.invoke({
@@ -281,6 +360,9 @@ CONTENT:
         documentContext: context.documentContext || 'No document context available',
       });
 
+      // Track token usage
+      this.trackTokenUsage(response);
+
       const content = typeof response === 'string' ? response : 
         Array.isArray(response.content) ? (response.content[0] as any).text : response.content;
       this.logger.log('Draft agent completed successfully');
@@ -291,7 +373,7 @@ CONTENT:
     }
   }
 
-  private async researchAgent(context: AgentContext): Promise<AgentContext> {
+  private async researchAgent(context: AgentContext, modelName: string): Promise<AgentContext> {
     const researchPrompt = PromptTemplate.fromTemplate(`
 You are a Research Agent responsible for gathering relevant external information to enhance content generation.
 
@@ -319,7 +401,8 @@ Provide your analysis in the following JSON format:
 ANALYSIS:
 `);
 
-    const chain = researchPrompt.pipe(this.openai);
+    const llm = this.createLanguageModel(modelName);
+    const chain = researchPrompt.pipe(llm);
 
     try {
       const response = await chain.invoke({

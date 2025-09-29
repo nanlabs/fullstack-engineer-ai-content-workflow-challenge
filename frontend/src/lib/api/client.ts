@@ -142,6 +142,7 @@ export const aiGenerationApi = {
     prompt: string;
     contentType?: string;
     language?: string;
+    modelName?: string;
   }): Promise<ApiResponse> => {
     return apiRequest(
       `${apiConfig.baseURL}/ai-generation/generate-draft`,
@@ -151,6 +152,33 @@ export const aiGenerationApi = {
         body: JSON.stringify(data),
       },
       OPERATION_MESSAGES.GENERATE_DRAFT
+    );
+  },
+
+  // Get available AI models
+  getAvailableModels: async (): Promise<ApiResponse> => {
+    return apiRequest(
+      `${apiConfig.baseURL}/ai-generation/models`,
+      { method: "GET" },
+      OPERATION_MESSAGES.LOAD_AI_MODELS
+    );
+  },
+
+  // Get campaign cost summary
+  getCampaignCostSummary: async (campaignId: string): Promise<ApiResponse> => {
+    return apiRequest(
+      `${apiConfig.baseURL}/ai-generation/cost-summary/campaign/${campaignId}`,
+      { method: "GET" },
+      OPERATION_MESSAGES.LOAD_COST_SUMMARY
+    );
+  },
+
+  // Get global cost statistics
+  getGlobalCostStats: async (): Promise<ApiResponse> => {
+    return apiRequest(
+      `${apiConfig.baseURL}/ai-generation/cost-summary/global`,
+      { method: "GET" },
+      OPERATION_MESSAGES.LOAD_GLOBAL_COST_STATS
     );
   },
 };

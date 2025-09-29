@@ -12,6 +12,7 @@ import { OPERATION_MESSAGES } from "@/lib/api/errorHandler";
 import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRealtimeState } from "@/contexts/RealtimeStateContext";
+import { CostDisplay } from "@/components/ui/CostDisplay";
 
 interface ContentPieceCardProps {
   contentPiece: ContentPiece;
@@ -176,6 +177,13 @@ export const ContentPieceCard: React.FC<ContentPieceCardProps> = ({
           )}
         </div>
         <div className="flex space-x-2 items-center justify-center border bg-gray-50/50 border-gray-300 rounded-md px-2 py-1">
+          <CostDisplay 
+            cost={contentPiece.totalCost || 0} 
+            type="content-piece" 
+            size="sm" 
+            showLabel={false}
+          />
+          
           <button
             onClick={() => setShowEditForm(true)}
             className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 text-sm py-1 transition-all rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-1 cursor-pointer"

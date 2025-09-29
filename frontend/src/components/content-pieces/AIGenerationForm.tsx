@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ModelSelector } from "@/components/ai/ModelSelector";
 
 interface AIGenerationFormProps {
   contentPiece: ContentPiece;
@@ -21,6 +22,7 @@ interface AIGenerationFormProps {
     prompt: string;
     contentType?: string;
     language?: string;
+    modelName?: string;
   }) => void;
   onCancel: () => void;
 }
@@ -34,6 +36,7 @@ export const AIGenerationForm: React.FC<AIGenerationFormProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [contentType, setContentType] = useState(contentPiece.contentType);
   const [language, setLanguage] = useState(contentPiece.language);
+  const [selectedModel, setSelectedModel] = useState<string>("gpt-3.5-turbo");
   const { showChainOfThoughts, hideChainOfThoughts, ...chainOfThoughtsState } =
     useChainOfThoughts();
 
@@ -53,6 +56,7 @@ export const AIGenerationForm: React.FC<AIGenerationFormProps> = ({
         contentType:
           contentType !== contentPiece.contentType ? contentType : undefined,
         language: language !== contentPiece.language ? language : undefined,
+        modelName: selectedModel !== "gpt-3.5-turbo" ? selectedModel : undefined,
       });
       setPrompt("");
     } finally {
@@ -134,7 +138,7 @@ export const AIGenerationForm: React.FC<AIGenerationFormProps> = ({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <div>
             <label
               htmlFor="contentType"
@@ -176,6 +180,15 @@ export const AIGenerationForm: React.FC<AIGenerationFormProps> = ({
                 <SelectItem value="pt">Portuguese</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div>
+            <ModelSelector
+              value={selectedModel}
+              onValueChange={setSelectedModel}
+              disabled={isGenerating}
+              showCostInfo={true}
+            />
           </div>
         </div>
 
@@ -223,6 +236,7 @@ export const AIGenerationForm: React.FC<AIGenerationFormProps> = ({
         message={chainOfThoughtsState.message}
         progress={chainOfThoughtsState.progress}
         onComplete={hideChainOfThoughts}
+        onClose={hideChainOfThoughts}
       />
     </div>
   );

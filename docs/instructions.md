@@ -3,6 +3,11 @@
 ## 📋 Overview
 This project implements a fullstack system for managing AI-powered content creation and review workflows. The system allows users to create campaigns, generate AI drafts, and manage a human-in-the-loop review process.
 
+## 📚 Documentation
+
+- **[Setup & Usage Guide](SETUP_AND_USAGE.md)** - Complete setup instructions, API testing with cURL, and usage guide
+- **[Architecture & Technical Decisions](ARCHITECTURE_AND_DECISIONS.md)** - Detailed architecture decisions, design patterns, and technical rationale
+
 ## 🏗️ Architecture
 
 ### Tech Stack

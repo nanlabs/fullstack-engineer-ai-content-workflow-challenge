@@ -33,6 +33,8 @@ model Campaign {
   contentPieces ContentPiece[]
   documents     Document[]
 
+  totalCost Float @default(0)
+
   @@map("campaigns")
 }
 
@@ -52,20 +54,23 @@ model ContentPiece {
 
   drafts Draft[]
 
+  totalCost Float @default(0)
+
   @@map("content_pieces")
 }
 
 // AI-generated drafts
 model Draft {
-  id          String      @id @default(cuid())
-  content     String
-  language    String      @default("en") // Original language of the draft
-  translations Json?      // Translations: { "es": "...", "fr": "...", "de": "..." }
+  id                String      @id @default(cuid())
+  content           String
+  language          String      @default("en") // Original language of the draft
+  translations      Json? // Translations: { "es": "...", "fr": "...", "de": "..." }
   translationStates Json? // Individual review states: { "es": "APPROVED", "fr": "REJECTED" }
-  reviewState ReviewState @default(DRAFT)
-  aiModel     String? // "openai", "anthropic", etc.
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  reviewState       ReviewState @default(DRAFT)
+  aiModel           String? // "openai", "anthropic", etc.
+  cost              Float       @default(0)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 
   // Relations
   contentPieceId String
@@ -76,15 +81,15 @@ model Draft {
 
 // Document model for RAG-based context enrichment
 model Document {
-  id          String   @id @default(cuid())
-  filename    String
-  originalName String  // Original filename from upload
-  fileType    String   // "pdf", "txt", etc.
-  fileSize    Int      // File size in bytes
-  content     String   // Extracted text content
-  chunks      Json?    // Document chunks for vector search: [{ "text": "...", "embedding": [...], "metadata": {...} }]
-  uploadedAt  DateTime @default(now())
-  processedAt DateTime? // When document was processed for chunks/embeddings
+  id           String    @id @default(cuid())
+  filename     String
+  originalName String // Original filename from upload
+  fileType     String // "pdf", "txt", etc.
+  fileSize     Int // File size in bytes
+  content      String // Extracted text content
+  chunks       Json? // Document chunks for vector search: [{ "text": "...", "embedding": [...], "metadata": {...} }]
+  uploadedAt   DateTime  @default(now())
+  processedAt  DateTime? // When document was processed for chunks/embeddings
 
   // Relations
   campaignId String

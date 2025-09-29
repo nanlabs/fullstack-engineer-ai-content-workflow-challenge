@@ -104,6 +104,18 @@ export const OPERATION_MESSAGES = {
         success: "Content pieces loaded successfully!",
         error: "Failed to load content pieces. Please try again.",
       },
+      LOAD_AI_MODELS: {
+        success: "AI models loaded successfully!",
+        error: "Failed to load AI models. Please try again.",
+      },
+      LOAD_COST_SUMMARY: {
+        success: "Cost summary loaded successfully!",
+        error: "Failed to load cost summary. Please try again.",
+      },
+      LOAD_GLOBAL_COST_STATS: {
+        success: "Global cost statistics loaded successfully!",
+        error: "Failed to load global cost statistics. Please try again.",
+      },
     };
 
 // Get user-friendly error message from status code
