@@ -1,4 +1,5 @@
-import { PrismaClient, UserRole, CampaignStatus, ContentStatus, ContentType, ReviewStatus } from '@prisma/client';
+import { PrismaClient, CampaignStatus, ContentStatus, ContentType, ReviewStatus } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
@@ -7,7 +8,6 @@ async function main() {
 
   // Clean existing data in development
   if (process.env.NODE_ENV === 'development') {
-    await prisma.auditLog.deleteMany();
     await prisma.review.deleteMany();
     await prisma.translation.deleteMany();
     await prisma.contentPiece.deleteMany();
@@ -16,11 +16,13 @@ async function main() {
   }
 
   // Create users
+  const hashedPassword = await bcrypt.hash('password123', 10);
+
   const admin = await prisma.user.create({
     data: {
       name: 'Admin User',
       email: 'admin@acmeglobalmedia.com',
-      role: UserRole.ADMIN,
+      password: hashedPassword,
     },
   });
 
@@ -28,7 +30,7 @@ async function main() {
     data: {
       name: 'Sarah Johnson',
       email: 'sarah.johnson@acmeglobalmedia.com',
-      role: UserRole.CREATOR,
+      password: hashedPassword,
     },
   });
 
@@ -36,7 +38,7 @@ async function main() {
     data: {
       name: 'Mike Rodriguez',
       email: 'mike.rodriguez@acmeglobalmedia.com',
-      role: UserRole.CREATOR,
+      password: hashedPassword,
     },
   });
 
@@ -44,7 +46,7 @@ async function main() {
     data: {
       name: 'Emily Chen',
       email: 'emily.chen@acmeglobalmedia.com',
-      role: UserRole.REVIEWER,
+      password: hashedPassword,
     },
   });
 
@@ -52,7 +54,7 @@ async function main() {
     data: {
       name: 'David Wilson',
       email: 'david.wilson@acmeglobalmedia.com',
-      role: UserRole.REVIEWER,
+      password: hashedPassword,
     },
   });
 
@@ -92,6 +94,7 @@ async function main() {
   const socialPost1 = await prisma.contentPiece.create({
     data: {
       campaignId: campaign1.id,
+      createdById: creator1.id,
       title: 'Instagram Summer Announcement',
       type: ContentType.SOCIAL_POST,
       content: '🌞 Summer is here! Discover our new collection designed to make your summer unforgettable. #SummerVibes #NewCollection',
@@ -107,6 +110,7 @@ async function main() {
   const emailSubject1 = await prisma.contentPiece.create({
     data: {
       campaignId: campaign1.id,
+      createdById: creator1.id,
       title: 'Launch Day Email Subject',
       type: ContentType.EMAIL_SUBJECT,
       content: 'Your Perfect Summer Starts Now - 20% Off New Arrivals!',
@@ -122,6 +126,7 @@ async function main() {
   const blogPost1 = await prisma.contentPiece.create({
     data: {
       campaignId: campaign1.id,
+      createdById: creator1.id,
       title: 'Summer Trends Blog Post',
       type: ContentType.BLOG_POST,
       content: 'As the warm weather approaches, it\'s time to refresh your style with the latest summer trends. Our new collection combines comfort with contemporary design...',
@@ -135,6 +140,7 @@ async function main() {
   const adCopy1 = await prisma.contentPiece.create({
     data: {
       campaignId: campaign2.id,
+      createdById: creator2.id,
       title: 'Black Friday Main Ad',
       type: ContentType.AD_COPY,
       content: 'BIGGEST SALE OF THE YEAR! Up to 70% off everything. Black Friday exclusive deals you can\'t miss. Shop now before it\'s too late!',
@@ -150,6 +156,7 @@ async function main() {
   const emailBody1 = await prisma.contentPiece.create({
     data: {
       campaignId: campaign2.id,
+      createdById: creator2.id,
       title: 'Black Friday Email Campaign',
       type: ContentType.EMAIL_BODY,
       content: 'Dear Valued Customer,\n\nThe wait is over! Our exclusive Black Friday sale is now live...',

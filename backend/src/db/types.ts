@@ -1,110 +1,49 @@
-// Generated types from Prisma schema
-// This file will be auto-generated when Prisma client is generated
+import { 
+  CampaignStatus, 
+  ContentStatus, 
+  ContentType, 
+  ReviewStatus, 
+  TranslationStatus,
+  User as PrismaUser,
+  Campaign as PrismaCampaign,
+  ContentPiece as PrismaContentPiece,
+  Review as PrismaReview,
+  Translation as PrismaTranslation
+} from '@prisma/client';
 
-export enum CampaignStatus {
-  DRAFT = 'DRAFT',
-  ACTIVE = 'ACTIVE',
-  COMPLETED = 'COMPLETED',
-  ARCHIVED = 'ARCHIVED'
+export { 
+  CampaignStatus, 
+  ContentStatus, 
+  ContentType, 
+  ReviewStatus, 
+  TranslationStatus 
+};
+
+export interface User extends Omit<PrismaUser, 'password'> {
+  // User without sensitive password field for API responses
 }
 
-export enum ContentStatus {
-  DRAFT = 'DRAFT',
-  AI_GENERATED = 'AI_GENERATED',
-  REVIEW = 'REVIEW',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED'
-}
-
-export enum ContentType {
-  SOCIAL_POST = 'SOCIAL_POST',
-  EMAIL_SUBJECT = 'EMAIL_SUBJECT',
-  EMAIL_BODY = 'EMAIL_BODY',
-  PRODUCT_DESCRIPTION = 'PRODUCT_DESCRIPTION',
-  BLOG_POST = 'BLOG_POST',
-  AD_COPY = 'AD_COPY',
-  AD_HEADLINE = 'AD_HEADLINE'
-}
-
-export enum ReviewStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  CHANGES_REQUESTED = 'CHANGES_REQUESTED'
-}
-
-export enum UserRole {
-  CREATOR = 'CREATOR',
-  REVIEWER = 'REVIEWER',
-  ADMIN = 'ADMIN'
-}
-
-export enum TranslationStatus {
-  PENDING = 'PENDING',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
-  REVIEWED = 'REVIEWED'
-}
-
-// Base entity interfaces
-export interface BaseEntity {
-  id: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface User extends BaseEntity {
-  name: string;
-  email: string;
-  role: UserRole;
-}
-
-export interface Campaign extends BaseEntity {
-  name: string;
-  description?: string;
-  status: CampaignStatus;
-  createdById: string;
+export interface Campaign extends PrismaCampaign {
   createdBy?: User;
   contentPieces?: ContentPiece[];
 }
 
-export interface ContentPiece extends BaseEntity {
-  campaignId: string;
-  title: string;
-  type: ContentType;
-  content?: string;
-  status: ContentStatus;
-  language: string;
-  aiGenerated: boolean;
-  promptUsed?: string;
-  aiModelUsed?: string;
-  tokensUsed?: number;
+export interface ContentPiece extends PrismaContentPiece {
   campaign?: Campaign;
+  createdBy?: User;
   translations?: Translation[];
   reviews?: Review[];
 }
 
-export interface Translation extends BaseEntity {
-  contentPieceId: string;
-  language: string;
-  content: string;
-  status: TranslationStatus;
-  aiModelUsed?: string;
-  tokensUsed?: number;
-  contentPiece?: ContentPiece;
-}
-
-export interface Review extends BaseEntity {
-  contentPieceId: string;
-  reviewerId: string;
-  status: ReviewStatus;
-  comments?: string;
-  reviewedAt?: Date;
+export interface Review extends PrismaReview {
   contentPiece?: ContentPiece;
   reviewer?: User;
 }
 
-// Utility types for API operations
+export interface Translation extends PrismaTranslation {
+  contentPiece?: ContentPiece;
+}
+
 export interface CreateCampaignInput {
   name: string;
   description?: string;
@@ -117,116 +56,71 @@ export interface UpdateCampaignInput {
   status?: CampaignStatus;
 }
 
-export interface CreateContentPieceInput {
-  campaignId: string;
+export interface CreateContentForCampaignInput {
   title: string;
   type: ContentType;
   content?: string;
+  status?: ContentStatus;
   language?: string;
+  aiGenerated?: boolean;
+  promptUsed?: string;
+  aiModelUsed?: string;
+  tokensUsed?: number;
 }
 
-export interface UpdateContentPieceInput {
+export interface UpdateContentInput {
   title?: string;
   content?: string;
   status?: ContentStatus;
+  language?: string;
+  aiGenerated?: boolean;
+  promptUsed?: string;
+  aiModelUsed?: string;
+  tokensUsed?: number;
 }
 
 export interface CreateReviewInput {
-  contentPieceId: string;
-  comments?: string;
-}
-
-export interface UpdateReviewInput {
   status: ReviewStatus;
   comments?: string;
 }
 
+export interface UpdateReviewInput {
+  status?: ReviewStatus;
+  comments?: string;
+}
+
 export interface CreateTranslationInput {
-  contentPieceId: string;
   language: string;
   content: string;
+  status?: TranslationStatus;
   aiModelUsed?: string;
+  tokensUsed?: number;
 }
 
-// API Response types
 export interface CampaignWithStats extends Campaign {
-  _count: {
+  _count?: {
     contentPieces: number;
   };
-  contentPiecesStats: {
-    draft: number;
-    aiGenerated: number;
-    review: number;
-    approved: number;
-    rejected: number;
+  contentPiecesStats?: {
+    [ContentStatus.DRAFT]: number;
+    [ContentStatus.AI_GENERATED]: number;
+    [ContentStatus.REVIEW]: number;
+    [ContentStatus.APPROVED]: number;
+    [ContentStatus.REJECTED]: number;
   };
 }
 
-export interface ContentPieceWithRelations extends ContentPiece {
+export interface ContentWithRelations extends ContentPiece {
   campaign: Campaign;
-  reviews: Review[];
-  translations: Translation[];
+  createdBy: User;
+  reviews?: Review[];
+  translations?: Translation[];
 }
-
-// AI Service types
-export interface AIGenerationRequest {
-  type: ContentType;
-  prompt: string;
-  model?: 'gpt-4' | 'gpt-3.5-turbo' | 'claude-3' | 'claude-instant';
-  temperature?: number;
-  maxTokens?: number;
-}
-
-export interface AIGenerationResponse {
-  content: string;
-  model: string;
-  tokensUsed: number;
-  finishReason?: string;
-}
-
-export interface TranslationRequest {
-  content: string;
-  targetLanguage: string;
-  sourceLanguage?: string;
-  model?: string;
-}
-
-export interface TranslationResponse {
-  translatedContent: string;
-  model: string;
-  tokensUsed: number;
-  confidence?: number;
-}
-
-// Pagination types
-export interface PaginationParams {
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasNext: boolean;
-    hasPrev: boolean;
-  };
-}
-
-// Filter types
 export interface CampaignFilters {
   status?: CampaignStatus;
-  createdById?: string;
-  dateFrom?: Date;
-  dateTo?: Date;
 }
 
-export interface ContentPieceFilters {
+export interface ContentFilters {
   campaignId?: string;
   status?: ContentStatus;
   type?: ContentType;
@@ -236,6 +130,39 @@ export interface ContentPieceFilters {
 
 export interface ReviewFilters {
   status?: ReviewStatus;
-  reviewerId?: string;
   contentPieceId?: string;
+}
+
+export interface TranslationFilters {
+  language?: string;
+  status?: TranslationStatus;
+}
+
+export interface AIGenerationRequest {
+  type: ContentType;
+  prompt: string;
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+}
+
+export interface AIGenerationResponse {
+  content: string;
+  model: string;
+  tokensUsed: number;
+}
+
+export interface TranslationRequest {
+  content: string;
+  targetLanguages: string[];
+  model?: string;
+}
+
+export interface TranslationResponse {
+  translations: Array<{
+    language: string;
+    content: string;
+    model: string;
+    tokensUsed: number;
+  }>;
 }

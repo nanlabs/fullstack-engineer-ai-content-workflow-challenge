@@ -43,12 +43,6 @@ enum ReviewStatus {
   CHANGES_REQUESTED
 }
 
-enum UserRole {
-  CREATOR
-  REVIEWER
-  ADMIN
-}
-
 enum TranslationStatus {
   PENDING
   COMPLETED
@@ -61,16 +55,16 @@ model User {
   id        String   @id @default(uuid()) @db.Uuid
   name      String
   email     String   @unique
-  role      UserRole @default(CREATOR)
+  password  String   
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   campaignsCreated Campaign[]
+  contentCreated   ContentPiece[] @relation("ContentCreator")
   reviews          Review[]
 
   @@map("users")
   @@index([email])
-  @@index([role])
 }
 
 model Campaign {
@@ -94,6 +88,7 @@ model Campaign {
 model ContentPiece {
   id           String        @id @default(uuid()) @db.Uuid
   campaignId   String        @map("campaign_id") @db.Uuid
+  createdById  String        @map("created_by_id") @db.Uuid
   title        String
   type         ContentType
   content      String?       @db.Text
@@ -107,11 +102,13 @@ model ContentPiece {
   updatedAt    DateTime      @updatedAt @map("updated_at")
 
   campaign     Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  createdBy    User          @relation("ContentCreator", fields: [createdById], references: [id], onDelete: Cascade)
   translations Translation[]
   reviews      Review[]
 
   @@map("content_pieces")
   @@index([campaignId])
+  @@index([createdById])
   @@index([status])
   @@index([type])
   @@index([language])
