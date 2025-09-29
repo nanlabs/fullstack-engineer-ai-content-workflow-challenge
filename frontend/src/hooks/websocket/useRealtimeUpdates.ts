@@ -4,7 +4,8 @@ import { useToast } from '@/components/ui/ToastProvider';
 import { 
   WebSocketCampaignEvent, 
   WebSocketContentPieceEvent, 
-  WebSocketDraftEvent 
+  WebSocketDraftEvent,
+  Document
 } from '@/types';
 
 interface RealtimeUpdateCallbacks {
