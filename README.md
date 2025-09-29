@@ -1,129 +1,202 @@
-# 🚀 Fullstack Engineer Challenge – AI Content Workflow
+# 🚀 ACME Global Media - AI Content Workflow System
 
-Welcome to the **Fullstack Engineer Challenge!** 🤖📝  
-In this challenge, you'll help the fictional company **ACME GLOBAL MEDIA** build a system to manage the **content creation and review workflow** for their international campaigns — powered by **AI**.
+A fullstack application for managing AI-powered content creation and review workflows for international marketing campaigns.
 
-## 🎯 Context
+## 🎯 Overview
 
-ACME GLOBAL MEDIA produces ads, micro-sites, and marketing materials in multiple languages.  
-Traditionally, creating and translating this content is slow and error-prone. They want to experiment with **LLMs** to:
+This system helps ACME Global Media streamline their content creation process by leveraging AI to:
 
-- Generate initial content drafts (headlines, product descriptions, etc.).
-- Translate and localize content into multiple languages.
-- Extract structured data (keywords, tone, sentiment).
-- Keep a **review workflow** where humans can accept, edit, or reject AI suggestions.
+- Generate initial content drafts (headlines, product descriptions, social posts, etc.)
+- Translate and localize content into multiple languages
+- Manage content review workflows (Draft → AI Generated → Reviewed → Approved/Rejected)
+- Provide real-time updates across all connected users
 
-Your task is to build a simple system to:
+## 🏗️ Architecture
 
-- Manage **campaigns** (each with multiple content pieces).
-- Generate **AI-powered drafts** for a content piece using OpenAI or Anthropic.
-- Provide **translation/localization** suggestions via AI.
-- Track a **review state** (Draft → Suggested by AI → Reviewed → Approved/Rejected).
-- Show updates to all users in real-time.
+### Backend
+- **Framework**: NestJS with TypeScript
+- **Database**: PostgreSQL with Prisma ORM
+- **API**: RESTful endpoints with WebSocket support for real-time updates
+- **AI Integration**: OpenAI SDK for content generation and translation
+- **Authentication**: JWT-based authentication with bcrypt password hashing
 
-## 📌 Requirements
+### Frontend
+- **Framework**: Next.js 15 with React 19
+- **Styling**: Tailwind CSS
+- **Real-time**: Socket.io client for live updates
+- **HTTP Client**: Axios for API communication
+- **Notifications**: React Hot Toast for user feedback
 
-### ⚙️ Tech Stack
+### Infrastructure
+- **Containerization**: Docker & Docker Compose
+- **Database Migration**: Prisma migrate with seeding
+- **Development**: Hot reload for both frontend and backend
 
-> ⚡ **Must Include** - Use the following technologies, aligned with our tech stack:
+## 🚀 Quick Start
 
-- **Backend:** You can use any stack you're comfortable with, but we recommend:
-  - TypeScript + NestJS (Fastify/Koa also valid)  
-  - Python + FastAPI (Flask/Django also valid)  
-  - Go + Fiber (Gin/Echo also valid)  
-- **API:** REST and/or GraphQL (justify your choice if only one)  
-- **Frontend:** React (Next.js, Remix, or Vite)  
-- **Database:** PostgreSQL (primary), MongoDB (optional if needed)  
-- **Containerization:** Docker (required)  
-- **AI Integrations:** OpenAI and/or Anthropic SDKs (required)  
-- **Bonus:** LangChain, Kafka, Redis, ArgoCD, Kubernetes  
+### Prerequisites
+- Docker and Docker Compose
+- Node.js 18+ (for local development)
+- OpenAI API key (required for AI features)
 
-### 📦 Deliverables
+### 1. Clone and Setup
 
-> 📥 **Your submission must be a Pull Request that includes:**
-
-- A **backend API** that supports:
-  - Creating a campaign and its content pieces.
-  - Generating AI drafts (titles, descriptions, translations).
-  - Updating the review state of content.
-  - Querying campaigns with their content and review states.
-- A **frontend built with React** to:
-  - Display a campaign dashboard.
-  - Trigger AI draft generation.
-  - Provide UI to review/edit/approve/reject drafts.
-  - Show updates in real-time.
-- Docker setup to run the entire app locally.
-- A `README.md` with:
-  - Setup instructions.
-  - Tech decisions and tradeoffs.
-  - If applicable, reasoning for REST, GraphQL, or both.
-- A `docs/` folder for any diagrams, workflows, or extra notes.
-
-### 📂 Suggested Folder Structure
-
-```txt
-/
-├── .github/
-│   ├── workflows/
-│   └── PULL_REQUEST_TEMPLATE.md
-├── docs/
-├── backend/
-│   ├── src/
-│   ├── test/
-│   └── Dockerfile
-├── frontend/
-│   ├── src/
-│   ├── public/
-│   └── Dockerfile
-├── compose.yml
-├── .env.example
-├── README.md
-├── .prettierrc.js
-├── eslint.config.mjs
-└── ...
-````
-
-## 🌟 Nice to Have
-
-> 💡 **Bonus Points For:**
-
-* Using **LangChain** to chain AI tasks (generate → translate → summarize).
-* Supporting **multi-model comparison** (OpenAI vs Anthropic).
-* Real-time features with WebSockets, GraphQL Subscriptions, or SSE.
-* Automated testing & GitHub Actions CI pipeline.
-* Unit/integration tests for API or AI-related logic.
-* Using Redis/Kafka for async event messaging.
-* Deploy manifests for Kubernetes or ArgoCD.
-
-## 🧪 Submission Guidelines
-
-1. **Fork this repository.**
-2. **Create a feature branch** for your implementation.
-3. **Commit your changes** with meaningful commit messages.
-4. **Open a Pull Request** following the provided template.
-5. **Our team will review** and provide feedback.
-
-## ✅ Evaluation Criteria
-
-> 🔍 **What we'll be looking at:**
-
-* Ability to work **across the stack** (NestJS/FastAPI/Go + PostgreSQL + React).
-* Integration of **AI features** in a clean, modular way.
-* Clear **data modeling** and workflow management.
-* **Human-in-the-loop UX** for reviewing AI content.
-* Documentation of assumptions, tradeoffs, and AI design choices.
-* Creativity in using AI to enhance the workflow.
-
-## 💬 Final Notes
-
-This challenge is designed to be **flexible**. Some tips:
-
-* If you’re stronger in backend, focus there but add a simple UI.
-* If you’re stronger in frontend, ensure your backend has clean APIs.
-* Time-box your work — we want to see **how you think and solve problems**, not perfection.
-* Surprise us with creative uses of AI! 🎉
-
-## 🏁 Good luck and have fun building!
-
-
+```bash
+git clone <repository-url>
+cd fullstack-engineer-ai-content-workflow-challenge
 ```
+
+### 2. Environment Configuration
+
+Copy the environment template and configure your API keys:
+
+```bash
+cp .env.example .env
+```
+
+**Important**: Edit `.env` and add your OpenAI API key:
+```bash
+OPENAI_API_KEY="sk-your-actual-openai-api-key-here"
+```
+
+### 3. Start with Docker
+
+```bash
+# Build and start all services
+docker-compose up --build
+
+# Or run in detached mode
+docker-compose up --build -d
+```
+
+This will start:
+- **PostgreSQL**: `localhost:5432`
+- **Backend API**: `localhost:3001`
+- **Frontend App**: `localhost:3000`
+
+### 4. Access the Application
+
+- **Frontend**: http://localhost:3000
+- **API Documentation**: http://localhost:3001/api (Swagger UI)
+- **Database**: PostgreSQL on port 5432
+
+## 🛠️ Development Setup
+
+### Local Development (without Docker)
+
+1. **Start PostgreSQL**:
+```bash
+# Using Docker for just the database
+docker run --name postgres-dev -e POSTGRES_PASSWORD=password -e POSTGRES_DB=acme_content_workflow -p 5432:5432 -d postgres:15
+```
+
+2. **Backend Setup**:
+```bash
+cd backend
+npm install
+npm run db:migrate
+npm run db:seed
+npm run start:dev
+```
+
+3. **Frontend Setup**:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+## 📊 Database Schema
+
+The system uses the following main entities:
+
+- **Users**: Authentication and user management
+- **Campaigns**: Marketing campaign containers
+- **ContentPieces**: Individual content items (headlines, descriptions, etc.)
+- **Translations**: AI-generated translations for content pieces
+
+### Content Types Supported
+- Social Media Posts
+- Email Subjects & Bodies
+- Product Descriptions
+- Blog Posts
+- Ad Copy & Headlines
+
+### Workflow States
+- `DRAFT` → `AI_GENERATED` → `APPROVED`/`REJECTED`
+
+## 🤖 AI Features
+
+### Content Generation
+- **OpenAI Integration**: GPT models for creative content generation
+- **Multiple Content Types**: Tailored prompts for different content formats
+- **Token Tracking**: Monitor API usage and costs
+
+### Translation & Localization
+- **Multi-language Support**: AI-powered translation to various languages
+- **Context-aware Translation**: Maintains marketing tone and brand voice
+- **Translation Status Tracking**: Manage translation workflows
+
+### Prompt Engineering
+- Custom prompts optimized for each content type
+- Brand voice and tone guidelines integration
+
+## 🔄 Real-time Features
+
+- **WebSocket Integration**: Live updates when content is generated or reviewed
+- **Collaborative Editing**: Multiple users can work on campaigns simultaneously
+- **Instant Notifications**: Real-time feedback on content status changes
+
+## 🧪 Testing
+
+### Backend Tests
+```bash
+cd backend
+npm run test          # Unit tests
+npm run test:e2e      # End-to-end tests
+npm run test:cov      # Coverage report
+```
+
+### Frontend Tests
+```bash
+cd frontend
+npm run test
+```
+
+
+## 🚦 Tech Decisions & Tradeoffs
+
+### Why REST over GraphQL?
+- **Simplicity**: Easier to implement and debug for this scope
+- **Caching**: Better HTTP caching strategies
+- **Team Familiarity**: Faster development with REST patterns
+- **Future Flexibility**: Can add GraphQL later if needed
+
+### Why Prisma?
+- **Type Safety**: Generated TypeScript client
+- **Migration Management**: Robust schema evolution
+- **Query Performance**: Optimized database queries
+- **Developer Experience**: Excellent tooling and documentation
+## 🆘 Troubleshooting
+
+### Common Issues
+
+**Docker containers won't start:**
+```bash
+docker-compose down -v
+docker-compose up --build
+```
+
+**Database connection issues:**
+- Check PostgreSQL is running on port 5432
+- Verify DATABASE_URL in .env file
+- Run database migrations: `docker-compose exec backend npm run db:migrate`
+
+**AI features not working:**
+- Verify OPENAI_API_KEY is set correctly
+- Check API key has sufficient credits
+- Review backend logs: `docker-compose logs backend`
+
+**Frontend not connecting to backend:**
+- Ensure NEXT_PUBLIC_API_URL points to correct backend URL
+- Check CORS settings in backend configuration

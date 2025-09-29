@@ -1,0 +1,126 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum ContentStatus {
+  DRAFT
+  AI_GENERATED
+  APPROVED
+  REJECTED
+}
+
+enum ContentType {
+  SOCIAL_POST
+  EMAIL_SUBJECT
+  EMAIL_BODY
+  PRODUCT_DESCRIPTION
+  BLOG_POST
+  AD_COPY
+  AD_HEADLINE
+}
+
+enum TranslationStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REVIEWED
+}
+
+// Models
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  email     String   @unique
+  password  String   
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  campaignsCreated Campaign[]
+  contentCreated   ContentPiece[] @relation("ContentCreator")
+
+  @@map("users")
+  @@index([email])
+}
+
+model Campaign {
+  id          String         @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  status      CampaignStatus @default(DRAFT)
+  createdById String         @map("created_by_id") @db.Uuid
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  createdBy     User           @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  contentPieces ContentPiece[]
+
+  @@map("campaigns")
+  @@index([status])
+  @@index([createdById])
+  @@index([createdAt])
+}
+
+model ContentPiece {
+  id           String        @id @default(uuid()) @db.Uuid
+  campaignId   String        @map("campaign_id") @db.Uuid
+  createdById  String        @map("created_by_id") @db.Uuid
+  title        String
+  type         ContentType
+  content      String?       @db.Text
+  status       ContentStatus @default(DRAFT)
+  language     String        @default("en")
+  aiGenerated  Boolean       @default(false) @map("ai_generated")
+  promptUsed   String?       @db.Text @map("prompt_used")
+  aiModelUsed  String?       @map("ai_model_used")
+  tokensUsed   Int?          @map("tokens_used")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  campaign     Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  createdBy    User          @relation("ContentCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  translations Translation[]
+
+  @@map("content_pieces")
+  @@index([campaignId])
+  @@index([createdById])
+  @@index([status])
+  @@index([type])
+  @@index([language])
+  @@index([aiGenerated])
+  @@index([createdAt])
+}
+
+model Translation {
+  id              String            @id @default(uuid()) @db.Uuid
+  contentPieceId  String            @map("content_piece_id") @db.Uuid
+  language        String 
+  content         String            @db.Text
+  status          TranslationStatus @default(PENDING)
+  aiModelUsed     String?           @map("ai_model_used")
+  tokensUsed      Int?              @map("tokens_used")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  contentPiece ContentPiece @relation(fields: [contentPieceId], references: [id], onDelete: Cascade)
+
+  @@map("translations")
+  @@index([contentPieceId])
+  @@index([language])
+  @@index([status])
+}
