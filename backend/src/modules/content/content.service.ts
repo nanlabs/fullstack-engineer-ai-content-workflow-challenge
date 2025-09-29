@@ -287,9 +287,10 @@ export class ContentService {
   private validateStatusTransition(currentStatus: ContentStatus, newStatus: ContentStatus) {
     // Define valid status transitions
     const validTransitions: { [key: string]: ContentStatus[] } = {
-      [ContentStatus.DRAFT]: [ContentStatus.AI_GENERATED],
-      [ContentStatus.AI_GENERATED]: [ContentStatus.DRAFT],
+      [ContentStatus.DRAFT]: [ContentStatus.AI_GENERATED, ContentStatus.APPROVED],
+      [ContentStatus.AI_GENERATED]: [ContentStatus.DRAFT, ContentStatus.APPROVED, ContentStatus.REJECTED],
       [ContentStatus.REJECTED]: [ContentStatus.DRAFT],
+      [ContentStatus.APPROVED]: [], // Final state, no transitions allowed
     };
 
     const allowedTransitions = validTransitions[currentStatus] || [];

@@ -592,15 +592,27 @@ describe('ContentService', () => {
       // Access private method for testing
       const validateStatusTransition = (service as any).validateStatusTransition.bind(service);
       
+      // From DRAFT
       expect(() => validateStatusTransition(ContentStatus.DRAFT, ContentStatus.AI_GENERATED)).not.toThrow();
+      expect(() => validateStatusTransition(ContentStatus.DRAFT, ContentStatus.APPROVED)).not.toThrow();
+      
+      // From AI_GENERATED
       expect(() => validateStatusTransition(ContentStatus.AI_GENERATED, ContentStatus.DRAFT)).not.toThrow();
+      expect(() => validateStatusTransition(ContentStatus.AI_GENERATED, ContentStatus.APPROVED)).not.toThrow();
+      expect(() => validateStatusTransition(ContentStatus.AI_GENERATED, ContentStatus.REJECTED)).not.toThrow();
+      
+      // From REJECTED
       expect(() => validateStatusTransition(ContentStatus.REJECTED, ContentStatus.DRAFT)).not.toThrow();
     });
 
     it('should throw error for invalid status transitions', () => {
       const validateStatusTransition = (service as any).validateStatusTransition.bind(service);
       
-      expect(() => validateStatusTransition(ContentStatus.DRAFT, ContentStatus.APPROVED)).toThrow(BadRequestException);
+      // Invalid transitions
+      expect(() => validateStatusTransition(ContentStatus.APPROVED, ContentStatus.DRAFT)).toThrow(BadRequestException);
+      expect(() => validateStatusTransition(ContentStatus.APPROVED, ContentStatus.AI_GENERATED)).toThrow(BadRequestException);
+      expect(() => validateStatusTransition(ContentStatus.REJECTED, ContentStatus.APPROVED)).toThrow(BadRequestException);
+      expect(() => validateStatusTransition(ContentStatus.REJECTED, ContentStatus.AI_GENERATED)).toThrow(BadRequestException);
       expect(() => validateStatusTransition(ContentStatus.APPROVED, ContentStatus.REJECTED)).toThrow(BadRequestException);
     });
   });
