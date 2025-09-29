@@ -1,4 +1,4 @@
-import { PrismaClient, CampaignStatus, ContentStatus, ContentType, ReviewStatus } from '@prisma/client';
+import { PrismaClient, CampaignStatus, ContentStatus, ContentType, TranslationStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -8,7 +8,6 @@ async function main() {
 
   // Clean existing data in development
   if (process.env.NODE_ENV === 'development') {
-    await prisma.review.deleteMany();
     await prisma.translation.deleteMany();
     await prisma.contentPiece.deleteMany();
     await prisma.campaign.deleteMany();
@@ -38,22 +37,6 @@ async function main() {
     data: {
       name: 'Mike Rodriguez',
       email: 'mike.rodriguez@acmeglobalmedia.com',
-      password: hashedPassword,
-    },
-  });
-
-  const reviewer1 = await prisma.user.create({
-    data: {
-      name: 'Emily Chen',
-      email: 'emily.chen@acmeglobalmedia.com',
-      password: hashedPassword,
-    },
-  });
-
-  const reviewer2 = await prisma.user.create({
-    data: {
-      name: 'David Wilson',
-      email: 'david.wilson@acmeglobalmedia.com',
       password: hashedPassword,
     },
   });
@@ -114,7 +97,7 @@ async function main() {
       title: 'Launch Day Email Subject',
       type: ContentType.EMAIL_SUBJECT,
       content: 'Your Perfect Summer Starts Now - 20% Off New Arrivals!',
-      status: ContentStatus.REVIEW,
+      status: ContentStatus.AI_GENERATED,
       language: 'en',
       aiGenerated: true,
       promptUsed: 'Create a compelling email subject line for a summer product launch with discount',
@@ -193,48 +176,16 @@ async function main() {
 
   console.log('Translations created');
 
-  // Create reviews
-  await prisma.review.create({
-    data: {
-      contentPieceId: emailSubject1.id,
-      reviewerId: reviewer1.id,
-      status: ReviewStatus.PENDING,
-      comments: 'The subject line looks good, but we might want to test different discount percentages. Consider A/B testing 20% vs 25%.',
-    },
-  });
-
-  await prisma.review.create({
-    data: {
-      contentPieceId: socialPost1.id,
-      reviewerId: reviewer2.id,
-      status: ReviewStatus.APPROVED,
-      comments: 'Perfect tone for our summer campaign! The emojis and hashtags are on brand.',
-      reviewedAt: new Date(),
-    },
-  });
-
-  await prisma.review.create({
-    data: {
-      contentPieceId: adCopy1.id,
-      reviewerId: reviewer1.id,
-      status: ReviewStatus.CHANGES_REQUESTED,
-      comments: 'The urgency is good, but we need to specify which products are included in the 70% discount. Please add more details.',
-    },
-  });
-
-  console.log('Reviews created');
-
   // Summary
   const stats = {
     users: await prisma.user.count(),
     campaigns: await prisma.campaign.count(),
     contentPieces: await prisma.contentPiece.count(),
     translations: await prisma.translation.count(),
-    reviews: await prisma.review.count(),
   };
 
   console.log('Database seeded successfully!');
-
+  console.log('Stats:', stats);
 }
 
 main()

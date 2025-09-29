@@ -1,13 +1,18 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
+import { AiService } from '../ai/ai.service';
 import { CreateTranslationDto } from './dto/create-translation.dto';
 import { UpdateTranslationDto } from './dto/update-translation.dto';
-import { GenerateTranslationsDto } from './dto/generate-translations.dto';
+import { GenerateTranslationDto } from './dto/generate-translations.dto';
+import { RegenerateTranslationDto } from './dto/regenerate-translation.dto';
 import { TranslationStatus, ContentStatus } from '@prisma/client';
 
 @Injectable()
 export class TranslationsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private aiService: AiService,
+  ) {}
 
   async create(createTranslationDto: CreateTranslationDto) {
     // Verify content piece exists
@@ -181,8 +186,7 @@ export class TranslationsService {
     });
   }
 
-  async generateTranslations(contentPieceId: string, generateDto: GenerateTranslationsDto) {
-    // Verify content piece exists and is approved
+  async generateTranslation(contentPieceId: string, generateDto: GenerateTranslationDto) {
     const contentPiece = await this.prisma.contentPiece.findUnique({
       where: { id: contentPieceId },
     });
@@ -191,83 +195,80 @@ export class TranslationsService {
       throw new NotFoundException(`Content piece with ID ${contentPieceId} not found`);
     }
 
-    if (contentPiece.status !== ContentStatus.APPROVED) {
-      throw new BadRequestException('Content must be APPROVED before translation');
-    }
-
     if (!contentPiece.content) {
       throw new BadRequestException('Content piece has no content to translate');
     }
 
-    const translations = [];
-    
-    for (const language of generateDto.languages) {
-      try {
-        // Check if translation already exists
-        const existingTranslation = await this.prisma.translation.findUnique({
-          where: {
-            contentPieceId_language: {
-              contentPieceId,
-              language,
+    try {
+      // Check if translation already exists for this language
+      const existingTranslation = await this.prisma.translation.findUnique({
+        where: {
+          contentPieceId_language: {
+            contentPieceId,
+            language: generateDto.language,
+          },
+        },
+      });
+
+      // Generate translation using AI service
+      const aiResponse = await this.aiService.translateContent({
+        content: contentPiece.content,
+        targetLanguage: generateDto.language,
+        context: generateDto.context,
+        model: generateDto.aiModelUsed || 'gpt-3.5-turbo',
+      });
+
+      if (existingTranslation) {
+        // Update existing translation
+        return await this.prisma.translation.update({
+          where: { id: existingTranslation.id },
+          data: {
+            content: aiResponse.content,
+            status: TranslationStatus.COMPLETED,
+            aiModelUsed: aiResponse.model,
+            tokensUsed: aiResponse.tokensUsed,
+          },
+          include: {
+            contentPiece: {
+              select: {
+                id: true,
+                title: true,
+                type: true,
+                content: true,
+              },
             },
           },
         });
-
-        if (existingTranslation) {
-          // Update existing translation
-          const updated = await this.prisma.translation.update({
-            where: { id: existingTranslation.id },
-            data: {
-              content: this.simulateTranslation(contentPiece.content, language),
-              status: TranslationStatus.COMPLETED,
-              aiModelUsed: generateDto.aiModelUsed || 'gpt-4',
-              tokensUsed: Math.floor(Math.random() * 100) + 30,
-            },
-            include: {
-              contentPiece: {
-                select: {
-                  id: true,
-                  title: true,
-                  type: true,
-                  content: true,
-                },
+      } else {
+        // Create new translation
+        return await this.prisma.translation.create({
+          data: {
+            contentPieceId,
+            language: generateDto.language,
+            content: aiResponse.content,
+            status: TranslationStatus.COMPLETED,
+            aiModelUsed: aiResponse.model,
+            tokensUsed: aiResponse.tokensUsed,
+          },
+          include: {
+            contentPiece: {
+              select: {
+                id: true,
+                title: true,
+                type: true,
+                content: true,
               },
             },
-          });
-          translations.push(updated);
-        } else {
-          // Create new translation
-          const created = await this.prisma.translation.create({
-            data: {
-              contentPieceId,
-              language,
-              content: this.simulateTranslation(contentPiece.content, language),
-              status: TranslationStatus.COMPLETED,
-              aiModelUsed: generateDto.aiModelUsed || 'gpt-4',
-              tokensUsed: Math.floor(Math.random() * 100) + 30,
-            },
-            include: {
-              contentPiece: {
-                select: {
-                  id: true,
-                  title: true,
-                  type: true,
-                  content: true,
-                },
-              },
-            },
-          });
-          translations.push(created);
-        }
-      } catch (error) {
-        console.error(`Failed to generate translation for language ${language}:`, error);
+          },
+        });
       }
+    } catch (error) {
+      console.error(`Failed to generate translation for ${generateDto.language}:`, error);
+      throw error;
     }
-
-    return translations;
   }
 
-  async generateTranslationsForMyContent(contentPieceId: string, generateDto: GenerateTranslationsDto, userId: string) {
+  async generateTranslationForMyContent(contentPieceId: string, generateDto: GenerateTranslationDto, userId: string) {
     // Verify the user owns the content piece
     const contentPiece = await this.prisma.contentPiece.findUnique({
       where: { id: contentPieceId },
@@ -286,15 +287,11 @@ export class TranslationsService {
       throw new ForbiddenException('You can only generate translations for your own content');
     }
 
-    if (contentPiece.status !== ContentStatus.APPROVED) {
-      throw new BadRequestException('Content must be APPROVED before translation');
-    }
-
     if (!contentPiece.content) {
       throw new BadRequestException('Content piece has no content to translate');
     }
 
-    return this.generateTranslations(contentPieceId, generateDto);
+    return this.generateTranslation(contentPieceId, generateDto);
   }
 
   async findAllForContent(contentPieceId: string, userId: string) {
@@ -438,54 +435,52 @@ export class TranslationsService {
     });
   }
 
-  private simulateTranslation(originalContent: string, targetLanguage: string): string {
-    // Simple translation simulation for demo purposes
-    const translations = {
-      'es': {
-        'Summer': 'Verano',
-        'Check out': 'Echa un vistazo',
-        'Amazing': 'Increíble',
-        'Product': 'Producto',
-        'Launch': 'Lanzamiento',
-        'New': 'Nuevo',
-        'Special': 'Especial',
-        'Offer': 'Oferta',
-        'Don\'t miss': 'No te pierdas',
-      },
-      'fr': {
-        'Summer': 'Été',
-        'Check out': 'Découvrez',
-        'Amazing': 'Incroyable',
-        'Product': 'Produit',
-        'Launch': 'Lancement',
-        'New': 'Nouveau',
-        'Special': 'Spécial',
-        'Offer': 'Offre',
-        'Don\'t miss': 'Ne manquez pas',
-      },
-      'de': {
-        'Summer': 'Sommer',
-        'Check out': 'Schauen Sie sich an',
-        'Amazing': 'Erstaunlich',
-        'Product': 'Produkt',
-        'Launch': 'Start',
-        'New': 'Neu',
-        'Special': 'Besondere',
-        'Offer': 'Angebot',
-        'Don\'t miss': 'Verpassen Sie nicht',
-      }
-    };
+  async regenerateTranslation(id: string, regenerateDto: RegenerateTranslationDto, userId: string) {
+    const translation = await this.getMyTranslation(id, userId);
 
-    let translatedContent = originalContent;
-    const languageTranslations = translations[targetLanguage as keyof typeof translations];
-
-    if (languageTranslations) {
-      Object.entries(languageTranslations).forEach(([english, translated]) => {
-        const regex = new RegExp(english, 'gi');
-        translatedContent = translatedContent.replace(regex, translated);
-      });
+    if (!translation.content) {
+      throw new BadRequestException('Can only regenerate translations that have existing content');
     }
 
-    return `[${targetLanguage.toUpperCase()}] ${translatedContent}`;
+    try {
+      // Save current version as backup if requested
+      if (regenerateDto.keepHistory !== false) {
+        // Here you would typically save to a history table
+        // For now, we'll just log it
+        console.log(`Backing up version for translation ${id}:`, translation.content.substring(0, 100));
+      }
+
+      const aiResponse = await this.aiService.regenerateTranslation({
+        originalContent: translation.contentPiece.content,
+        currentTranslation: translation.content,
+        feedback: regenerateDto.feedback,
+        targetLanguage: translation.language,
+        context: '', // Could be enhanced to store context in translation record
+        model: regenerateDto.model,
+      });
+
+      return await this.prisma.translation.update({
+        where: { id },
+        data: {
+          content: aiResponse.content,
+          status: TranslationStatus.COMPLETED,
+          aiModelUsed: aiResponse.model,
+          tokensUsed: (translation.tokensUsed || 0) + aiResponse.tokensUsed, // Accumulate tokens
+        },
+        include: {
+          contentPiece: {
+            select: {
+              id: true,
+              title: true,
+              type: true,
+              content: true,
+            },
+          },
+        },
+      });
+    } catch (error) {
+      console.error('Translation regeneration failed:', error);
+      throw error;
+    }
   }
 }

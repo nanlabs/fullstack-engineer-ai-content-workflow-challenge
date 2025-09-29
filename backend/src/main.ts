@@ -24,14 +24,13 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('ACME Content Workflow API')
-    .setDescription('AI-powered content creation and review workflow system')
+    .setDescription('AI-powered content creation and workflow system')
     .setVersion('1.0')
     .addBearerAuth()
     .addTag('auth', 'Authentication endpoints')
     .addTag('campaigns', 'Campaign management')
-    .addTag('content', 'Content piece operations')
-    .addTag('reviews', 'Review workflow')
-    .addTag('translations', 'Translation management')
+    .addTag('content', 'Content piece operations with AI generation')
+    .addTag('translations', 'AI-powered translation management')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

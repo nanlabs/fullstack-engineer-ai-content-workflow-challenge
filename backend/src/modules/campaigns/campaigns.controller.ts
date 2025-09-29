@@ -43,7 +43,7 @@ export class CampaignsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Getcampaigns with filters' })
+  @ApiOperation({ summary: 'Get campaigns with filters' })
   @ApiResponse({ status: 200, type: [CampaignResponseDto] })
   @ApiQuery({ 
     name: 'status', 
@@ -66,16 +66,6 @@ export class CampaignsController {
     @CurrentUser() user: { id: string },
   ) {
     return this.campaignsService.findOne(id, user.id);
-  }
-
-  @Get(':id/stats')
-  @ApiOperation({ summary: 'Get campaign statistics' })
-  @ApiResponse({ status: 200 })
-  getStats(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() user: { id: string },
-  ) {
-    return this.campaignsService.getCampaignStats(id, user.id);
   }
 
   @Post(':id/content')

@@ -21,7 +21,6 @@ enum CampaignStatus {
 enum ContentStatus {
   DRAFT
   AI_GENERATED
-  REVIEW
   APPROVED
   REJECTED
 }
@@ -34,13 +33,6 @@ enum ContentType {
   BLOG_POST
   AD_COPY
   AD_HEADLINE
-}
-
-enum ReviewStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  CHANGES_REQUESTED
 }
 
 enum TranslationStatus {
@@ -61,7 +53,6 @@ model User {
 
   campaignsCreated Campaign[]
   contentCreated   ContentPiece[] @relation("ContentCreator")
-  reviews          Review[]
 
   @@map("users")
   @@index([email])
@@ -104,7 +95,6 @@ model ContentPiece {
   campaign     Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   createdBy    User          @relation("ContentCreator", fields: [createdById], references: [id], onDelete: Cascade)
   translations Translation[]
-  reviews      Review[]
 
   @@map("content_pieces")
   @@index([campaignId])
@@ -134,24 +124,4 @@ model Translation {
   @@index([contentPieceId])
   @@index([language])
   @@index([status])
-}
-
-model Review {
-  id             String       @id @default(uuid()) @db.Uuid
-  contentPieceId String       @map("content_piece_id") @db.Uuid
-  reviewerId     String       @map("reviewer_id") @db.Uuid
-  status         ReviewStatus @default(PENDING)
-  comments       String?      @db.Text
-  reviewedAt     DateTime?    @map("reviewed_at")
-  createdAt      DateTime     @default(now()) @map("created_at")
-  updatedAt      DateTime     @updatedAt @map("updated_at")
-
-  contentPiece ContentPiece @relation(fields: [contentPieceId], references: [id], onDelete: Cascade)
-  reviewer     User         @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
-
-  @@map("reviews")
-  @@index([contentPieceId])
-  @@index([reviewerId])
-  @@index([status])
-  @@index([reviewedAt])
 }

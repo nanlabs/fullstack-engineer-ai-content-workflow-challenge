@@ -15,17 +15,15 @@ import { ContentStatus } from '@prisma/client';
 import { ContentService } from './content.service';
 import { UpdateContentDto } from './dto/update-content.dto';
 import { GenerateAiContentDto } from './dto/generate-ai-content.dto';
+import { RegenerateAiContentDto } from '../ai/dto/regenerate-ai-content.dto';
 import { ContentResponseDto } from './dto/content-response.dto';
-import { CreateReviewDto } from '../reviews/dto/create-review.dto';
-import { UpdateReviewDto } from '../reviews/dto/update-review.dto';
-import { ReviewResponseDto } from '../reviews/dto/review-response.dto';
-import { ReviewsService } from '../reviews/reviews.service';
 import { CreateTranslationDto } from '../translations/dto/create-translation.dto';
-import { GenerateTranslationsDto } from '../translations/dto/generate-translations.dto';
+import { GenerateTranslationDto } from '../translations/dto/generate-translations.dto';
 import { TranslationResponseDto } from '../translations/dto/translation-response.dto';
 import { TranslationsService } from '../translations/translations.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { AiThrottle } from '../../common/decorators/ai-throttle.decorator';
 
 @ApiTags('content')
 @Controller('content')
@@ -34,7 +32,6 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 export class ContentController {
   constructor(
     private readonly contentService: ContentService,
-    private readonly reviewsService: ReviewsService,
     private readonly translationsService: TranslationsService,
   ) {}
 
@@ -78,6 +75,7 @@ export class ContentController {
   }
 
   @Post(':id/generate-ai')
+  @AiThrottle()
   @ApiOperation({ summary: 'Generate AI content for a content piece' })
   @ApiResponse({ status: 200, type: ContentResponseDto })
   generateAiContent(
@@ -88,25 +86,16 @@ export class ContentController {
     return this.contentService.generateAiContent(id, generateDto, user.id);
   }
 
-  @Post(':id/reviews')
-  @ApiOperation({ summary: 'Create a review forcontent piece' })
-  @ApiResponse({ status: 201, type: ReviewResponseDto })
-  createReviewForMyContent(
-    @Param('id', ParseUUIDPipe) contentPieceId: string,
-    @Body() createReviewDto: CreateReviewDto,
+  @Post(':id/regenerate-ai')
+  @AiThrottle()
+  @ApiOperation({ summary: 'Regenerate AI content with feedback for a content piece' })
+  @ApiResponse({ status: 200, type: ContentResponseDto })
+  regenerateAiContent(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() regenerateDto: RegenerateAiContentDto,
     @CurrentUser() user: { id: string },
   ) {
-    return this.reviewsService.createForMyContent(contentPieceId, createReviewDto, user.id);
-  }
-
-  @Get(':id/reviews')
-  @ApiOperation({ summary: 'Get allreviews forcontent piece' })
-  @ApiResponse({ status: 200, type: [ReviewResponseDto] })
-  getMyContentReviews(
-    @Param('id', ParseUUIDPipe) contentPieceId: string,
-    @CurrentUser() user: { id: string },
-  ) {
-    return this.reviewsService.findAllForContent(contentPieceId, user.id);
+    return this.contentService.regenerateAiContent(id, regenerateDto, user.id);
   }
 
   @Post(':id/translations')
@@ -121,14 +110,15 @@ export class ContentController {
   }
 
   @Post(':id/translations/generate')
-  @ApiOperation({ summary: 'Generate AI translations forcontent piece' })
-  @ApiResponse({ status: 201, type: [TranslationResponseDto] })
-  generateTranslationsForMyContent(
+  @AiThrottle()
+  @ApiOperation({ summary: 'Generate AI translation for content piece' })
+  @ApiResponse({ status: 201, type: TranslationResponseDto })
+  generateTranslationForMyContent(
     @Param('id', ParseUUIDPipe) contentPieceId: string,
-    @Body() generateDto: GenerateTranslationsDto,
+    @Body() generateDto: GenerateTranslationDto,
     @CurrentUser() user: { id: string },
   ) {
-    return this.translationsService.generateTranslationsForMyContent(contentPieceId, generateDto, user.id);
+    return this.translationsService.generateTranslationForMyContent(contentPieceId, generateDto, user.id);
   }
 
   @Get(':id/translations')

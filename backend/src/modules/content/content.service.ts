@@ -1,14 +1,19 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
+import { AiService } from '../ai/ai.service';
 import { CreateContentDto } from './dto/create-content.dto';
 import { CreateContentForCampaignDto } from './dto/create-content-for-campaign.dto';
 import { UpdateContentDto } from './dto/update-content.dto';
 import { GenerateAiContentDto } from './dto/generate-ai-content.dto';
+import { RegenerateAiContentDto } from '../ai/dto/regenerate-ai-content.dto';
 import { ContentStatus } from '@prisma/client';
 
 @Injectable()
 export class ContentService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private aiService: AiService,
+  ) {}
 
   async create(createContentDto: CreateContentDto, userId: string) {
     // Verify campaign exists and belongs to user
@@ -74,17 +79,6 @@ export class ContentService {
             email: true,
           },
         },
-        reviews: {
-          include: {
-            reviewer: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-          },
-        },
         translations: true,
       },
     });
@@ -107,18 +101,6 @@ export class ContentService {
             name: true,
             email: true,
           },
-        },
-        reviews: {
-          include: {
-            reviewer: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-          },
-          orderBy: { createdAt: 'desc' },
         },
         translations: {
           orderBy: { createdAt: 'desc' },
@@ -183,54 +165,97 @@ export class ContentService {
   async generateAiContent(id: string, generateDto: GenerateAiContentDto, userId: string) {
     const contentPiece = await this.findOne(id, userId);
 
-    // For this demo, we'll simulate AI generation
-    const simulatedAiContent = this.simulateAiGeneration(generateDto.prompt, contentPiece.type);
+    try {
+      // Generate content using AI service
+      const aiResponse = await this.aiService.generateContent({
+        prompt: generateDto.prompt,
+        contentType: contentPiece.type,
+        model: generateDto.model,
+      });
 
-    return this.prisma.contentPiece.update({
-      where: { id },
-      data: {
-        content: simulatedAiContent,
-        status: ContentStatus.AI_GENERATED,
-        aiGenerated: true,
-        promptUsed: generateDto.prompt,
-        aiModelUsed: generateDto.model,
-        tokensUsed: Math.floor(Math.random() * 200) + 50, // Random tokens for demo
-      },
-      include: {
-        campaign: {
-          select: {
-            id: true,
-            name: true,
-            status: true,
+      return await this.prisma.contentPiece.update({
+        where: { id },
+        data: {
+          content: aiResponse.content,
+          status: ContentStatus.AI_GENERATED,
+          aiGenerated: true,
+          promptUsed: aiResponse.promptUsed,
+          aiModelUsed: aiResponse.model,
+          tokensUsed: aiResponse.tokensUsed,
+        },
+        include: {
+          campaign: {
+            select: {
+              id: true,
+              name: true,
+              status: true,
+            },
           },
         },
-      },
-    });
+      });
+    } catch (error) {
+      console.error('AI content generation failed:', error);
+      throw error;
+    }
   }
 
-  private simulateAiGeneration(prompt: string, type: string): string {
-    // Simple AI simulation for demo purposes
-    const templates = {
-      SOCIAL_POST: `🌟 Exciting news! ${prompt.toLowerCase().includes('summer') ? 'Our summer collection is here!' : 'Check out our latest products!'} ✨ Don't miss out on this amazing opportunity! #NewLaunch #ExcitingNews`,
-      EMAIL_SUBJECT: `Don't Miss Out: ${prompt.toLowerCase().includes('summer') ? 'Summer Sale' : 'Special Offer'} Inside!`,
-      EMAIL_BODY: `Dear valued customer,\n\nWe're excited to share some amazing news with you! Based on your request: "${prompt.slice(0, 50)}..."\n\nOur team has crafted something special just for you.\n\nBest regards,\nThe ACME Team`,
-      BLOG_POST: `# ${prompt.toLowerCase().includes('summer') ? 'Summer Trends' : 'Latest Insights'}\n\nWelcome to our latest blog post! Here's what we've been working on:\n\n${prompt}\n\nStay tuned for more updates!`,
-      AD_COPY: `Transform Your Experience! ${prompt.toLowerCase().includes('summer') ? '🌞 Summer Special' : '🚀 Limited Time'} - Act Now!`,
-      AD_HEADLINE: prompt.toLowerCase().includes('summer') ? '🌞 Summer Sale: Up to 50% Off!' : '🚀 Revolutionary Products Await!',
-      PRODUCT_DESCRIPTION: `Premium quality meets innovative design. ${prompt.slice(0, 100)}... Experience the difference today!`
-    };
+  async regenerateAiContent(id: string, regenerateDto: RegenerateAiContentDto, userId: string) {
+    const contentPiece = await this.findOne(id, userId);
 
-    return templates[type as keyof typeof templates] || `Generated content based on: ${prompt}`;
+    if (!contentPiece.aiGenerated || !contentPiece.content || !contentPiece.promptUsed) {
+      throw new BadRequestException('Can only regenerate AI-generated content that has existing content');
+    }
+
+    try {
+      // Extract original prompt from the stored prompt (remove the system prompt part)
+      const originalPrompt = contentPiece.promptUsed.split('Topic/Requirements: ')[1] || contentPiece.promptUsed;
+
+      // Save current version as backup if requested
+      if (regenerateDto.keepHistory !== false) {
+        // Here you would typically save to a history table
+        // For now, we'll just log it
+        console.log(`Backing up version for content ${id}:`, contentPiece.content.substring(0, 100));
+      }
+
+      const aiResponse = await this.aiService.regenerateContent({
+        originalPrompt,
+        currentContent: contentPiece.content,
+        feedback: regenerateDto.feedback,
+        contentType: contentPiece.type,
+        model: regenerateDto.model,
+      });
+
+      return await this.prisma.contentPiece.update({
+        where: { id },
+        data: {
+          content: aiResponse.content,
+          status: ContentStatus.AI_GENERATED, // Keep as AI_GENERATED for further iterations
+          promptUsed: aiResponse.promptUsed,
+          aiModelUsed: aiResponse.model,
+          tokensUsed: (contentPiece.tokensUsed || 0) + aiResponse.tokensUsed, // Accumulate tokens
+        },
+        include: {
+          campaign: {
+            select: {
+              id: true,
+              name: true,
+              status: true,
+            },
+          },
+        },
+      });
+    } catch (error) {
+      console.error('AI content regeneration failed:', error);
+      throw error;
+    }
   }
 
   private validateStatusTransition(currentStatus: ContentStatus, newStatus: ContentStatus) {
     // Define valid status transitions
     const validTransitions: { [key: string]: ContentStatus[] } = {
-      [ContentStatus.DRAFT]: [ContentStatus.REVIEW, ContentStatus.AI_GENERATED],
-      [ContentStatus.AI_GENERATED]: [ContentStatus.REVIEW, ContentStatus.DRAFT],
-      [ContentStatus.REVIEW]: [ContentStatus.APPROVED, ContentStatus.REJECTED, ContentStatus.DRAFT],
-      [ContentStatus.APPROVED]: [ContentStatus.REVIEW], // Can be sent back for review
-      [ContentStatus.REJECTED]: [ContentStatus.DRAFT, ContentStatus.REVIEW],
+      [ContentStatus.DRAFT]: [ContentStatus.AI_GENERATED],
+      [ContentStatus.AI_GENERATED]: [ContentStatus.DRAFT],
+      [ContentStatus.REJECTED]: [ContentStatus.DRAFT],
     };
 
     const allowedTransitions = validTransitions[currentStatus] || [];

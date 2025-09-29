@@ -8,14 +8,17 @@ import {
   ParseUUIDPipe,
   UseGuards,
   Body,
+  Post,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { TranslationsService } from './translations.service';
 import { UpdateTranslationDto } from './dto/update-translation.dto';
+import { RegenerateTranslationDto } from './dto/regenerate-translation.dto';
 import { TranslationResponseDto } from './dto/translation-response.dto';
 import { TranslationStatus } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { AiThrottle } from '../../common/decorators/ai-throttle.decorator';
 
 @ApiTags('translations')
 @Controller('translations')
@@ -61,6 +64,18 @@ export class TranslationsController {
     @CurrentUser() user: { id: string },
   ) {
     return this.translationsService.updateMyTranslation(id, updateTranslationDto, user.id);
+  }
+
+  @Post(':id/regenerate')
+  @AiThrottle()
+  @ApiOperation({ summary: 'Regenerate translation with feedback' })
+  @ApiResponse({ status: 200, type: TranslationResponseDto })
+  regenerateTranslation(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() regenerateDto: RegenerateTranslationDto,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.translationsService.regenerateTranslation(id, regenerateDto, user.id);
   }
 
   @Delete(':id')

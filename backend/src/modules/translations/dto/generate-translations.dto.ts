@@ -1,17 +1,27 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsString, MinLength } from 'class-validator';
+import { IsString, MinLength, IsOptional } from 'class-validator';
 
-export class GenerateTranslationsDto {
+export class GenerateTranslationDto {
   @ApiProperty({ 
-    example: ['es', 'fr', 'de'],
-    description: 'Array of language codes to translate to' 
+    example: 'Spanish',
+    description: 'Target language name (e.g., Spanish, French, German, Portuguese)' 
   })
-  @IsArray()
-  @IsString({ each: true })
-  languages: string[];
-
-  @ApiPropertyOptional({ example: 'gpt-4' })
   @IsString()
-  @MinLength(1)
+  @MinLength(2)
+  language: string;
+
+  @ApiPropertyOptional({ 
+    example: 'Argentina - Buenos Aires market, casual tone, use "vos" instead of "tú"',
+    description: 'Additional context for localization (country, region, tone, cultural notes)' 
+  })
+  @IsOptional()
+  @IsString()
+  context?: string;
+
+  @ApiPropertyOptional({ 
+    example: 'gpt-3.5-turbo' 
+  })
+  @IsOptional()
+  @IsString()
   aiModelUsed?: string;
 }

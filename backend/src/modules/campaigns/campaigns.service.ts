@@ -69,17 +69,6 @@ export class CampaignsService {
         },
         contentPieces: {
           include: {
-            reviews: {
-              include: {
-                reviewer: {
-                  select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                  },
-                },
-              },
-            },
             translations: true,
           },
         },
@@ -121,35 +110,5 @@ export class CampaignsService {
     return this.prisma.campaign.delete({
       where: { id },
     });
-  }
-
-  async getCampaignStats(id: string, userId: string) {
-    const campaign = await this.findOne(id, userId);
-
-    const stats = await this.prisma.contentPiece.groupBy({
-      by: ['status'],
-      where: { campaignId: id },
-      _count: true,
-    });
-
-    const totalContent = await this.prisma.contentPiece.count({
-      where: { campaignId: id },
-    });
-
-    const totalTranslations = await this.prisma.translation.count({
-      where: {
-        contentPiece: { campaignId: id },
-      },
-    });
-
-    return {
-      campaignId: id,
-      totalContent,
-      totalTranslations,
-      contentByStatus: stats.reduce((acc, stat) => {
-        acc[stat.status] = stat._count;
-        return acc;
-      }, {}),
-    };
   }
 }
