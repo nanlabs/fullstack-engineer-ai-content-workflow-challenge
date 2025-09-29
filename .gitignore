@@ -1,0 +1,27 @@
+# Directorios de Build
+.next/
+
+# Dependencias
+node_modules
+
+# Variables de Entorno
+.env
+.env.local
+.env.development.local
+.env.production.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Caché de TypeScript
+*.tsbuildinfo
+
+# Caché del Linter
+.eslintcache
+
+# Archivos del Sistema Operativo
+.DS_Store
+Thumbs.db

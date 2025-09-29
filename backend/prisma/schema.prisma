@@ -1,0 +1,99 @@
+// ACME AI Workflow Challenge - Database Schema
+// Campaigns and Content Pieces with AI-generated drafts
+
+// https://prisma-erd.simonknott.de/ to generate the ERD
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Review states for content workflow
+enum ReviewState {
+  DRAFT
+  SUGGESTED_BY_AI
+  REVIEWED
+  APPROVED
+  REJECTED
+}
+
+// Campaign model
+model Campaign {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  contentPieces ContentPiece[]
+  documents     Document[]
+
+  totalCost Float @default(0)
+
+  @@map("campaigns")
+}
+
+// Content piece model (headlines, descriptions, etc.)
+model ContentPiece {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  contentType String // "headline", "description", "translation", etc.
+  language    String   @default("en")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  drafts Draft[]
+
+  totalCost Float @default(0)
+
+  @@map("content_pieces")
+}
+
+// AI-generated drafts
+model Draft {
+  id                String      @id @default(cuid())
+  content           String
+  language          String      @default("en") // Original language of the draft
+  translations      Json? // Translations: { "es": "...", "fr": "...", "de": "..." }
+  translationStates Json? // Individual review states: { "es": "APPROVED", "fr": "REJECTED" }
+  reviewState       ReviewState @default(DRAFT)
+  aiModel           String? // "openai", "anthropic", etc.
+  cost              Float       @default(0)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  // Relations
+  contentPieceId String
+  contentPiece   ContentPiece @relation(fields: [contentPieceId], references: [id], onDelete: Cascade)
+
+  @@map("drafts")
+}
+
+// Document model for RAG-based context enrichment
+model Document {
+  id           String    @id @default(cuid())
+  filename     String
+  originalName String // Original filename from upload
+  fileType     String // "pdf", "txt", etc.
+  fileSize     Int // File size in bytes
+  content      String // Extracted text content
+  chunks       Json? // Document chunks for vector search: [{ "text": "...", "embedding": [...], "metadata": {...} }]
+  uploadedAt   DateTime  @default(now())
+  processedAt  DateTime? // When document was processed for chunks/embeddings
+
+  // Relations
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
+}
