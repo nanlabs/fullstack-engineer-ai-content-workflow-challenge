@@ -8,6 +8,7 @@ import { ContentModule } from './modules/content/content.module';
 import { TranslationsModule } from './modules/translations/translations.module';
 import { UsersModule } from './modules/users/users.module';
 import { AiModule } from './modules/ai/ai.module';
+import { EventsModule } from './common/events/events.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { AiModule } from './modules/ai/ai.module';
       limit: 100, // max 100 requests per minute
     }]),
     DatabaseModule,
+    EventsModule,
     AiModule,
     AuthModule,
     UsersModule,

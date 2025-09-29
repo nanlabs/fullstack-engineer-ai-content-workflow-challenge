@@ -1,15 +1,19 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
+import { EventsGateway } from '../../common/events/events.gateway';
 import { CreateCampaignDto } from './dto/create-campaign.dto';
 import { UpdateCampaignDto } from './dto/update-campaign.dto';
 import { CampaignStatus } from '@prisma/client';
 
 @Injectable()
 export class CampaignsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private eventsGateway: EventsGateway,
+  ) {}
 
   async create(createCampaignDto: CreateCampaignDto, userId: string) {
-    return this.prisma.campaign.create({
+    const campaign = await this.prisma.campaign.create({
       data: {
         ...createCampaignDto,
         createdById: userId,
@@ -24,6 +28,11 @@ export class CampaignsService {
         },
       },
     });
+
+    // Emit WebSocket event
+    this.eventsGateway.emitCampaignCreated(userId, campaign);
+
+    return campaign;
   }
 
   async findAll(userId: string, status?: CampaignStatus) {
@@ -89,7 +98,7 @@ export class CampaignsService {
   async update(id: string, updateCampaignDto: UpdateCampaignDto, userId: string) {
     const campaign = await this.findOne(id, userId);
 
-    return this.prisma.campaign.update({
+    const updatedCampaign = await this.prisma.campaign.update({
       where: { id },
       data: updateCampaignDto,
       include: {
@@ -102,13 +111,23 @@ export class CampaignsService {
         },
       },
     });
+
+    // Emit WebSocket event
+    this.eventsGateway.emitCampaignUpdated(userId, updatedCampaign);
+
+    return updatedCampaign;
   }
 
   async remove(id: string, userId: string) {
     const campaign = await this.findOne(id, userId);
 
-    return this.prisma.campaign.delete({
+    const result = await this.prisma.campaign.delete({
       where: { id },
     });
+
+    // Emit WebSocket event
+    this.eventsGateway.emitCampaignDeleted(userId, id);
+
+    return result;
   }
 }

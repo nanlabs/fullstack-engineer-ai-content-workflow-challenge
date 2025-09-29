@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { AiService } from '../ai/ai.service';
+import { EventsGateway } from '../../common/events/events.gateway';
 import { CreateContentDto } from './dto/create-content.dto';
 import { CreateContentForCampaignDto } from './dto/create-content-for-campaign.dto';
 import { UpdateContentDto } from './dto/update-content.dto';
@@ -13,6 +14,7 @@ export class ContentService {
   constructor(
     private prisma: PrismaService,
     private aiService: AiService,
+    private eventsGateway: EventsGateway,
   ) {}
 
   async create(createContentDto: CreateContentDto, userId: string) {
@@ -29,7 +31,7 @@ export class ContentService {
       throw new ForbiddenException('You can only create content for your own campaigns');
     }
 
-    return this.prisma.contentPiece.create({
+    const content = await this.prisma.contentPiece.create({
       data: {
         ...createContentDto,
         createdById: userId,
@@ -52,6 +54,11 @@ export class ContentService {
         },
       },
     });
+
+    // Emit WebSocket event
+    this.eventsGateway.emitContentCreated(userId, content);
+
+    return content;
   }
 
   async findAll(userId: string, campaignId?: string, status?: ContentStatus) {
@@ -128,7 +135,7 @@ export class ContentService {
     }
 
     try {
-      return await this.prisma.contentPiece.update({
+      const updatedContent = await this.prisma.contentPiece.update({
         where: { id },
         data: updateContentDto,
         include: {
@@ -148,6 +155,16 @@ export class ContentService {
           },
         },
       });
+
+      // Emit WebSocket event
+      this.eventsGateway.emitContentUpdated(userId, updatedContent);
+
+      // If status changed, emit specific status change event
+      if (updateContentDto.status && updateContentDto.status !== contentPiece.status) {
+        this.eventsGateway.emitContentStatusChanged(userId, id, updateContentDto.status, updatedContent);
+      }
+
+      return updatedContent;
     } catch (error) {
       console.error('Error updating content:', error);
       throw error;
@@ -157,9 +174,14 @@ export class ContentService {
   async remove(id: string, userId: string) {
     const contentPiece = await this.findOne(id, userId);
 
-    return this.prisma.contentPiece.delete({
+    const result = await this.prisma.contentPiece.delete({
       where: { id },
     });
+
+    // Emit WebSocket event
+    this.eventsGateway.emitContentDeleted(userId, id);
+
+    return result;
   }
 
   async generateAiContent(id: string, generateDto: GenerateAiContentDto, userId: string) {
@@ -173,7 +195,7 @@ export class ContentService {
         model: generateDto.model,
       });
 
-      return await this.prisma.contentPiece.update({
+      const updatedContent = await this.prisma.contentPiece.update({
         where: { id },
         data: {
           content: aiResponse.content,
@@ -193,6 +215,12 @@ export class ContentService {
           },
         },
       });
+
+      // Emit WebSocket events
+      this.eventsGateway.emitContentAiGenerated(userId, updatedContent);
+      this.eventsGateway.emitContentStatusChanged(userId, id, ContentStatus.AI_GENERATED, updatedContent);
+
+      return updatedContent;
     } catch (error) {
       console.error('AI content generation failed:', error);
       throw error;
@@ -225,7 +253,7 @@ export class ContentService {
         model: regenerateDto.model,
       });
 
-      return await this.prisma.contentPiece.update({
+      const updatedContent = await this.prisma.contentPiece.update({
         where: { id },
         data: {
           content: aiResponse.content,
@@ -244,6 +272,12 @@ export class ContentService {
           },
         },
       });
+
+      // Emit WebSocket events
+      this.eventsGateway.emitContentAiGenerated(userId, updatedContent);
+      this.eventsGateway.emitContentUpdated(userId, updatedContent);
+
+      return updatedContent;
     } catch (error) {
       console.error('AI content regeneration failed:', error);
       throw error;
@@ -282,7 +316,7 @@ export class ContentService {
       throw new ForbiddenException('You can only create content for your own campaigns');
     }
 
-    return this.prisma.contentPiece.create({
+    const content = await this.prisma.contentPiece.create({
       data: {
         campaignId,
         ...createContentDto,
@@ -306,6 +340,11 @@ export class ContentService {
         },
       },
     });
+
+    // Emit WebSocket event
+    this.eventsGateway.emitContentCreated(userId, content);
+
+    return content;
   }
 
   async findAllForCampaign(campaignId: string, userId: string) {
