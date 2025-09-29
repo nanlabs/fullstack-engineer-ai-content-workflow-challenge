@@ -384,6 +384,7 @@ export class ContentService {
             email: true,
           },
         },
+        translations: true,
       },
     });
   }

@@ -119,7 +119,6 @@ model Translation {
 
   contentPiece ContentPiece @relation(fields: [contentPieceId], references: [id], onDelete: Cascade)
 
-  @@unique([contentPieceId, language])
   @@map("translations")
   @@index([contentPieceId])
   @@index([language])

@@ -24,22 +24,6 @@ export class TranslationsService {
       throw new NotFoundException(`Content piece with ID ${createTranslationDto.contentPieceId} not found`);
     }
 
-    // Check if translation already exists for this language
-    const existingTranslation = await this.prisma.translation.findUnique({
-      where: {
-        contentPieceId_language: {
-          contentPieceId: createTranslationDto.contentPieceId,
-          language: createTranslationDto.language,
-        },
-      },
-    });
-
-    if (existingTranslation) {
-      throw new BadRequestException(
-        `Translation already exists for language '${createTranslationDto.language}'`
-      );
-    }
-
     return this.prisma.translation.create({
       data: {
         ...createTranslationDto,
@@ -71,22 +55,6 @@ export class TranslationsService {
 
     if (contentPiece.createdById !== userId) {
       throw new ForbiddenException('You can only create translations for your own content');
-    }
-
-    // Check if translation already exists for this language
-    const existingTranslation = await this.prisma.translation.findUnique({
-      where: {
-        contentPieceId_language: {
-          contentPieceId,
-          language: createTranslationDto.language,
-        },
-      },
-    });
-
-    if (existingTranslation) {
-      throw new BadRequestException(
-        `Translation already exists for language '${createTranslationDto.language}'`
-      );
     }
 
     return this.prisma.translation.create({
@@ -200,16 +168,6 @@ export class TranslationsService {
     }
 
     try {
-      // Check if translation already exists for this language
-      const existingTranslation = await this.prisma.translation.findUnique({
-        where: {
-          contentPieceId_language: {
-            contentPieceId,
-            language: generateDto.language,
-          },
-        },
-      });
-
       // Generate translation using AI service
       const aiResponse = await this.aiService.translateContent({
         content: contentPiece.content,
@@ -218,50 +176,27 @@ export class TranslationsService {
         model: generateDto.aiModelUsed || 'gpt-3.5-turbo',
       });
 
-      if (existingTranslation) {
-        // Update existing translation
-        return await this.prisma.translation.update({
-          where: { id: existingTranslation.id },
-          data: {
-            content: aiResponse.content,
-            status: TranslationStatus.COMPLETED,
-            aiModelUsed: aiResponse.model,
-            tokensUsed: aiResponse.tokensUsed,
-          },
-          include: {
-            contentPiece: {
-              select: {
-                id: true,
-                title: true,
-                type: true,
-                content: true,
-              },
+      // Create new translation
+      return await this.prisma.translation.create({
+        data: {
+          contentPieceId,
+          language: generateDto.language,
+          content: aiResponse.content,
+          status: TranslationStatus.COMPLETED,
+          aiModelUsed: aiResponse.model,
+          tokensUsed: aiResponse.tokensUsed,
+        },
+        include: {
+          contentPiece: {
+            select: {
+              id: true,
+              title: true,
+              type: true,
+              content: true,
             },
           },
-        });
-      } else {
-        // Create new translation
-        return await this.prisma.translation.create({
-          data: {
-            contentPieceId,
-            language: generateDto.language,
-            content: aiResponse.content,
-            status: TranslationStatus.COMPLETED,
-            aiModelUsed: aiResponse.model,
-            tokensUsed: aiResponse.tokensUsed,
-          },
-          include: {
-            contentPiece: {
-              select: {
-                id: true,
-                title: true,
-                type: true,
-                content: true,
-              },
-            },
-          },
-        });
-      }
+        },
+      });
     } catch (error) {
       console.error(`Failed to generate translation for ${generateDto.language}:`, error);
       throw error;

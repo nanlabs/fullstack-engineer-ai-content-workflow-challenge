@@ -7,7 +7,7 @@ export class CreateTranslationDto {
   @IsUUID()
   contentPieceId: string;
 
-  @ApiProperty({ example: 'es', description: 'Language code (e.g., en, es, fr, de, it, pt)' })
+  @ApiProperty({ example: 'Spanish', description: 'Language name (e.g., Spanish, French, German, Portuguese)' })
   @IsString()
   @MinLength(2)
   language: string;
