@@ -34,7 +34,6 @@ export default function RootLayout({
         <AuthProvider>
           <NotificationProvider>
             {children}
-            <ConnectionStatus />
           </NotificationProvider>
         </AuthProvider>
         <Toaster position="top-right" />

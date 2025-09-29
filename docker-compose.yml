@@ -1,8 +1,10 @@
 version: '3.8'
 
 services:
+  # PostgreSQL Database
   postgres:
     image: postgres:15
+    container_name: acme-postgres
     environment:
       POSTGRES_DB: acme_content_workflow
       POSTGRES_USER: postgres
@@ -11,6 +13,63 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Database Migration Service
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: acme-migrate
+    environment:
+      DATABASE_URL: "postgresql://postgres:password@postgres:5432/acme_content_workflow?schema=public"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "
+        npx prisma migrate deploy &&
+        npx prisma db seed || echo 'Seed completed or skipped'
+      "
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: acme-backend
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: "postgresql://postgres:password@postgres:5432/acme_content_workflow?schema=public"
+      FRONTEND_URL: "http://localhost:3000"
+      JWT_SECRET: "your-super-secret-jwt-key-change-this-in-production-and-make-it-long-and-random"
+      JWT_EXPIRES_IN: "7d"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  # Frontend React App
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: acme-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: "http://localhost:3001"
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:
