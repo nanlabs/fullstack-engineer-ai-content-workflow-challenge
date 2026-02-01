@@ -8,6 +8,7 @@
    - `docker compose up --build`
 3. Visit the frontend at `http://localhost:3000`.
 
+> TypeORM migrations run automatically on backend startup.
 > Backend and frontend services are placeholders until the app is implemented.
 
 ## Environment Variables
