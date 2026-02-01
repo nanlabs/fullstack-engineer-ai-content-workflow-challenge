@@ -123,6 +123,13 @@ This challenge is designed to be **flexible**. Some tips:
 * Time-box your work — we want to see **how you think and solve problems**, not perfection.
 * Surprise us with creative uses of AI! 🎉
 
+## 📚 Documentation
+
+- `docs/runbook.md` (how to run locally)
+- `docs/architecture.md`
+- `docs/workflow.md`
+- `docs/decisions.md`
+
 ## 🏁 Good luck and have fun building!
 
 
