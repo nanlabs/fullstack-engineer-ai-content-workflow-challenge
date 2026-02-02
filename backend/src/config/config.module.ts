@@ -7,6 +7,7 @@ import databaseConfig from './database.config';
     ConfigModule.forRoot({
       isGlobal: true,
       load: [databaseConfig],
+      envFilePath: '.env',
     }),
   ],
 })

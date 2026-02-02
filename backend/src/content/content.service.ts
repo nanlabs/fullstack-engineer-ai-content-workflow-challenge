@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ContentEventsGateway } from '../websocket/content-events.gateway';
 import { ContentPiece } from './content-piece.entity';
 import { CreateContentPieceDto } from './dto/create-content-piece.dto';
 import { UpdateContentPieceDto } from './dto/update-content-piece.dto';
@@ -10,6 +11,7 @@ export class ContentService {
   constructor(
     @InjectRepository(ContentPiece)
     private readonly contentRepository: Repository<ContentPiece>,
+    private readonly eventsGateway: ContentEventsGateway,
   ) {}
 
   async create(
@@ -27,7 +29,9 @@ export class ContentService {
       metadata: payload.metadata,
     });
 
-    return this.contentRepository.save(contentPiece);
+    const saved = await this.contentRepository.save(contentPiece);
+    this.eventsGateway.emitContentCreated(campaignId, saved);
+    return saved;
   }
 
   async findOne(id: string): Promise<ContentPiece> {
@@ -59,7 +63,9 @@ export class ContentService {
       metadata: payload.metadata ?? contentPiece.metadata,
     });
 
-    return this.contentRepository.save(contentPiece);
+    const saved = await this.contentRepository.save(contentPiece);
+    this.eventsGateway.emitContentUpdated(id, saved);
+    return saved;
   }
 
   async remove(id: string): Promise<void> {
@@ -68,5 +74,7 @@ export class ContentService {
     if (!result.affected) {
       throw new NotFoundException(`Content piece ${id} not found`);
     }
+
+    this.eventsGateway.emitContentDeleted(id);
   }
 }
