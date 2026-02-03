@@ -4,7 +4,7 @@ import { Link, useLoaderData, useNavigate } from 'react-router-dom'
 import SectionHeader from '../components/SectionHeader'
 import StatusBadge from '../components/StatusBadge'
 import { useContentEvents } from '../hooks/useContentEvents'
-import { formatDate, formatParagraphs } from '../lib/format'
+import { formatDate, formatParagraphs, normalizeLanguages } from '../lib/format'
 import type { ContentPiece } from '../lib/types'
 import {
   deleteContent,
@@ -48,7 +48,7 @@ export default function ContentDetail() {
     setTitle(initialContent.title)
     setType(initialContent.type)
     setOriginalText(initialContent.originalText)
-    setTargetLanguages(initialContent.campaign?.targetLanguages?.join(', ') ?? '')
+    setTargetLanguages(normalizeLanguages(initialContent.campaign?.targetLanguages).join(', '))
   }, [initialContent])
 
   useContentEvents({
