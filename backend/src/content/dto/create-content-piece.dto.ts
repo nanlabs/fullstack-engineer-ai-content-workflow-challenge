@@ -5,12 +5,12 @@ import {
   IsString,
   MaxLength,
 } from 'class-validator';
+import { ContentType } from '../content-type.enum';
 import { ReviewState } from '../review-state.enum';
 
 export class CreateContentPieceDto {
-  @IsString()
-  @MaxLength(50)
-  type: string;
+  @IsEnum(ContentType)
+  type: ContentType;
 
   @IsString()
   @MaxLength(200)

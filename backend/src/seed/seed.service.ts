@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { Campaign } from '../campaigns/campaign.entity';
 import { CampaignStatus } from '../campaigns/campaign-status.enum';
 import { ContentPiece } from '../content/content-piece.entity';
+import { ContentType } from '../content/content-type.enum';
 import { ReviewState } from '../content/review-state.enum';
 
 @Injectable()
@@ -53,7 +54,7 @@ export class SeedService implements OnApplicationBootstrap {
     // Content pieces for Summer Sale
     const summerBlog = this.contentRepository.create({
       campaignId: savedSummerSale.id,
-      type: 'blog',
+      type: ContentType.Blog,
       title: 'Top 10 Summer Deals You Cannot Miss',
       originalText: 'This summer, we are bringing you incredible savings on our best products. From electronics to home goods, discover deals that will make your summer unforgettable.',
       reviewState: ReviewState.Draft,
@@ -61,7 +62,7 @@ export class SeedService implements OnApplicationBootstrap {
 
     const summerSocial = this.contentRepository.create({
       campaignId: savedSummerSale.id,
-      type: 'social',
+      type: ContentType.Social,
       title: 'Summer Sale Instagram Post',
       originalText: '☀️ SUMMER IS HERE! ☀️ Get up to 50% off everything! Limited time only. Shop now!',
       reviewState: ReviewState.AiSuggested,
@@ -86,7 +87,7 @@ export class SeedService implements OnApplicationBootstrap {
     // Content pieces for Product Launch
     const launchEmail = this.contentRepository.create({
       campaignId: savedProductLaunch.id,
-      type: 'email',
+      type: ContentType.Email,
       title: 'Product Launch Announcement Email',
       originalText: 'We are thrilled to announce the launch of our new product. After months of development, it is finally here. Be among the first to experience innovation.',
       reviewState: ReviewState.InReview,
