@@ -38,6 +38,11 @@ export default function ContentDetail() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [isTranslating, setIsTranslating] = useState(false)
 
+  const translationEntries = useMemo(
+    () => Object.entries(content.translations ?? {}),
+    [content.translations],
+  )
+
   useEffect(() => {
     setContent(initialContent)
     setTitle(initialContent.title)
@@ -60,11 +65,6 @@ export default function ContentDetail() {
       setContent((prev) => ({ ...prev, reviewState: reviewState as ContentPiece['reviewState'] }))
     },
   })
-
-  const translationEntries = useMemo(
-    () => Object.entries(content.translations ?? {}),
-    [content.translations],
-  )
 
   const handleSave = async () => {
     setError(null)

@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import { Toaster } from 'sonner'
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   `rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition ${
@@ -10,6 +11,17 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
 export default function AppLayout() {
   return (
     <div className="min-h-screen">
+      <Toaster
+        position="top-right"
+        closeButton
+        toastOptions={{
+          duration: 4000,
+          className: 'sonner-toast',
+          descriptionClassName: 'sonner-description',
+          actionButtonClassName: 'sonner-action',
+          cancelButtonClassName: 'sonner-cancel',
+        }}
+      />
       <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-[rgba(255,248,240,0.8)] backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-5">
           <div>

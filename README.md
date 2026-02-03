@@ -130,6 +130,8 @@ This challenge is designed to be **flexible**. Some tips:
 - `docs/workflow.md`
 - `docs/decisions.md`
 
+> Running without Docker requires a local PostgreSQL instance and a valid `DATABASE_URL` in `.env`.
+
 ## 🏁 Good luck and have fun building!
 
 

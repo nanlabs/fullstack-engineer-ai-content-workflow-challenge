@@ -9,6 +9,8 @@ export type ReviewState =
 
 export type ReviewDecision = 'APPROVE' | 'REJECT' | 'EDIT'
 
+export type ContentType = 'Email' | 'Blog' | 'Social' | 'Ad' | 'Landing Page'
+
 export type ContentMetadata = {
   reviewFeedback?: string
   reviewedAt?: string
@@ -52,7 +54,7 @@ export type UpdateCampaignPayload = Partial<CreateCampaignPayload>
 
 export type CreateContentPayload = {
   title: string
-  type: string
+  type: ContentType
   originalText: string
 }
 

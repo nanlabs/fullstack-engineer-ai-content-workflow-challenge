@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useLoaderData } from 'react-router-dom'
+import { toast } from 'sonner'
 
 import SectionHeader from '../components/SectionHeader'
 import StatusBadge from '../components/StatusBadge'
+import Tooltip from '../components/Tooltip'
 import { useContentEvents } from '../hooks/useContentEvents'
 import { api } from '../lib/api'
 import { formatDate } from '../lib/format'
@@ -52,6 +54,7 @@ export default function ContentReview() {
     setError(null)
     if (decision === 'EDIT' && !editedDraft.trim()) {
       setError('Edited draft is required before saving.')
+      toast.error('Add edits before saving.')
       return
     }
     setIsSubmitting(true)
@@ -63,12 +66,58 @@ export default function ContentReview() {
       }
       const updated = await api.submitReview(content.id, payload)
       setContent(updated)
+      if (decision === 'APPROVE') {
+        toast.success('Content approved.')
+      } else if (decision === 'REJECT') {
+        toast.success('Content rejected.')
+      } else {
+        toast.success('Edits saved.')
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to submit review')
+      const message = err instanceof Error ? err.message : 'Unable to submit review'
+      setError(message)
+      toast.error(message)
     } finally {
       setIsSubmitting(false)
     }
   }
+
+  const isApproveDisabled = content.reviewState === 'APPROVED'
+  const isRejectDisabled = content.reviewState === 'REJECTED'
+  const approveButton = (
+    <button
+      type="button"
+      onClick={() => {
+        if (isSubmitting || isApproveDisabled) return
+        handleReview('APPROVE')
+      }}
+      aria-disabled={isSubmitting || isApproveDisabled}
+      disabled={isSubmitting}
+      data-disabled={isSubmitting || isApproveDisabled}
+      className={`rounded-full bg-emerald-600 px-6 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-white transition ${
+        isSubmitting || isApproveDisabled ? 'cursor-not-allowed opacity-60' : ''
+      }`}
+    >
+      Approve
+    </button>
+  )
+  const rejectButton = (
+    <button
+      type="button"
+      onClick={() => {
+        if (isSubmitting || isRejectDisabled) return
+        handleReview('REJECT')
+      }}
+      aria-disabled={isSubmitting || isRejectDisabled}
+      disabled={isSubmitting}
+      data-disabled={isSubmitting || isRejectDisabled}
+      className={`rounded-full border border-rose-200 px-6 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-rose-600 transition ${
+        isSubmitting || isRejectDisabled ? 'cursor-not-allowed opacity-60' : ''
+      }`}
+    >
+      Reject
+    </button>
+  )
 
   return (
     <section className="space-y-8">
@@ -139,22 +188,8 @@ export default function ContentReview() {
               </div>
             ) : null}
             <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => handleReview('APPROVE')}
-                disabled={isSubmitting}
-                className="rounded-full bg-emerald-600 px-6 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-white disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Approve
-              </button>
-              <button
-                type="button"
-                onClick={() => handleReview('REJECT')}
-                disabled={isSubmitting}
-                className="rounded-full border border-rose-200 px-6 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-rose-600 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Reject
-              </button>
+              {isApproveDisabled ? <Tooltip label="Already approved">{approveButton}</Tooltip> : approveButton}
+              {isRejectDisabled ? <Tooltip label="Already rejected">{rejectButton}</Tooltip> : rejectButton}
               <button
                 type="button"
                 onClick={() => handleReview('EDIT')}

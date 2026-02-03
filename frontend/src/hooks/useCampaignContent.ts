@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type SyntheticEvent } from 'react'
 
 import { api } from '../lib/api'
-import type { ContentPiece } from '../lib/types'
+import type { ContentPiece, ContentType } from '../lib/types'
 import { useContentEvents } from './useContentEvents'
 
 type UseCampaignContentParams = {
@@ -12,7 +12,7 @@ type UseCampaignContentParams = {
 export function useCampaignContent({ campaignId, initialContentPieces }: UseCampaignContentParams) {
   const [contentPieces, setContentPieces] = useState<ContentPiece[]>(initialContentPieces)
   const [title, setTitle] = useState('')
-  const [type, setType] = useState('Email')
+  const [type, setType] = useState<ContentType>('Email')
   const [originalText, setOriginalText] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
@@ -72,7 +72,7 @@ export function useCampaignContent({ campaignId, initialContentPieces }: UseCamp
     try {
       const created = await api.createContent(campaignId, {
         title: title.trim(),
-        type: type.trim() || 'Content',
+        type,
         originalText: originalText.trim(),
       })
       setContentPieces((prev) => [created, ...prev])

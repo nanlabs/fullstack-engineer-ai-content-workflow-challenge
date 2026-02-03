@@ -7,9 +7,10 @@ import StatusBadge from '../components/StatusBadge'
 import { useCampaignContent } from '../hooks/useCampaignContent'
 import { useCampaignSettings } from '../hooks/useCampaignSettings'
 import { formatDate, formatLanguages } from '../lib/format'
-import type { Campaign, CampaignStatus } from '../lib/types'
+import type { Campaign, CampaignStatus, ContentType } from '../lib/types'
 
 const statusOptions: CampaignStatus[] = ['ACTIVE', 'PAUSED', 'ARCHIVED']
+const contentTypeOptions: ContentType[] = ['Email', 'Blog', 'Social', 'Ad', 'Landing Page']
 const statusTone: Record<CampaignStatus, 'accent' | 'warning' | 'neutral'> = {
   ACTIVE: 'accent',
   PAUSED: 'warning',
@@ -134,12 +135,17 @@ export default function CampaignDetail() {
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">Type</label>
-                <input
+                <select
                   value={type}
-                  onChange={(event) => setType(event.target.value)}
-                  placeholder="Email, Blog, Social"
+                  onChange={(event) => setType(event.target.value as ContentType)}
                   className="w-full rounded-2xl border border-[var(--line)] bg-white/80 px-4 py-2 text-sm"
-                />
+                >
+                  {contentTypeOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="space-y-2">
