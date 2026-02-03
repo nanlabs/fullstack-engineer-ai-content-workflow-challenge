@@ -7,10 +7,10 @@ import StatusBadge from '../components/StatusBadge'
 import { useCampaignContent } from '../hooks/useCampaignContent'
 import { useCampaignSettings } from '../hooks/useCampaignSettings'
 import { formatDate, formatLanguages } from '../lib/format'
+import { contentTypeOptions } from '../lib/contentTypes'
 import type { Campaign, CampaignStatus, ContentType } from '../lib/types'
 
 const statusOptions: CampaignStatus[] = ['ACTIVE', 'PAUSED', 'ARCHIVED']
-const contentTypeOptions: ContentType[] = ['Email', 'Blog', 'Social', 'Ad', 'Landing Page']
 const statusTone: Record<CampaignStatus, 'accent' | 'warning' | 'neutral'> = {
   ACTIVE: 'accent',
   PAUSED: 'warning',

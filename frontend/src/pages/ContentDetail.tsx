@@ -4,8 +4,9 @@ import { Link, useLoaderData, useNavigate } from 'react-router-dom'
 import SectionHeader from '../components/SectionHeader'
 import StatusBadge from '../components/StatusBadge'
 import { useContentEvents } from '../hooks/useContentEvents'
+import { contentTypeOptions } from '../lib/contentTypes'
 import { formatDate, formatParagraphs, normalizeLanguages } from '../lib/format'
-import type { ContentPiece } from '../lib/types'
+import type { ContentPiece, ContentType } from '../lib/types'
 import {
   deleteContent,
   generateDraft,
@@ -21,6 +22,7 @@ const reviewTone: Record<ContentPiece['reviewState'], 'neutral' | 'accent' | 'wa
   APPROVED: 'success',
   REJECTED: 'danger',
 }
+
 
 export default function ContentDetail() {
   const initialContent = useLoaderData() as ContentPiece
@@ -182,11 +184,17 @@ export default function ContentDetail() {
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">Type</label>
-                <input
+                <select
                   value={type}
-                  onChange={(event) => setType(event.target.value)}
+                  onChange={(event) => setType(event.target.value as ContentType)}
                   className="w-full rounded-2xl border border-[var(--line)] bg-white/80 px-4 py-2 text-sm"
-                />
+                >
+                  {contentTypeOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="space-y-2">
