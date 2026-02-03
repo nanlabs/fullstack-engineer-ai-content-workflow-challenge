@@ -2,8 +2,8 @@
 
 ## Prerequisites
 
-- **Node.js 20** (see `.nvmrc` in backend folder)
-  - Use `nvm use` in the `backend/` directory to switch to the correct version
+- **Node.js 20** (see root `.nvmrc`)
+  - Use `nvm use` in the repo root to switch to the correct version
 
 ## Local Development (Docker)
 

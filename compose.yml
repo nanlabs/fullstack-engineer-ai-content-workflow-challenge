@@ -50,6 +50,7 @@ services:
     environment:
       NODE_ENV: development
       VITE_API_URL: ${VITE_API_URL:-http://localhost:${BACKEND_PORT:-4000}}
+      VITE_WS_URL: ${VITE_WS_URL:-http://localhost:${BACKEND_PORT:-4000}}
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     depends_on:
