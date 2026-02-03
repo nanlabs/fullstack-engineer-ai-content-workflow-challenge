@@ -126,37 +126,16 @@ export class AiService {
       ],
     });
 
-    const fallbackOutput = (response.output ?? [])
-      .flatMap((item) => (item as { content?: Array<{ text?: string }> }).content ?? [])
-      .map((content) => content.text)
-      .filter(Boolean)
-      .join('\n')
-      .trim();
-    const rawOutput = response.output_text?.trim() || fallbackOutput;
+    const rawOutput = response.output_text?.trim();
 
     if (!rawOutput) {
       throw new BadRequestException('OpenAI response did not include translations');
     }
 
-    const parseJson = (input: string) => {
-      const trimmed = input.trim();
-      const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-      const candidate = fenced?.[1]?.trim() ?? trimmed;
-      try {
-        return JSON.parse(candidate) as Record<string, unknown>;
-      } catch (error) {
-        const objectMatch = candidate.match(/\{[\s\S]*\}/);
-        if (objectMatch) {
-          return JSON.parse(objectMatch[0]) as Record<string, unknown>;
-        }
-        throw error;
-      }
-    };
-
     let parsedTranslations: Record<string, unknown>;
 
     try {
-      parsedTranslations = parseJson(rawOutput);
+      parsedTranslations = JSON.parse(rawOutput) as Record<string, unknown>;
     } catch (error) {
       throw new BadRequestException('OpenAI response was not valid JSON');
     }
