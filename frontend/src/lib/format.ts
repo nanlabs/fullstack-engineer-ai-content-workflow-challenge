@@ -30,9 +30,28 @@ export function normalizeLanguages(languages?: string[] | string | null): string
   if (!languages) return []
   if (Array.isArray(languages)) return languages
   if (typeof languages === 'string') {
-    return languages
+    const trimmed = languages.trim()
+    if (!trimmed) return []
+
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed)
+        if (Array.isArray(parsed)) {
+          return parsed
+            .map((lang) => String(lang).trim())
+            .map((lang) => lang.replace(/^\{+|\}+$/g, '').replace(/^"+|"+$/g, '').replace(/^'+|'+$/g, ''))
+            .filter(Boolean)
+        }
+      } catch {
+        // fall through to string parsing
+      }
+    }
+
+    const withoutBraces = trimmed.startsWith('{') && trimmed.endsWith('}') ? trimmed.slice(1, -1) : trimmed
+    return withoutBraces
       .split(',')
       .map((lang) => lang.trim())
+      .map((lang) => lang.replace(/^\{+|\}+$/g, '').replace(/^"+|"+$/g, '').replace(/^'+|'+$/g, ''))
       .filter(Boolean)
   }
   return []

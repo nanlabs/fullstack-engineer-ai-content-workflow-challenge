@@ -9,6 +9,14 @@ type UseCampaignContentParams = {
   initialContentPieces: ContentPiece[]
 }
 
+const upsertContentPiece = (items: ContentPiece[], incoming: ContentPiece) => {
+  const index = items.findIndex((item) => item.id === incoming.id)
+  if (index === -1) {
+    return [incoming, ...items]
+  }
+  return items.map((item) => (item.id === incoming.id ? incoming : item))
+}
+
 export function useCampaignContent({ campaignId, initialContentPieces }: UseCampaignContentParams) {
   const [contentPieces, setContentPieces] = useState<ContentPiece[]>(initialContentPieces)
   const [title, setTitle] = useState('')
@@ -27,7 +35,7 @@ export function useCampaignContent({ campaignId, initialContentPieces }: UseCamp
       if (incomingCampaignId !== campaignId) return
       setContentPieces((prev) => {
         const created = content as ContentPiece
-        return prev.some((item) => item.id === created.id) ? prev : [created, ...prev]
+        return upsertContentPiece(prev, created)
       })
     },
     onContentUpdated: ({ contentId, content }) => {
@@ -75,7 +83,7 @@ export function useCampaignContent({ campaignId, initialContentPieces }: UseCamp
         type,
         originalText: originalText.trim(),
       })
-      setContentPieces((prev) => [created, ...prev])
+      setContentPieces((prev) => upsertContentPiece(prev, created))
       setTitle('')
       setType('Email')
       setOriginalText('')

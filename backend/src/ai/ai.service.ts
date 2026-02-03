@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import OpenAI from 'openai';
@@ -85,7 +81,7 @@ export class AiService {
     const sourceText = content.aiDraft ?? content.originalText;
 
     const systemPrompt =
-      'You are a localization expert. Translate the content to requested locales. Respond with a JSON object keyed by locale.';
+      'You are a localization expert. Translate the content to requested locales. Respond with JSON matching the provided schema only.';
     const userPrompt = [
       `Title: ${content.title}`,
       `Type: ${content.type}`,
@@ -98,29 +94,89 @@ export class AiService {
 
     const response = await this.client.responses.create({
       model: 'gpt-4o-mini',
+      text: {
+        format: {
+          type: 'json_schema',
+          name: 'translations',
+          strict: true,
+          schema: {
+            type: 'object',
+            properties: {
+              translations: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    locale: { type: 'string' },
+                    text: { type: 'string' },
+                  },
+                  required: ['locale', 'text'],
+                  additionalProperties: false,
+                },
+              },
+            },
+            required: ['translations'],
+            additionalProperties: false,
+          },
+        },
+      },
       input: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
     });
 
-    const rawOutput = response.output_text?.trim();
+    const fallbackOutput = (response.output ?? [])
+      .flatMap((item) => (item as { content?: Array<{ text?: string }> }).content ?? [])
+      .map((content) => content.text)
+      .filter(Boolean)
+      .join('\n')
+      .trim();
+    const rawOutput = response.output_text?.trim() || fallbackOutput;
 
     if (!rawOutput) {
       throw new BadRequestException('OpenAI response did not include translations');
     }
 
-    let parsedTranslations: Record<string, string>;
+    const parseJson = (input: string) => {
+      const trimmed = input.trim();
+      const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+      const candidate = fenced?.[1]?.trim() ?? trimmed;
+      try {
+        return JSON.parse(candidate) as Record<string, unknown>;
+      } catch (error) {
+        const objectMatch = candidate.match(/\{[\s\S]*\}/);
+        if (objectMatch) {
+          return JSON.parse(objectMatch[0]) as Record<string, unknown>;
+        }
+        throw error;
+      }
+    };
+
+    let parsedTranslations: Record<string, unknown>;
 
     try {
-      parsedTranslations = JSON.parse(rawOutput) as Record<string, string>;
+      parsedTranslations = parseJson(rawOutput);
     } catch (error) {
       throw new BadRequestException('OpenAI response was not valid JSON');
     }
 
+    const translationArray =
+      (parsedTranslations.translations as Array<{ locale?: unknown; text?: unknown }> | undefined) ??
+      [];
+
+    const normalizedTranslations = Object.fromEntries(
+      translationArray
+        .filter((entry) => typeof entry?.locale === 'string')
+        .map((entry) => [
+          entry.locale as string,
+          typeof entry.text === 'string' ? entry.text : String(entry.text ?? ''),
+        ]),
+    );
+
     content.translations = {
       ...(content.translations ?? {}),
-      ...parsedTranslations,
+      ...normalizedTranslations,
     };
 
     const saved = await this.contentRepository.save(content);

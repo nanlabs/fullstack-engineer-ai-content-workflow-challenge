@@ -1,11 +1,8 @@
 import { api } from '../lib/api'
+import { normalizeLanguages } from './format'
 import type { ContentPiece } from '../lib/types'
 
-export const parseLanguages = (value: string) =>
-  value
-    .split(',')
-    .map((lang) => lang.trim())
-    .filter(Boolean)
+export const parseLanguages = (value: string) => normalizeLanguages(value)
 
 export const saveContent = async ({
   contentId,
