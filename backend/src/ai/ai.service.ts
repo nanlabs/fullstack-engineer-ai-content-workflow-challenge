@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Campaign } from '../campaign/campaign.entity';
 import { ContentPiece } from '../content-piece/content-pieces.entity';
 import { ContentLocalization } from '../content-localization/content-localizations.entity';
+import { ReviewStatus } from '../status-enum';
 import { createModel } from './model.factory';
 import { buildPiecesPrompt } from '../prompts/pieces.prompts';
 import { buildContentPrompt } from '../prompts/localization.prompts';
@@ -83,6 +84,7 @@ export class AiService {
 
     localization.titleSuggestion = parsed.title ?? '';
     localization.bodySuggestion = parsed.body ?? '';
+    localization.status = ReviewStatus.AI_SUGGESTED;
 
     return this.localizationRepo.save(localization);
   }

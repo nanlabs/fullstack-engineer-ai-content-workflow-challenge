@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ReviewStatus } from '../status-enum';
@@ -8,6 +8,14 @@ import { UpdateLocalizationStatusDto } from './dto/update-localization-status.dt
 
 @Injectable()
 export class ContentLocalizationService {
+  private readonly allowedTransitions: Record<ReviewStatus, ReviewStatus[]> = {
+    [ReviewStatus.DRAFT]: [ReviewStatus.AI_SUGGESTED],
+    [ReviewStatus.AI_SUGGESTED]: [ReviewStatus.REVIEWED, ReviewStatus.REJECTED],
+    [ReviewStatus.REVIEWED]: [ReviewStatus.APPROVED, ReviewStatus.REJECTED],
+    [ReviewStatus.APPROVED]: [],
+    [ReviewStatus.REJECTED]: [],
+  };
+
   constructor(
     @InjectRepository(ContentLocalization)
     private readonly localizationRepo: Repository<ContentLocalization>,
@@ -18,6 +26,7 @@ export class ContentLocalizationService {
     payload: UpdateLocalizationStatusDto,
   ): Promise<ContentLocalization> {
     const localization = await this.getByIdOrThrow(id);
+    this.assertTransition(localization.status, payload.status);
     localization.status = payload.status;
     return this.localizationRepo.save(localization);
   }
@@ -27,6 +36,15 @@ export class ContentLocalizationService {
     payload: UpdateLocalizationContentDto,
   ): Promise<ContentLocalization> {
     const localization = await this.getByIdOrThrow(id);
+
+    if (
+      localization.status === ReviewStatus.APPROVED ||
+      localization.status === ReviewStatus.REJECTED
+    ) {
+      throw new BadRequestException(
+        'Cannot edit content after it is finalized (APPROVED or REJECTED)',
+      );
+    }
 
     if (payload.titleSuggestion !== undefined) {
       localization.titleSuggestion = payload.titleSuggestion;
@@ -53,5 +71,16 @@ export class ContentLocalizationService {
     }
 
     return localization;
+  }
+
+  private assertTransition(current: ReviewStatus, next: ReviewStatus): void {
+    if (current === next) {
+      return;
+    }
+
+    const allowed = this.allowedTransitions[current] ?? [];
+    if (!allowed.includes(next)) {
+      throw new BadRequestException(`Invalid status transition: ${current} -> ${next}`);
+    }
   }
 }
