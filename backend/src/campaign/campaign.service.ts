@@ -31,17 +31,31 @@ export class CampaignService {
     return campaign;
   }
 
-  async getCampaigns(): Promise<Campaign[]> {
-    return this.campaignRepo.find({
+  async getCampaigns(): Promise<Record<string, unknown>[]> {
+    const campaigns = await this.campaignRepo.find({
       order: { createdAt: 'DESC' },
-      relations: { pieces: true },
+      relations: { pieces: { localizations: true } },
     });
+
+    // Dashboard view: avoid sending full generated content bodies for every row.
+    return campaigns.map((campaign) => ({
+      ...campaign,
+      pieces: campaign.pieces.map((piece) => ({
+        ...piece,
+        localizations: piece.localizations.map((loc) => ({
+          id: loc.id,
+          languageCode: loc.languageCode,
+          status: loc.status,
+          updatedAt: loc.updatedAt,
+        })),
+      })),
+    }));
   }
 
   async getCampaignById(id: string): Promise<Campaign> {
     const campaign = await this.campaignRepo.findOne({
       where: { id },
-      relations: { pieces: true },
+      relations: { pieces: { localizations: true } },
     });
     if (!campaign) {
       throw new NotFoundException(`Campaign with id "${id}" not found`);

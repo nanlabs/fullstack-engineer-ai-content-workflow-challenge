@@ -20,7 +20,7 @@ export class CampaignController {
 
   @Get()
   @ApiOperation({ summary: 'List all campaigns' })
-  findAll(): Promise<Campaign[]> {
+  findAll(): Promise<Record<string, unknown>[]> {
     return this.campaignService.getCampaigns();
   }
 

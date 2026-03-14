@@ -1,7 +1,0 @@
-export enum ReviewStatus {
-    DRAFT = 'DRAFT',
-    AI_SUGGESTED = 'AI_SUGGESTED',
-    REVIEWED = 'REVIEWED',
-    APPROVED = 'APPROVED',
-    REJECTED = 'REJECTED',
-  }
