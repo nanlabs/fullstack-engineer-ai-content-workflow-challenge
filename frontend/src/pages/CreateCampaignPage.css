@@ -1,0 +1,36 @@
+.create-campaign-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.create-campaign-page__card {
+  width: 100%;
+  max-width: 720px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.create-campaign-page__subtitle {
+  margin-top: 0;
+  color: #6b7280;
+}
+
+.create-campaign-page__error {
+  margin-top: 16px;
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.create-campaign-page__success {
+  margin-top: 16px;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  padding: 12px;
+  border-radius: 8px;
+}
