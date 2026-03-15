@@ -37,9 +37,14 @@ export function CreateCampaignPage() {
         {requestError && <p className="create-campaign-page__error">{requestError}</p>}
 
         {createdId && (
-          <p className="create-campaign-page__success">
-            Campaign created successfully. ID: <code>{createdId}</code>
-          </p>
+          <div className="create-campaign-page__success">
+            <p>
+              Campaign created successfully. ID: <code>{createdId}</code>
+            </p>
+            <a className="create-campaign-page__details-link" href={`/campaigns/${createdId}`}>
+              View campaign details
+            </a>
+          </div>
         )}
       </section>
     </main>

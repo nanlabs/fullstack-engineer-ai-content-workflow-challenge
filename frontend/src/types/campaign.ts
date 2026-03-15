@@ -1,4 +1,5 @@
 export type CampaignProvider = 'openai' | 'anthropic'
+export type ReviewStatus = 'DRAFT' | 'AI_SUGGESTED' | 'REVIEWED' | 'APPROVED' | 'REJECTED'
 
 export type CreateCampaignPayload = {
   topic: string
@@ -14,4 +15,40 @@ export type CampaignApiError = {
 
 export type CreateCampaignResponse = {
   id: string
+}
+
+export type ContentLocalization = {
+  id: string
+  languageCode: string
+  titleSuggestion: string | null
+  bodySuggestion: string | null
+  status: ReviewStatus
+  updatedAt: string
+}
+
+export type ContentPiece = {
+  id: string
+  name: string
+  type: string
+  localizations: ContentLocalization[]
+}
+
+export type CampaignDetails = {
+  id: string
+  topic: string
+  description: string | null
+  languages: string[]
+  llmProvider: string
+  model: string
+  createdAt: string
+  pieces: ContentPiece[]
+}
+
+export type UpdateLocalizationContentPayload = {
+  titleSuggestion?: string
+  bodySuggestion?: string
+}
+
+export type UpdateLocalizationStatusPayload = {
+  status: ReviewStatus
 }

@@ -34,3 +34,17 @@
   padding: 12px;
   border-radius: 8px;
 }
+
+.create-campaign-page__success p {
+  margin: 0 0 10px;
+}
+
+.create-campaign-page__details-link {
+  color: #1d4ed8;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.create-campaign-page__details-link:hover {
+  text-decoration: underline;
+}
