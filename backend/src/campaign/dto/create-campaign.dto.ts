@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ArrayNotEmpty, IsArray, IsOptional, IsString, MinLength } from 'class-validator';
+import { ArrayNotEmpty, IsArray, IsOptional, IsString, Matches, MinLength } from 'class-validator';
 
 export class CreateCampaignDto {
   @ApiProperty({ example: 'Summer campaign for skincare products' })
@@ -12,10 +12,15 @@ export class CreateCampaignDto {
   @IsString()
   description?: string;
 
-  @ApiProperty({ example: ['en', 'es', 'pt'] })
+  @ApiProperty({ example: ['en-US', 'es-ES', 'fr-FR'] })
   @IsArray()
   @ArrayNotEmpty()
   @IsString({ each: true })
+  @Matches(/^[a-z]{2,3}-[A-Z]{2}$/, {
+    each: true,
+    message:
+      'Each localization must use locale format like en-US, es-MX, fr-FR (language-country).',
+  })
   languages: string[];
 
   @ApiProperty({ example: 'openai' })

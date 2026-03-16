@@ -18,15 +18,19 @@ export class CampaignService {
   ) {}
 
   async createCampaign(payload: CreateCampaignDto): Promise<Campaign> {
+    const normalizedLocalizations = payload.languages.map((locale) =>
+      this.normalizeLocale(locale),
+    );
+
     const campaign = await this.campaignRepo.save({
       topic: payload.topic,
       description: payload.description,
-      languages: payload.languages,
+      languages: normalizedLocalizations,
       llmProvider: payload.provider,
       model: payload.model,
     });
 
-    await this.aiService.generateCampaignContent(campaign, payload.languages);
+    await this.aiService.generateCampaignContent(campaign, normalizedLocalizations);
 
     return campaign;
   }
@@ -71,5 +75,13 @@ export class CampaignService {
       campaign: { id: campaignId } as Campaign,
     });
     return this.contentPieceRepo.save(piece);
+  }
+
+  private normalizeLocale(rawLocale: string): string {
+    const [language, region] = rawLocale.split('-');
+    if (!language || !region) {
+      return rawLocale;
+    }
+    return `${language.toLowerCase()}-${region.toUpperCase()}`;
   }
 }
