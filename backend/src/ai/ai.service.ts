@@ -1,4 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Campaign } from '../campaign/campaign.entity';
@@ -26,6 +27,11 @@ type AiErrorDetail = {
   message: string;
 };
 
+type ProviderModel = {
+  id: string;
+  label: string;
+};
+
 @Injectable()
 export class AiService {
   private readonly logger = new Logger(AiService.name);
@@ -38,11 +44,26 @@ export class AiService {
   ];
 
   constructor(
+    private readonly configService: ConfigService,
     @InjectRepository(ContentPiece)
     private readonly pieceRepo: Repository<ContentPiece>,
     @InjectRepository(ContentLocalization)
     private readonly localizationRepo: Repository<ContentLocalization>,
   ) {}
+
+  async getModelsByProvider(provider: string): Promise<ProviderModel[]> {
+    const normalizedProvider = provider.toLowerCase();
+
+    if (normalizedProvider === 'openai') {
+      return this.fetchOpenAiModels();
+    }
+
+    if (normalizedProvider === 'anthropic') {
+      return this.fetchAnthropicModels();
+    }
+
+    throw new BadRequestException(`Unsupported provider "${provider}"`);
+  }
 
   async generateCampaignContent(campaign: Campaign, languages: string[]): Promise<void> {
     const modelCandidates = this.buildModelCandidates(campaign.llmProvider, campaign.model);
@@ -320,5 +341,71 @@ export class AiService {
 
   private async sleep(ms: number): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private async fetchOpenAiModels(): Promise<ProviderModel[]> {
+    const apiKey = this.configService.get<string>('OPENAI_API_KEY');
+    if (!apiKey) {
+      throw new ServiceUnavailableException('OPENAI_API_KEY is missing on server');
+    }
+
+    const response = await fetch('https://api.openai.com/v1/models', {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+    });
+
+    if (!response.ok) {
+      const raw = await response.text();
+      throw new ServiceUnavailableException(
+        `Could not fetch OpenAI models (${response.status}): ${raw}`,
+      );
+    }
+
+    const payload = (await response.json()) as {
+      data?: Array<{ id?: string }>;
+    };
+    const models = (payload.data ?? [])
+      .map((item) => item.id)
+      .filter((id): id is string => Boolean(id))
+      .sort((a, b) => a.localeCompare(b))
+      .map((id) => ({ id, label: id }));
+
+    return models;
+  }
+
+  private async fetchAnthropicModels(): Promise<ProviderModel[]> {
+    const apiKey = this.configService.get<string>('ANTHROPIC_API_KEY');
+    if (!apiKey) {
+      throw new ServiceUnavailableException('ANTHROPIC_API_KEY is missing on server');
+    }
+
+    const response = await fetch('https://api.anthropic.com/v1/models', {
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+    });
+
+    if (!response.ok) {
+      const raw = await response.text();
+      throw new ServiceUnavailableException(
+        `Could not fetch Anthropic models (${response.status}): ${raw}`,
+      );
+    }
+
+    const payload = (await response.json()) as {
+      data?: Array<{ id?: string; display_name?: string }>;
+    };
+
+    const models = (payload.data ?? [])
+      .map((item) => ({
+        id: item.id ?? '',
+        label: item.display_name ?? item.id ?? '',
+      }))
+      .filter((item) => item.id.length > 0)
+      .sort((a, b) => a.id.localeCompare(b.id));
+
+    return models;
   }
 }

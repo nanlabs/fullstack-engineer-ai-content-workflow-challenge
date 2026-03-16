@@ -6,10 +6,11 @@ import { CampaignService } from './campaign.service';
 import { ContentPiece } from '../content-piece/content-pieces.entity';
 import { ContentLocalization } from '../content-localization/content-localizations.entity';
 import { AiService } from '../ai/ai.service';
+import { AiController } from '../ai/ai.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Campaign, ContentPiece, ContentLocalization])],
-  controllers: [CampaignController],
+  controllers: [CampaignController, AiController],
   providers: [CampaignService, AiService],
   exports: [CampaignService],
 })
