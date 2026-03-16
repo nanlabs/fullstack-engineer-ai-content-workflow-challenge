@@ -32,7 +32,7 @@ export function CreateCampaignPage() {
         </a>
         <h1>Create Content Workflow</h1>
         <p className="create-campaign-page__subtitle">
-          Enter topic, model and languages to create a campaign.
+          Enter topic, model and localizations to create a campaign.
         </p>
 
         <CreateCampaignForm onSubmitCampaign={handleCreateCampaign} loading={loading} />

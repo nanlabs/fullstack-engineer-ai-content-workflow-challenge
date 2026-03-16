@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getCampaigns } from '../services/campaign.service'
-import type { CampaignSummary } from '../types/campaign'
+import type { CampaignSummary, ReviewStatus } from '../types/campaign'
 import './DashboardPage.css'
 
 export function DashboardPage() {
@@ -105,7 +105,10 @@ export function DashboardPage() {
                       <p>{piece.type}</p>
                       <div className="dashboard-page__locs">
                         {piece.localizations.map((loc) => (
-                          <span key={loc.id} className="dashboard-page__loc-badge">
+                          <span
+                            key={loc.id}
+                            className={`dashboard-page__loc-badge ${getStatusClassName(loc.status)}`}
+                          >
                             {loc.languageCode.toUpperCase()} - {loc.status}
                           </span>
                         ))}
@@ -120,4 +123,21 @@ export function DashboardPage() {
       </section>
     </main>
   )
+}
+
+function getStatusClassName(status: ReviewStatus): string {
+  switch (status) {
+    case 'DRAFT':
+      return 'dashboard-page__loc-badge--draft'
+    case 'AI_SUGGESTED':
+      return 'dashboard-page__loc-badge--ai-suggested'
+    case 'REVIEWED':
+      return 'dashboard-page__loc-badge--reviewed'
+    case 'APPROVED':
+      return 'dashboard-page__loc-badge--approved'
+    case 'REJECTED':
+      return 'dashboard-page__loc-badge--rejected'
+    default:
+      return ''
+  }
 }

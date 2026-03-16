@@ -2,9 +2,11 @@ import type {
   CampaignSummary,
   CampaignDetails,
   CampaignApiError,
+  CampaignProvider,
   ContentLocalization,
   CreateCampaignPayload,
   CreateCampaignResponse,
+  ProviderModelOption,
   UpdateLocalizationContentPayload,
   UpdateLocalizationStatusPayload,
 } from '../types/campaign'
@@ -51,6 +53,31 @@ export async function getCampaigns(): Promise<CampaignSummary[]> {
 
   if (!Array.isArray(data)) {
     throw new Error('Campaigns response is invalid.')
+  }
+
+  return data
+}
+
+export async function getProviderModels(
+  provider: CampaignProvider,
+): Promise<ProviderModelOption[]> {
+  const response = await fetch(`/api/ai/models?provider=${encodeURIComponent(provider)}`)
+  const data = (await parseResponseBody(response)) as ProviderModelOption[] | CampaignApiError
+
+  if (!response.ok) {
+    const message =
+      data && !Array.isArray(data)
+        ? Array.isArray(data.message)
+          ? data.message.join(', ')
+          : typeof data.message === 'string'
+            ? data.message
+            : undefined
+        : undefined
+    throw new Error(message || `Failed to load ${provider} models (${response.status})`)
+  }
+
+  if (!Array.isArray(data)) {
+    throw new Error('Models response is invalid.')
   }
 
   return data

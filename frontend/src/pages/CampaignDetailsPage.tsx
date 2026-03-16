@@ -196,7 +196,13 @@ export function CampaignDetailsPage({ campaignId }: CampaignDetailsPageProps) {
                     <section key={localization.id} className="campaign-details-page__loc-card">
                       <div className="campaign-details-page__loc-head">
                         <strong>{localization.languageCode.toUpperCase()}</strong>
-                        <span>{localization.status}</span>
+                        <span
+                          className={`campaign-details-page__status-tag ${getStatusClassName(
+                            localization.status,
+                          )}`}
+                        >
+                          {localization.status}
+                        </span>
                       </div>
 
                       <label className="campaign-details-page__field-label">Title</label>
@@ -304,4 +310,21 @@ function getAllowedTransitions(current: ReviewStatus): ReviewStatus[] {
     REJECTED: [],
   }
   return map[current] ?? []
+}
+
+function getStatusClassName(status: ReviewStatus): string {
+  switch (status) {
+    case 'DRAFT':
+      return 'campaign-details-page__status-tag--draft'
+    case 'AI_SUGGESTED':
+      return 'campaign-details-page__status-tag--ai-suggested'
+    case 'REVIEWED':
+      return 'campaign-details-page__status-tag--reviewed'
+    case 'APPROVED':
+      return 'campaign-details-page__status-tag--approved'
+    case 'REJECTED':
+      return 'campaign-details-page__status-tag--rejected'
+    default:
+      return ''
+  }
 }

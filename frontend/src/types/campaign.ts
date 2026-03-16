@@ -1,6 +1,11 @@
 export type CampaignProvider = 'openai' | 'anthropic'
 export type ReviewStatus = 'DRAFT' | 'AI_SUGGESTED' | 'REVIEWED' | 'APPROVED' | 'REJECTED'
 
+export type ProviderModelOption = {
+  id: string
+  label: string
+}
+
 export type CreateCampaignPayload = {
   topic: string
   description?: string
