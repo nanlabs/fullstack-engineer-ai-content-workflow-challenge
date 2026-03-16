@@ -6,6 +6,7 @@ import { Campaign } from './campaign/campaign.entity';
 import { ContentPiece } from './content-piece/content-pieces.entity';
 import { ContentLocalization } from './content-localization/content-localizations.entity';
 import { ContentLocalizationModule } from './content-localization/content-localization.module';
+import { SeedModule } from './seed/seed.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { ContentLocalizationModule } from './content-localization/content-locali
     }),
     CampaignModule,
     ContentLocalizationModule,
+    SeedModule,
   ],
 })
 export class AppModule {}
