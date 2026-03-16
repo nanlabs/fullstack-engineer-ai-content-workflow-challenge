@@ -7,6 +7,7 @@ import { ContentPiece } from './content-piece/content-pieces.entity';
 import { ContentLocalization } from './content-localization/content-localizations.entity';
 import { ContentLocalizationModule } from './content-localization/content-localization.module';
 import { SeedModule } from './seed/seed.module';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { SeedModule } from './seed/seed.module';
         synchronize: true,
       }),
     }),
+    EventsModule,
     CampaignModule,
     ContentLocalizationModule,
     SeedModule,

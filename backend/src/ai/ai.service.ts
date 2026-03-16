@@ -9,7 +9,7 @@ import { ReviewStatus } from '../status-enum';
 import { createModel } from './model.factory';
 import { buildPiecesPrompt } from '../prompts/pieces.prompts';
 import { buildContentPrompt } from '../prompts/localization.prompts';
-import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { EventsService } from '../events/events.service';
 
 type GeneratedPiece = {
   type: string;
@@ -46,7 +46,7 @@ export class AiService {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly realtimeGateway: RealtimeGateway,
+    private readonly eventsService: EventsService,
     @InjectRepository(ContentPiece)
     private readonly pieceRepo: Repository<ContentPiece>,
     @InjectRepository(ContentLocalization)
@@ -106,7 +106,7 @@ export class AiService {
               }
             : null,
         });
-        this.realtimeGateway.emitToCampaign(campaign.id, 'content:processing', {
+        await this.eventsService.publish('content:processing', {
           campaignId: campaign.id,
           contentPieceId: piece.id,
           localizationId: localization.id,
@@ -194,7 +194,7 @@ export class AiService {
         });
         const savedLocalization = await this.localizationRepo.save(localization);
 
-        this.realtimeGateway.emitToCampaign(campaign.id, 'content:suggested', {
+        await this.eventsService.publish('content:suggested', {
           campaignId: campaign.id,
           contentPieceId: piece.id,
           localizationId: savedLocalization.id,
@@ -204,7 +204,7 @@ export class AiService {
           status: savedLocalization.status,
         });
 
-        this.realtimeGateway.emitToCampaign(campaign.id, 'status:change', {
+        await this.eventsService.publish('status:change', {
           campaignId: campaign.id,
           contentPieceId: piece.id,
           localizationId: savedLocalization.id,

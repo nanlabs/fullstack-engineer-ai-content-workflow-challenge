@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ReviewStatus } from '../status-enum';
-import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { EventsService } from '../events/events.service';
 import { ContentLocalization } from './content-localizations.entity';
 import { UpdateLocalizationContentDto } from './dto/update-localization-content.dto';
 import { UpdateLocalizationStatusDto } from './dto/update-localization-status.dto';
@@ -20,7 +20,7 @@ export class ContentLocalizationService {
   constructor(
     @InjectRepository(ContentLocalization)
     private readonly localizationRepo: Repository<ContentLocalization>,
-    private readonly realtimeGateway: RealtimeGateway,
+    private readonly eventsService: EventsService,
   ) {}
 
   async updateStatus(
@@ -32,7 +32,7 @@ export class ContentLocalizationService {
     localization.status = payload.status;
     const saved = await this.localizationRepo.save(localization);
 
-    this.emitStatusChange(saved);
+    await this.emitStatusChange(saved);
 
     return saved;
   }
@@ -67,7 +67,7 @@ export class ContentLocalizationService {
 
     const campaignId = saved.contentPiece?.campaign?.id;
     if (campaignId) {
-      this.realtimeGateway.emitToCampaign(campaignId, 'content:update', {
+      await this.eventsService.publish('content:update', {
         campaignId,
         contentPieceId: saved.contentPiece.id,
         localizationId: saved.id,
@@ -78,7 +78,7 @@ export class ContentLocalizationService {
       });
     }
 
-    this.emitStatusChange(saved);
+    await this.emitStatusChange(saved);
 
     return saved;
   }
@@ -107,13 +107,13 @@ export class ContentLocalizationService {
     }
   }
 
-  private emitStatusChange(localization: ContentLocalization): void {
+  private async emitStatusChange(localization: ContentLocalization): Promise<void> {
     const campaignId = localization.contentPiece?.campaign?.id;
     if (!campaignId) {
       return;
     }
 
-    this.realtimeGateway.emitToCampaign(campaignId, 'status:change', {
+    await this.eventsService.publish('status:change', {
       campaignId,
       contentPieceId: localization.contentPiece.id,
       localizationId: localization.id,

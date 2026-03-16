@@ -9,6 +9,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { EventsService } from '../events/events.service';
 
 @WebSocketGateway({
   cors: {
@@ -17,6 +18,9 @@ import { Server, Socket } from 'socket.io';
 })
 export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(RealtimeGateway.name);
+  private unsubscribe: (() => void) | null = null;
+
+  constructor(private readonly eventsService: EventsService) {}
 
   @WebSocketServer()
   server: Server;
@@ -27,6 +31,18 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   handleDisconnect(client: Socket): void {
     this.logger.log(`Socket disconnected: ${client.id}`);
+  }
+
+  afterInit(): void {
+    this.unsubscribe = this.eventsService.onEvent(({ event, payload }) => {
+      const campaignId = payload.campaignId;
+      if (typeof campaignId === 'string' && campaignId.length > 0) {
+        this.server.to(this.getCampaignRoom(campaignId)).emit(event, payload);
+        return;
+      }
+
+      this.server.emit(event, payload);
+    });
   }
 
   @SubscribeMessage('campaign:join')
@@ -46,8 +62,11 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     });
   }
 
-  emitToCampaign(campaignId: string, event: string, payload: Record<string, unknown>): void {
-    this.server.to(this.getCampaignRoom(campaignId)).emit(event, payload);
+  onModuleDestroy(): void {
+    if (this.unsubscribe) {
+      this.unsubscribe();
+      this.unsubscribe = null;
+    }
   }
 
   private getCampaignRoom(campaignId: string): string {
