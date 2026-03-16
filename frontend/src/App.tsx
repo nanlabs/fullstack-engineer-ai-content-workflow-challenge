@@ -1,5 +1,6 @@
 import { CreateCampaignPage } from './pages/CreateCampaignPage'
 import { CampaignDetailsPage } from './pages/CampaignDetailsPage'
+import { DashboardPage } from './pages/DashboardPage'
 
 export default function App() {
   const pathname = window.location.pathname
@@ -9,5 +10,9 @@ export default function App() {
     return <CampaignDetailsPage campaignId={campaignMatch[1]} />
   }
 
-  return <CreateCampaignPage />
+  if (pathname === '/create') {
+    return <CreateCampaignPage />
+  }
+
+  return <DashboardPage />
 }

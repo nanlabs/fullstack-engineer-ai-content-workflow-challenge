@@ -1,0 +1,150 @@
+.dashboard-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px;
+}
+
+.dashboard-page__card {
+  width: 100%;
+  max-width: 1100px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.dashboard-page__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.dashboard-page__subtitle {
+  margin-top: 0;
+  color: #6b7280;
+}
+
+.dashboard-page__create-link {
+  background: #2563eb;
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.dashboard-page__content {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 16px;
+}
+
+.dashboard-page__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dashboard-page__item {
+  text-align: left;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dashboard-page__item--active {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.dashboard-page__item span {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.dashboard-page__details {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px;
+  background: #fafafa;
+}
+
+.dashboard-page__details-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dashboard-page__details-head p {
+  margin: 6px 0 0;
+  color: #6b7280;
+}
+
+.dashboard-page__details-head a {
+  color: #1d4ed8;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.dashboard-page__details-head a:hover {
+  text-decoration: underline;
+}
+
+.dashboard-page__pieces {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dashboard-page__piece-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 10px;
+}
+
+.dashboard-page__piece-card h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.dashboard-page__piece-card p {
+  margin: 4px 0 8px;
+  color: #6b7280;
+}
+
+.dashboard-page__locs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dashboard-page__loc-badge {
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 12px;
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.dashboard-page__error {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .dashboard-page__content {
+    grid-template-columns: 1fr;
+  }
+}

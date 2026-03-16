@@ -21,6 +21,16 @@
   color: #6b7280;
 }
 
+.create-campaign-page__back-link {
+  color: #1d4ed8;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.create-campaign-page__back-link:hover {
+  text-decoration: underline;
+}
+
 .create-campaign-page__error {
   margin-top: 16px;
   color: #dc2626;

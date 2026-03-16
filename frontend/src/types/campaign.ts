@@ -44,6 +44,31 @@ export type CampaignDetails = {
   pieces: ContentPiece[]
 }
 
+export type CampaignSummaryLocalization = {
+  id: string
+  languageCode: string
+  status: ReviewStatus
+  updatedAt: string
+}
+
+export type CampaignSummaryPiece = {
+  id: string
+  name: string
+  type: string
+  localizations: CampaignSummaryLocalization[]
+}
+
+export type CampaignSummary = {
+  id: string
+  topic: string
+  description: string | null
+  languages: string[]
+  llmProvider: string
+  model: string
+  createdAt: string
+  pieces: CampaignSummaryPiece[]
+}
+
 export type UpdateLocalizationContentPayload = {
   titleSuggestion?: string
   bodySuggestion?: string

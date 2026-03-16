@@ -1,4 +1,5 @@
 import type {
+  CampaignSummary,
   CampaignDetails,
   CampaignApiError,
   ContentLocalization,
@@ -30,6 +31,29 @@ export async function createCampaign(
   }
 
   return { id: data.id }
+}
+
+export async function getCampaigns(): Promise<CampaignSummary[]> {
+  const response = await fetch('/api/campaigns')
+  const data = (await parseResponseBody(response)) as CampaignSummary[] | CampaignApiError
+
+  if (!response.ok) {
+    const message =
+      data && !Array.isArray(data)
+        ? Array.isArray(data.message)
+          ? data.message.join(', ')
+          : typeof data.message === 'string'
+            ? data.message
+            : undefined
+        : undefined
+    throw new Error(message || `Failed to load campaigns (${response.status})`)
+  }
+
+  if (!Array.isArray(data)) {
+    throw new Error('Campaigns response is invalid.')
+  }
+
+  return data
 }
 
 export async function getCampaignById(id: string): Promise<CampaignDetails> {

@@ -27,6 +27,9 @@ export function CreateCampaignPage() {
   return (
     <main className="create-campaign-page">
       <section className="create-campaign-page__card">
+        <a className="create-campaign-page__back-link" href="/">
+          Back to dashboard
+        </a>
         <h1>Create Content Workflow</h1>
         <p className="create-campaign-page__subtitle">
           Enter topic, model and languages to create a campaign.
