@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ReviewStatus } from '../status-enum';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { ContentLocalization } from './content-localizations.entity';
 import { UpdateLocalizationContentDto } from './dto/update-localization-content.dto';
 import { UpdateLocalizationStatusDto } from './dto/update-localization-status.dto';
@@ -19,6 +20,7 @@ export class ContentLocalizationService {
   constructor(
     @InjectRepository(ContentLocalization)
     private readonly localizationRepo: Repository<ContentLocalization>,
+    private readonly realtimeGateway: RealtimeGateway,
   ) {}
 
   async updateStatus(
@@ -28,7 +30,11 @@ export class ContentLocalizationService {
     const localization = await this.getByIdOrThrow(id);
     this.assertTransition(localization.status, payload.status);
     localization.status = payload.status;
-    return this.localizationRepo.save(localization);
+    const saved = await this.localizationRepo.save(localization);
+
+    this.emitStatusChange(saved);
+
+    return saved;
   }
 
   async updateContent(
@@ -57,13 +63,30 @@ export class ContentLocalizationService {
     // Human edits imply the AI suggestion has been reviewed.
     localization.status = ReviewStatus.REVIEWED;
 
-    return this.localizationRepo.save(localization);
+    const saved = await this.localizationRepo.save(localization);
+
+    const campaignId = saved.contentPiece?.campaign?.id;
+    if (campaignId) {
+      this.realtimeGateway.emitToCampaign(campaignId, 'content:update', {
+        campaignId,
+        contentPieceId: saved.contentPiece.id,
+        localizationId: saved.id,
+        locale: saved.languageCode,
+        titleSuggestion: saved.titleSuggestion,
+        bodySuggestion: saved.bodySuggestion,
+        status: saved.status,
+      });
+    }
+
+    this.emitStatusChange(saved);
+
+    return saved;
   }
 
   private async getByIdOrThrow(id: string): Promise<ContentLocalization> {
     const localization = await this.localizationRepo.findOne({
       where: { id },
-      relations: { contentPiece: true },
+      relations: { contentPiece: { campaign: true } },
     });
 
     if (!localization) {
@@ -82,5 +105,20 @@ export class ContentLocalizationService {
     if (!allowed.includes(next)) {
       throw new BadRequestException(`Invalid status transition: ${current} -> ${next}`);
     }
+  }
+
+  private emitStatusChange(localization: ContentLocalization): void {
+    const campaignId = localization.contentPiece?.campaign?.id;
+    if (!campaignId) {
+      return;
+    }
+
+    this.realtimeGateway.emitToCampaign(campaignId, 'status:change', {
+      campaignId,
+      contentPieceId: localization.contentPiece.id,
+      localizationId: localization.id,
+      locale: localization.languageCode,
+      status: localization.status,
+    });
   }
 }

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { io } from 'socket.io-client'
 import {
   getCampaignById,
   updateLocalizationContent,
@@ -19,6 +20,16 @@ type EditingState = {
   value: string
 }
 
+type RealtimeLocalizationEvent = {
+  campaignId?: string
+  localizationId?: string
+  contentPieceId?: string
+  locale?: string
+  titleSuggestion?: string
+  bodySuggestion?: string
+  status?: ReviewStatus
+}
+
 export function CampaignDetailsPage({ campaignId }: CampaignDetailsPageProps) {
   const [campaign, setCampaign] = useState<CampaignDetails | null>(null)
   const [loading, setLoading] = useState(true)
@@ -27,6 +38,8 @@ export function CampaignDetailsPage({ campaignId }: CampaignDetailsPageProps) {
   const [saving, setSaving] = useState(false)
   const [statusSavingId, setStatusSavingId] = useState<string | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [realtimeMessage, setRealtimeMessage] = useState<string | null>(null)
+  const editingTextareaRef = useRef<HTMLTextAreaElement | null>(null)
 
   useEffect(() => {
     async function loadCampaign() {
@@ -44,6 +57,83 @@ export function CampaignDetailsPage({ campaignId }: CampaignDetailsPageProps) {
     }
 
     void loadCampaign()
+  }, [campaignId])
+
+  useEffect(() => {
+    if (!editingTextareaRef.current) {
+      return
+    }
+    autoResizeTextarea(editingTextareaRef.current)
+  }, [editing])
+
+  useEffect(() => {
+    const socketUrl = import.meta.env.VITE_WS_URL ?? 'http://localhost:3000'
+    const socket = io(socketUrl, { transports: ['websocket', 'polling'] })
+
+    const applyRealtimePatch = (payload: RealtimeLocalizationEvent) => {
+      if (!payload.localizationId) {
+        return
+      }
+
+      setCampaign((current) => {
+        if (!current || (payload.campaignId && payload.campaignId !== current.id)) {
+          return current
+        }
+
+        return {
+          ...current,
+          pieces: current.pieces.map((piece) => ({
+            ...piece,
+            localizations: piece.localizations.map((loc) =>
+              loc.id === payload.localizationId
+                ? {
+                    ...loc,
+                    languageCode: payload.locale ?? loc.languageCode,
+                    titleSuggestion:
+                      payload.titleSuggestion !== undefined
+                        ? payload.titleSuggestion
+                        : loc.titleSuggestion,
+                    bodySuggestion:
+                      payload.bodySuggestion !== undefined ? payload.bodySuggestion : loc.bodySuggestion,
+                    status: payload.status ?? loc.status,
+                  }
+                : loc,
+            ),
+          })),
+        }
+      })
+    }
+
+    socket.emit('campaign:join', { campaignId })
+
+    socket.on('campaign:join', () => {
+      setRealtimeMessage('Realtime connected')
+    })
+
+    socket.on('content:processing', (payload: RealtimeLocalizationEvent) => {
+      applyRealtimePatch(payload)
+      setRealtimeMessage(`Processing ${payload.locale ?? ''}`.trim())
+    })
+
+    socket.on('content:suggested', (payload: RealtimeLocalizationEvent) => {
+      applyRealtimePatch(payload)
+      setRealtimeMessage(`AI suggested content for ${payload.locale ?? 'localization'}`)
+    })
+
+    socket.on('content:update', (payload: RealtimeLocalizationEvent) => {
+      applyRealtimePatch(payload)
+      setRealtimeMessage(`Content updated for ${payload.locale ?? 'localization'}`)
+    })
+
+    socket.on('status:change', (payload: RealtimeLocalizationEvent) => {
+      applyRealtimePatch(payload)
+      setRealtimeMessage(`Status changed to ${payload.status ?? 'updated'}`)
+    })
+
+    return () => {
+      socket.removeAllListeners()
+      socket.disconnect()
+    }
   }, [campaignId])
 
   const localizationCount = useMemo(() => {
@@ -171,6 +261,10 @@ export function CampaignDetailsPage({ campaignId }: CampaignDetailsPageProps) {
           <span>Localizations: {localizationCount}</span>
         </div>
 
+        {realtimeMessage ? (
+          <p className="campaign-details-page__live-indicator">{realtimeMessage}</p>
+        ) : null}
+
         {saveError && <p className="campaign-details-page__error">{saveError}</p>}
 
         <div className="campaign-details-page__pieces">
@@ -208,12 +302,14 @@ export function CampaignDetailsPage({ campaignId }: CampaignDetailsPageProps) {
                       <label className="campaign-details-page__field-label">Title</label>
                       {isEditingTitle ? (
                         <textarea
+                          ref={editingTextareaRef}
                           className="campaign-details-page__editor"
                           value={editing.value}
-                          onChange={(event) =>
+                          onChange={(event) => {
                             setEditing({ ...editing, value: event.target.value })
-                          }
-                          rows={2}
+                            autoResizeTextarea(event.currentTarget)
+                          }}
+                          rows={1}
                         />
                       ) : (
                         <div
@@ -227,12 +323,14 @@ export function CampaignDetailsPage({ campaignId }: CampaignDetailsPageProps) {
                       <label className="campaign-details-page__field-label">Body</label>
                       {isEditingBody ? (
                         <textarea
+                          ref={editingTextareaRef}
                           className="campaign-details-page__editor"
                           value={editing.value}
-                          onChange={(event) =>
+                          onChange={(event) => {
                             setEditing({ ...editing, value: event.target.value })
-                          }
-                          rows={5}
+                            autoResizeTextarea(event.currentTarget)
+                          }}
+                          rows={1}
                         />
                       ) : (
                         <div
@@ -327,4 +425,9 @@ function getStatusClassName(status: ReviewStatus): string {
     default:
       return ''
   }
+}
+
+function autoResizeTextarea(element: HTMLTextAreaElement): void {
+  element.style.height = 'auto'
+  element.style.height = `${element.scrollHeight}px`
 }

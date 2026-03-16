@@ -52,6 +52,18 @@
   padding: 4px 10px;
 }
 
+.campaign-details-page__live-indicator {
+  margin: 0 0 12px;
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: #ecfeff;
+  color: #0e7490;
+  border: 1px solid #67e8f9;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .campaign-details-page__pieces {
   display: flex;
   flex-direction: column;
@@ -168,6 +180,8 @@
   padding: 8px;
   margin-bottom: 10px;
   font-size: 14px;
+  resize: none;
+  overflow: hidden;
 }
 
 .campaign-details-page__actions {

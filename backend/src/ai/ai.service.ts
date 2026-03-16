@@ -9,6 +9,7 @@ import { ReviewStatus } from '../status-enum';
 import { createModel } from './model.factory';
 import { buildPiecesPrompt } from '../prompts/pieces.prompts';
 import { buildContentPrompt } from '../prompts/localization.prompts';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 
 type GeneratedPiece = {
   type: string;
@@ -45,6 +46,7 @@ export class AiService {
 
   constructor(
     private readonly configService: ConfigService,
+    private readonly realtimeGateway: RealtimeGateway,
     @InjectRepository(ContentPiece)
     private readonly pieceRepo: Repository<ContentPiece>,
     @InjectRepository(ContentLocalization)
@@ -103,6 +105,13 @@ export class AiService {
                 updatedAt: new Date().toISOString(),
               }
             : null,
+        });
+        this.realtimeGateway.emitToCampaign(campaign.id, 'content:processing', {
+          campaignId: campaign.id,
+          contentPieceId: piece.id,
+          localizationId: localization.id,
+          locale: language,
+          status: ReviewStatus.DRAFT,
         });
         localizations.push(localization);
       }
@@ -183,7 +192,27 @@ export class AiService {
             updatedAt: new Date().toISOString(),
           },
         });
-        return this.localizationRepo.save(localization);
+        const savedLocalization = await this.localizationRepo.save(localization);
+
+        this.realtimeGateway.emitToCampaign(campaign.id, 'content:suggested', {
+          campaignId: campaign.id,
+          contentPieceId: piece.id,
+          localizationId: savedLocalization.id,
+          locale: savedLocalization.languageCode,
+          titleSuggestion: savedLocalization.titleSuggestion,
+          bodySuggestion: savedLocalization.bodySuggestion,
+          status: savedLocalization.status,
+        });
+
+        this.realtimeGateway.emitToCampaign(campaign.id, 'status:change', {
+          campaignId: campaign.id,
+          contentPieceId: piece.id,
+          localizationId: savedLocalization.id,
+          locale: savedLocalization.languageCode,
+          status: savedLocalization.status,
+        });
+
+        return savedLocalization;
       } catch (error) {
         errors.push({
           provider: candidate.provider,
