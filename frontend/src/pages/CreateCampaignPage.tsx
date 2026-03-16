@@ -1,26 +1,26 @@
-import { useState } from 'react'
-import { CreateCampaignForm } from '../components/campaign/CreateCampaignForm'
-import { createCampaign } from '../services/campaign.service'
-import type { CreateCampaignPayload } from '../types/campaign'
-import './CreateCampaignPage.css'
+import { useState } from 'react';
+import { CreateCampaignForm } from '../components/campaign/CreateCampaignForm';
+import { createCampaign } from '../services/campaign.service';
+import type { CreateCampaignPayload } from '../types/campaign';
+import './CreateCampaignPage.css';
 
 export function CreateCampaignPage() {
-  const [loading, setLoading] = useState(false)
-  const [requestError, setRequestError] = useState<string | null>(null)
-  const [createdId, setCreatedId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false);
+  const [requestError, setRequestError] = useState<string | null>(null);
+  const [createdId, setCreatedId] = useState<string | null>(null);
 
   async function handleCreateCampaign(payload: CreateCampaignPayload) {
-    setRequestError(null)
-    setCreatedId(null)
-    setLoading(true)
+    setRequestError(null);
+    setCreatedId(null);
+    setLoading(true);
 
     try {
-      const createdCampaign = await createCampaign(payload)
-      setCreatedId(createdCampaign.id)
+      const createdCampaign = await createCampaign(payload);
+      setCreatedId(createdCampaign.id);
     } catch (error) {
-      setRequestError(error instanceof Error ? error.message : 'Unexpected error')
+      setRequestError(error instanceof Error ? error.message : 'Unexpected error');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -51,5 +51,5 @@ export function CreateCampaignPage() {
         )}
       </section>
     </main>
-  )
+  );
 }

@@ -7,6 +7,10 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/main.js",
     "start:dev": "tsc -w -p tsconfig.json",
+    "lint": "eslint \"src/**/*.ts\" \"test/**/*.ts\"",
+    "lint:fix": "eslint \"src/**/*.ts\" \"test/**/*.ts\" --fix",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
     "test": "jest --runInBand",
     "test:integration": "jest --runInBand --testPathPatterns=test/integration",
     "test:e2e": "jest --runInBand --testPathPatterns=test/e2e",
@@ -39,11 +43,17 @@
     "typeorm": "^0.3.28"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
     "@nestjs/testing": "^11.1.17",
     "@types/jest": "^30.0.0",
     "@types/supertest": "^7.2.0",
+    "eslint": "^9.39.4",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.4.0",
     "jest": "^30.3.0",
+    "prettier": "^3.8.1",
     "supertest": "^7.2.2",
-    "ts-jest": "^29.4.6"
+    "ts-jest": "^29.4.6",
+    "typescript-eslint": "^8.57.1"
   }
 }

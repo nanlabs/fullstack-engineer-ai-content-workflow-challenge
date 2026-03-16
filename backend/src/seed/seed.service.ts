@@ -128,8 +128,7 @@ export class SeedService implements OnApplicationBootstrap {
         contentPiece: secondCampaignPieces[0],
         languageCode: 'fr-FR',
         titleSuggestion: "Hydratation d'ete: les gestes simples",
-        bodySuggestion:
-          "Adoptez des routines faciles pour rester hydrate tout au long de l'ete.",
+        bodySuggestion: "Adoptez des routines faciles pour rester hydrate tout au long de l'ete.",
         status: ReviewStatus.DRAFT,
       },
       {
@@ -150,7 +149,7 @@ export class SeedService implements OnApplicationBootstrap {
       {
         contentPiece: secondCampaignPieces[1],
         languageCode: 'fr-FR',
-        titleSuggestion: "Petit rappel hydratation",
+        titleSuggestion: 'Petit rappel hydratation',
         bodySuggestion: "Gardez une bouteille d'eau a portee de main et buvez regulierement.",
         status: ReviewStatus.REVIEWED,
       },

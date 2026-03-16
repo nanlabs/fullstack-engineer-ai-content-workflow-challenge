@@ -35,10 +35,7 @@ export class CampaignController {
   @ApiOperation({ summary: 'Add a new content piece to a campaign' })
   @ApiParam({ name: 'id', description: 'Campaign UUID' })
   @ApiResponse({ status: 201, description: 'Piece created and linked to campaign' })
-  addPiece(
-    @Param('id') id: string,
-    @Body() body: CreatePieceDto,
-  ): Promise<ContentPiece> {
+  addPiece(@Param('id') id: string, @Body() body: CreatePieceDto): Promise<ContentPiece> {
     return this.campaignService.addPieceToCampaign(id, body);
   }
 }

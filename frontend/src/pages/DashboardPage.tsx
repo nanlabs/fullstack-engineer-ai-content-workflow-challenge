@@ -1,36 +1,36 @@
-import { useEffect, useMemo, useState } from 'react'
-import { getCampaigns } from '../services/campaign.service'
-import type { CampaignSummary, ReviewStatus } from '../types/campaign'
-import './DashboardPage.css'
+import { useEffect, useMemo, useState } from 'react';
+import { getCampaigns } from '../services/campaign.service';
+import type { CampaignSummary, ReviewStatus } from '../types/campaign';
+import './DashboardPage.css';
 
 export function DashboardPage() {
-  const [campaigns, setCampaigns] = useState<CampaignSummary[]>([])
-  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [campaigns, setCampaigns] = useState<CampaignSummary[]>([]);
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadCampaigns() {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
       try {
-        const result = await getCampaigns()
-        setCampaigns(result)
-        setSelectedCampaignId(result[0]?.id ?? null)
+        const result = await getCampaigns();
+        setCampaigns(result);
+        setSelectedCampaignId(result[0]?.id ?? null);
       } catch (fetchError) {
-        setError(fetchError instanceof Error ? fetchError.message : 'Unexpected error')
+        setError(fetchError instanceof Error ? fetchError.message : 'Unexpected error');
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
 
-    void loadCampaigns()
-  }, [])
+    void loadCampaigns();
+  }, []);
 
   const selectedCampaign = useMemo(
     () => campaigns.find((campaign) => campaign.id === selectedCampaignId) ?? campaigns[0],
     [campaigns, selectedCampaignId],
-  )
+  );
 
   if (loading) {
     return (
@@ -39,7 +39,7 @@ export function DashboardPage() {
           <p>Loading campaigns...</p>
         </section>
       </main>
-    )
+    );
   }
 
   if (error) {
@@ -49,7 +49,7 @@ export function DashboardPage() {
           <p className="dashboard-page__error">{error}</p>
         </section>
       </main>
-    )
+    );
   }
 
   return (
@@ -71,7 +71,7 @@ export function DashboardPage() {
           <div className="dashboard-page__content">
             <aside className="dashboard-page__list">
               {campaigns.map((campaign) => {
-                const isSelected = campaign.id === selectedCampaign?.id
+                const isSelected = campaign.id === selectedCampaign?.id;
                 return (
                   <button
                     key={campaign.id}
@@ -84,7 +84,7 @@ export function DashboardPage() {
                     </span>
                     <span>{campaign.languages.join(', ')}</span>
                   </button>
-                )
+                );
               })}
             </aside>
 
@@ -122,22 +122,22 @@ export function DashboardPage() {
         )}
       </section>
     </main>
-  )
+  );
 }
 
 function getStatusClassName(status: ReviewStatus): string {
   switch (status) {
     case 'DRAFT':
-      return 'dashboard-page__loc-badge--draft'
+      return 'dashboard-page__loc-badge--draft';
     case 'AI_SUGGESTED':
-      return 'dashboard-page__loc-badge--ai-suggested'
+      return 'dashboard-page__loc-badge--ai-suggested';
     case 'REVIEWED':
-      return 'dashboard-page__loc-badge--reviewed'
+      return 'dashboard-page__loc-badge--reviewed';
     case 'APPROVED':
-      return 'dashboard-page__loc-badge--approved'
+      return 'dashboard-page__loc-badge--approved';
     case 'REJECTED':
-      return 'dashboard-page__loc-badge--rejected'
+      return 'dashboard-page__loc-badge--rejected';
     default:
-      return ''
+      return '';
   }
 }

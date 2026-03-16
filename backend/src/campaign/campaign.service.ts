@@ -18,9 +18,7 @@ export class CampaignService {
   ) {}
 
   async createCampaign(payload: CreateCampaignDto): Promise<Campaign> {
-    const normalizedLocalizations = payload.languages.map((locale) =>
-      this.normalizeLocale(locale),
-    );
+    const normalizedLocalizations = payload.languages.map((locale) => this.normalizeLocale(locale));
 
     const campaign = await this.campaignRepo.save({
       topic: payload.topic,

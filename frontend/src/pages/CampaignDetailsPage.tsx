@@ -1,83 +1,83 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { io } from 'socket.io-client'
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { io } from 'socket.io-client';
 import {
   getCampaignById,
   updateLocalizationContent,
   updateLocalizationStatus,
-} from '../services/campaign.service'
-import type { CampaignDetails, ContentLocalization, ReviewStatus } from '../types/campaign'
-import './CampaignDetailsPage.css'
+} from '../services/campaign.service';
+import type { CampaignDetails, ContentLocalization, ReviewStatus } from '../types/campaign';
+import './CampaignDetailsPage.css';
 
-type EditableField = 'titleSuggestion' | 'bodySuggestion'
+type EditableField = 'titleSuggestion' | 'bodySuggestion';
 
 type CampaignDetailsPageProps = {
-  campaignId: string
-}
+  campaignId: string;
+};
 
 type EditingState = {
-  localizationId: string
-  field: EditableField
-  value: string
-}
+  localizationId: string;
+  field: EditableField;
+  value: string;
+};
 
 type RealtimeLocalizationEvent = {
-  campaignId?: string
-  localizationId?: string
-  contentPieceId?: string
-  locale?: string
-  titleSuggestion?: string
-  bodySuggestion?: string
-  status?: ReviewStatus
-}
+  campaignId?: string;
+  localizationId?: string;
+  contentPieceId?: string;
+  locale?: string;
+  titleSuggestion?: string;
+  bodySuggestion?: string;
+  status?: ReviewStatus;
+};
 
 export function CampaignDetailsPage({ campaignId }: CampaignDetailsPageProps) {
-  const [campaign, setCampaign] = useState<CampaignDetails | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [editing, setEditing] = useState<EditingState | null>(null)
-  const [saving, setSaving] = useState(false)
-  const [statusSavingId, setStatusSavingId] = useState<string | null>(null)
-  const [saveError, setSaveError] = useState<string | null>(null)
-  const [realtimeMessage, setRealtimeMessage] = useState<string | null>(null)
-  const editingTextareaRef = useRef<HTMLTextAreaElement | null>(null)
+  const [campaign, setCampaign] = useState<CampaignDetails | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState<EditingState | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [statusSavingId, setStatusSavingId] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [realtimeMessage, setRealtimeMessage] = useState<string | null>(null);
+  const editingTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     async function loadCampaign() {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
       try {
-        const details = await getCampaignById(campaignId)
-        setCampaign(details)
+        const details = await getCampaignById(campaignId);
+        setCampaign(details);
       } catch (fetchError) {
-        setError(fetchError instanceof Error ? fetchError.message : 'Unexpected error')
+        setError(fetchError instanceof Error ? fetchError.message : 'Unexpected error');
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
 
-    void loadCampaign()
-  }, [campaignId])
+    void loadCampaign();
+  }, [campaignId]);
 
   useEffect(() => {
     if (!editingTextareaRef.current) {
-      return
+      return;
     }
-    autoResizeTextarea(editingTextareaRef.current)
-  }, [editing])
+    autoResizeTextarea(editingTextareaRef.current);
+  }, [editing]);
 
   useEffect(() => {
-    const socketUrl = import.meta.env.VITE_WS_URL ?? 'http://localhost:3000'
-    const socket = io(socketUrl, { transports: ['websocket', 'polling'] })
+    const socketUrl = import.meta.env.VITE_WS_URL ?? 'http://localhost:3000';
+    const socket = io(socketUrl, { transports: ['websocket', 'polling'] });
 
     const applyRealtimePatch = (payload: RealtimeLocalizationEvent) => {
       if (!payload.localizationId) {
-        return
+        return;
       }
 
       setCampaign((current) => {
         if (!current || (payload.campaignId && payload.campaignId !== current.id)) {
-          return current
+          return current;
         }
 
         return {
@@ -94,81 +94,83 @@ export function CampaignDetailsPage({ campaignId }: CampaignDetailsPageProps) {
                         ? payload.titleSuggestion
                         : loc.titleSuggestion,
                     bodySuggestion:
-                      payload.bodySuggestion !== undefined ? payload.bodySuggestion : loc.bodySuggestion,
+                      payload.bodySuggestion !== undefined
+                        ? payload.bodySuggestion
+                        : loc.bodySuggestion,
                     status: payload.status ?? loc.status,
                   }
                 : loc,
             ),
           })),
-        }
-      })
-    }
+        };
+      });
+    };
 
-    socket.emit('campaign:join', { campaignId })
+    socket.emit('campaign:join', { campaignId });
 
     socket.on('campaign:join', () => {
-      setRealtimeMessage('Realtime connected')
-    })
+      setRealtimeMessage('Realtime connected');
+    });
 
     socket.on('content:processing', (payload: RealtimeLocalizationEvent) => {
-      applyRealtimePatch(payload)
-      setRealtimeMessage(`Processing ${payload.locale ?? ''}`.trim())
-    })
+      applyRealtimePatch(payload);
+      setRealtimeMessage(`Processing ${payload.locale ?? ''}`.trim());
+    });
 
     socket.on('content:suggested', (payload: RealtimeLocalizationEvent) => {
-      applyRealtimePatch(payload)
-      setRealtimeMessage(`AI suggested content for ${payload.locale ?? 'localization'}`)
-    })
+      applyRealtimePatch(payload);
+      setRealtimeMessage(`AI suggested content for ${payload.locale ?? 'localization'}`);
+    });
 
     socket.on('content:update', (payload: RealtimeLocalizationEvent) => {
-      applyRealtimePatch(payload)
-      setRealtimeMessage(`Content updated for ${payload.locale ?? 'localization'}`)
-    })
+      applyRealtimePatch(payload);
+      setRealtimeMessage(`Content updated for ${payload.locale ?? 'localization'}`);
+    });
 
     socket.on('status:change', (payload: RealtimeLocalizationEvent) => {
-      applyRealtimePatch(payload)
-      setRealtimeMessage(`Status changed to ${payload.status ?? 'updated'}`)
-    })
+      applyRealtimePatch(payload);
+      setRealtimeMessage(`Status changed to ${payload.status ?? 'updated'}`);
+    });
 
     return () => {
-      socket.removeAllListeners()
-      socket.disconnect()
-    }
-  }, [campaignId])
+      socket.removeAllListeners();
+      socket.disconnect();
+    };
+  }, [campaignId]);
 
   const localizationCount = useMemo(() => {
     if (!campaign) {
-      return 0
+      return 0;
     }
-    return campaign.pieces.reduce((sum, piece) => sum + piece.localizations.length, 0)
-  }, [campaign])
+    return campaign.pieces.reduce((sum, piece) => sum + piece.localizations.length, 0);
+  }, [campaign]);
 
   function startEditing(localization: ContentLocalization, field: EditableField) {
     if (localization.status === 'APPROVED' || localization.status === 'REJECTED') {
-      return
+      return;
     }
-    setSaveError(null)
+    setSaveError(null);
     setEditing({
       localizationId: localization.id,
       field,
       value: localization[field] ?? '',
-    })
+    });
   }
 
   async function saveEditing() {
     if (!editing || !campaign) {
-      return
+      return;
     }
 
-    setSaving(true)
-    setSaveError(null)
+    setSaving(true);
+    setSaveError(null);
     try {
       const payload =
         editing.field === 'titleSuggestion'
           ? { titleSuggestion: editing.value }
-          : { bodySuggestion: editing.value }
+          : { bodySuggestion: editing.value };
 
-      const updatedLocalization = await updateLocalizationContent(editing.localizationId, payload)
+      const updatedLocalization = await updateLocalizationContent(editing.localizationId, payload);
 
       setCampaign({
         ...campaign,
@@ -178,26 +180,26 @@ export function CampaignDetailsPage({ campaignId }: CampaignDetailsPageProps) {
             loc.id === editing.localizationId ? { ...loc, ...updatedLocalization } : loc,
           ),
         })),
-      })
-      setEditing(null)
+      });
+      setEditing(null);
     } catch (updateError) {
-      setSaveError(updateError instanceof Error ? updateError.message : 'Unexpected error')
+      setSaveError(updateError instanceof Error ? updateError.message : 'Unexpected error');
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
   }
 
   async function changeStatus(localization: ContentLocalization, nextStatus: ReviewStatus) {
     if (!campaign) {
-      return
+      return;
     }
 
-    setSaveError(null)
-    setStatusSavingId(localization.id)
+    setSaveError(null);
+    setStatusSavingId(localization.id);
     try {
       const updatedLocalization = await updateLocalizationStatus(localization.id, {
         status: nextStatus,
-      })
+      });
 
       setCampaign({
         ...campaign,
@@ -207,11 +209,11 @@ export function CampaignDetailsPage({ campaignId }: CampaignDetailsPageProps) {
             loc.id === localization.id ? { ...loc, ...updatedLocalization } : loc,
           ),
         })),
-      })
+      });
     } catch (statusError) {
-      setSaveError(statusError instanceof Error ? statusError.message : 'Unexpected error')
+      setSaveError(statusError instanceof Error ? statusError.message : 'Unexpected error');
     } finally {
-      setStatusSavingId(null)
+      setStatusSavingId(null);
     }
   }
 
@@ -222,7 +224,7 @@ export function CampaignDetailsPage({ campaignId }: CampaignDetailsPageProps) {
           <p>Loading campaign details...</p>
         </section>
       </main>
-    )
+    );
   }
 
   if (error || !campaign) {
@@ -235,7 +237,7 @@ export function CampaignDetailsPage({ campaignId }: CampaignDetailsPageProps) {
           </a>
         </section>
       </main>
-    )
+    );
   }
 
   return (
@@ -277,14 +279,14 @@ export function CampaignDetailsPage({ campaignId }: CampaignDetailsPageProps) {
                 {piece.localizations.map((localization) => {
                   const isEditingTitle =
                     editing?.localizationId === localization.id &&
-                    editing.field === 'titleSuggestion'
+                    editing.field === 'titleSuggestion';
                   const isEditingBody =
                     editing?.localizationId === localization.id &&
-                    editing.field === 'bodySuggestion'
+                    editing.field === 'bodySuggestion';
                   const isFinalized =
-                    localization.status === 'APPROVED' || localization.status === 'REJECTED'
-                  const allowedStatusTransitions = getAllowedTransitions(localization.status)
-                  const isChangingStatus = statusSavingId === localization.id
+                    localization.status === 'APPROVED' || localization.status === 'REJECTED';
+                  const allowedStatusTransitions = getAllowedTransitions(localization.status);
+                  const isChangingStatus = statusSavingId === localization.id;
 
                   return (
                     <section key={localization.id} className="campaign-details-page__loc-card">
@@ -306,8 +308,8 @@ export function CampaignDetailsPage({ campaignId }: CampaignDetailsPageProps) {
                           className="campaign-details-page__editor"
                           value={editing.value}
                           onChange={(event) => {
-                            setEditing({ ...editing, value: event.target.value })
-                            autoResizeTextarea(event.currentTarget)
+                            setEditing({ ...editing, value: event.target.value });
+                            autoResizeTextarea(event.currentTarget);
                           }}
                           rows={1}
                         />
@@ -327,8 +329,8 @@ export function CampaignDetailsPage({ campaignId }: CampaignDetailsPageProps) {
                           className="campaign-details-page__editor"
                           value={editing.value}
                           onChange={(event) => {
-                            setEditing({ ...editing, value: event.target.value })
-                            autoResizeTextarea(event.currentTarget)
+                            setEditing({ ...editing, value: event.target.value });
+                            autoResizeTextarea(event.currentTarget);
                           }}
                           rows={1}
                         />
@@ -388,7 +390,7 @@ export function CampaignDetailsPage({ campaignId }: CampaignDetailsPageProps) {
                         </div>
                       </div>
                     </section>
-                  )
+                  );
                 })}
               </div>
             </article>
@@ -396,7 +398,7 @@ export function CampaignDetailsPage({ campaignId }: CampaignDetailsPageProps) {
         </div>
       </section>
     </main>
-  )
+  );
 }
 
 function getAllowedTransitions(current: ReviewStatus): ReviewStatus[] {
@@ -406,28 +408,28 @@ function getAllowedTransitions(current: ReviewStatus): ReviewStatus[] {
     REVIEWED: ['APPROVED', 'REJECTED'],
     APPROVED: [],
     REJECTED: [],
-  }
-  return map[current] ?? []
+  };
+  return map[current] ?? [];
 }
 
 function getStatusClassName(status: ReviewStatus): string {
   switch (status) {
     case 'DRAFT':
-      return 'campaign-details-page__status-tag--draft'
+      return 'campaign-details-page__status-tag--draft';
     case 'AI_SUGGESTED':
-      return 'campaign-details-page__status-tag--ai-suggested'
+      return 'campaign-details-page__status-tag--ai-suggested';
     case 'REVIEWED':
-      return 'campaign-details-page__status-tag--reviewed'
+      return 'campaign-details-page__status-tag--reviewed';
     case 'APPROVED':
-      return 'campaign-details-page__status-tag--approved'
+      return 'campaign-details-page__status-tag--approved';
     case 'REJECTED':
-      return 'campaign-details-page__status-tag--rejected'
+      return 'campaign-details-page__status-tag--rejected';
     default:
-      return ''
+      return '';
   }
 }
 
 function autoResizeTextarea(element: HTMLTextAreaElement): void {
-  element.style.height = 'auto'
-  element.style.height = `${element.scrollHeight}px`
+  element.style.height = 'auto';
+  element.style.height = `${element.scrollHeight}px`;
 }

@@ -9,7 +9,7 @@ import type {
   ProviderModelOption,
   UpdateLocalizationContentPayload,
   UpdateLocalizationStatusPayload,
-} from '../types/campaign'
+} from '../types/campaign';
 
 export async function createCampaign(
   payload: CreateCampaignPayload,
@@ -18,26 +18,26 @@ export async function createCampaign(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
-  })
+  });
 
   const data = (await parseResponseBody(response)) as Partial<CreateCampaignResponse> &
-    CampaignApiError
+    CampaignApiError;
 
   if (!response.ok) {
-    const message = Array.isArray(data.message) ? data.message.join(', ') : data.message
-    throw new Error(message || `Failed to create campaign (${response.status})`)
+    const message = Array.isArray(data.message) ? data.message.join(', ') : data.message;
+    throw new Error(message || `Failed to create campaign (${response.status})`);
   }
 
   if (!data.id) {
-    throw new Error('Campaign was created but response did not include an id.')
+    throw new Error('Campaign was created but response did not include an id.');
   }
 
-  return { id: data.id }
+  return { id: data.id };
 }
 
 export async function getCampaigns(): Promise<CampaignSummary[]> {
-  const response = await fetch('/api/campaigns')
-  const data = (await parseResponseBody(response)) as CampaignSummary[] | CampaignApiError
+  const response = await fetch('/api/campaigns');
+  const data = (await parseResponseBody(response)) as CampaignSummary[] | CampaignApiError;
 
   if (!response.ok) {
     const message =
@@ -47,22 +47,22 @@ export async function getCampaigns(): Promise<CampaignSummary[]> {
           : typeof data.message === 'string'
             ? data.message
             : undefined
-        : undefined
-    throw new Error(message || `Failed to load campaigns (${response.status})`)
+        : undefined;
+    throw new Error(message || `Failed to load campaigns (${response.status})`);
   }
 
   if (!Array.isArray(data)) {
-    throw new Error('Campaigns response is invalid.')
+    throw new Error('Campaigns response is invalid.');
   }
 
-  return data
+  return data;
 }
 
 export async function getProviderModels(
   provider: CampaignProvider,
 ): Promise<ProviderModelOption[]> {
-  const response = await fetch(`/api/ai/models?provider=${encodeURIComponent(provider)}`)
-  const data = (await parseResponseBody(response)) as ProviderModelOption[] | CampaignApiError
+  const response = await fetch(`/api/ai/models?provider=${encodeURIComponent(provider)}`);
+  const data = (await parseResponseBody(response)) as ProviderModelOption[] | CampaignApiError;
 
   if (!response.ok) {
     const message =
@@ -72,31 +72,31 @@ export async function getProviderModels(
           : typeof data.message === 'string'
             ? data.message
             : undefined
-        : undefined
-    throw new Error(message || `Failed to load ${provider} models (${response.status})`)
+        : undefined;
+    throw new Error(message || `Failed to load ${provider} models (${response.status})`);
   }
 
   if (!Array.isArray(data)) {
-    throw new Error('Models response is invalid.')
+    throw new Error('Models response is invalid.');
   }
 
-  return data
+  return data;
 }
 
 export async function getCampaignById(id: string): Promise<CampaignDetails> {
-  const response = await fetch(`/api/campaigns/${id}`)
-  const data = (await parseResponseBody(response)) as Partial<CampaignDetails> & CampaignApiError
+  const response = await fetch(`/api/campaigns/${id}`);
+  const data = (await parseResponseBody(response)) as Partial<CampaignDetails> & CampaignApiError;
 
   if (!response.ok) {
-    const message = Array.isArray(data.message) ? data.message.join(', ') : data.message
-    throw new Error(message || `Failed to load campaign (${response.status})`)
+    const message = Array.isArray(data.message) ? data.message.join(', ') : data.message;
+    throw new Error(message || `Failed to load campaign (${response.status})`);
   }
 
   if (!data.id) {
-    throw new Error('Campaign details response is missing required fields.')
+    throw new Error('Campaign details response is missing required fields.');
   }
 
-  return data as CampaignDetails
+  return data as CampaignDetails;
 }
 
 export async function updateLocalizationContent(
@@ -107,19 +107,20 @@ export async function updateLocalizationContent(
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
-  })
-  const data = (await parseResponseBody(response)) as Partial<ContentLocalization> & CampaignApiError
+  });
+  const data = (await parseResponseBody(response)) as Partial<ContentLocalization> &
+    CampaignApiError;
 
   if (!response.ok) {
-    const message = Array.isArray(data.message) ? data.message.join(', ') : data.message
-    throw new Error(message || `Failed to update content (${response.status})`)
+    const message = Array.isArray(data.message) ? data.message.join(', ') : data.message;
+    throw new Error(message || `Failed to update content (${response.status})`);
   }
 
   if (!data.id) {
-    throw new Error('Updated localization response is missing required fields.')
+    throw new Error('Updated localization response is missing required fields.');
   }
 
-  return data as ContentLocalization
+  return data as ContentLocalization;
 }
 
 export async function updateLocalizationStatus(
@@ -130,30 +131,31 @@ export async function updateLocalizationStatus(
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
-  })
-  const data = (await parseResponseBody(response)) as Partial<ContentLocalization> & CampaignApiError
+  });
+  const data = (await parseResponseBody(response)) as Partial<ContentLocalization> &
+    CampaignApiError;
 
   if (!response.ok) {
-    const message = Array.isArray(data.message) ? data.message.join(', ') : data.message
-    throw new Error(message || `Failed to update status (${response.status})`)
+    const message = Array.isArray(data.message) ? data.message.join(', ') : data.message;
+    throw new Error(message || `Failed to update status (${response.status})`);
   }
 
   if (!data.id) {
-    throw new Error('Updated status response is missing required fields.')
+    throw new Error('Updated status response is missing required fields.');
   }
 
-  return data as ContentLocalization
+  return data as ContentLocalization;
 }
 
 async function parseResponseBody(response: Response): Promise<Record<string, unknown>> {
-  const raw = await response.text()
+  const raw = await response.text();
   if (!raw.trim()) {
-    return {}
+    return {};
   }
 
   try {
-    return JSON.parse(raw) as Record<string, unknown>
+    return JSON.parse(raw) as Record<string, unknown>;
   } catch {
-    throw new Error(`Backend returned invalid JSON (${response.status}).`)
+    throw new Error(`Backend returned invalid JSON (${response.status}).`);
   }
 }

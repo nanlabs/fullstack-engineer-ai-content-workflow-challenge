@@ -1,17 +1,17 @@
-import { useEffect, useState } from 'react'
-import type { FormEvent } from 'react'
-import { getProviderModels } from '../../services/campaign.service'
+import { useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
+import { getProviderModels } from '../../services/campaign.service';
 import type {
   CampaignProvider,
   CreateCampaignPayload,
   ProviderModelOption,
-} from '../../types/campaign'
-import './CreateCampaignForm.css'
+} from '../../types/campaign';
+import './CreateCampaignForm.css';
 
 type CreateCampaignFormProps = {
-  onSubmitCampaign: (payload: CreateCampaignPayload) => Promise<void>
-  loading: boolean
-}
+  onSubmitCampaign: (payload: CreateCampaignPayload) => Promise<void>;
+  loading: boolean;
+};
 
 const COMMON_LOCALES = [
   { code: 'en-US', label: 'English (United States)' },
@@ -50,80 +50,78 @@ const COMMON_LOCALES = [
   { code: 'ro-RO', label: 'Romanian (Romania)' },
   { code: 'el-GR', label: 'Greek (Greece)' },
   { code: 'hu-HU', label: 'Hungarian (Hungary)' },
-] as const
+] as const;
 
 export function CreateCampaignForm({ onSubmitCampaign, loading }: CreateCampaignFormProps) {
-  const [topic, setTopic] = useState('')
-  const [description, setDescription] = useState('')
-  const [provider, setProvider] = useState<CampaignProvider>('openai')
-  const [model, setModel] = useState('')
-  const [modelOptions, setModelOptions] = useState<ProviderModelOption[]>([])
-  const [modelsLoading, setModelsLoading] = useState(false)
-  const [modelsError, setModelsError] = useState<string | null>(null)
-  const [selectedLocales, setSelectedLocales] = useState<string[]>(['es-ES', 'en-US'])
-  const [localeSearch, setLocaleSearch] = useState('')
-  const [validationError, setValidationError] = useState<string | null>(null)
+  const [topic, setTopic] = useState('');
+  const [description, setDescription] = useState('');
+  const [provider, setProvider] = useState<CampaignProvider>('openai');
+  const [model, setModel] = useState('');
+  const [modelOptions, setModelOptions] = useState<ProviderModelOption[]>([]);
+  const [modelsLoading, setModelsLoading] = useState(false);
+  const [modelsError, setModelsError] = useState<string | null>(null);
+  const [selectedLocales, setSelectedLocales] = useState<string[]>(['es-ES', 'en-US']);
+  const [localeSearch, setLocaleSearch] = useState('');
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const visibleLocales = COMMON_LOCALES.filter((locale) => {
-    const term = localeSearch.trim().toLowerCase()
+    const term = localeSearch.trim().toLowerCase();
     if (!term) {
-      return true
+      return true;
     }
-    return (
-      locale.label.toLowerCase().includes(term) || locale.code.toLowerCase().includes(term)
-    )
-  })
+    return locale.label.toLowerCase().includes(term) || locale.code.toLowerCase().includes(term);
+  });
 
   function toggleLocale(localeCode: string) {
     setSelectedLocales((current) =>
       current.includes(localeCode)
         ? current.filter((locale) => locale !== localeCode)
         : [...current, localeCode],
-    )
+    );
   }
 
   useEffect(() => {
     async function loadModels() {
-      setModelsLoading(true)
-      setModelsError(null)
+      setModelsLoading(true);
+      setModelsError(null);
       try {
-        const models = await getProviderModels(provider)
-        setModelOptions(models)
+        const models = await getProviderModels(provider);
+        setModelOptions(models);
         setModel((currentModel) => {
           if (models.some((item) => item.id === currentModel)) {
-            return currentModel
+            return currentModel;
           }
-          return models[0]?.id ?? ''
-        })
+          return models[0]?.id ?? '';
+        });
       } catch (error) {
-        setModelOptions([])
-        setModel('')
-        setModelsError(error instanceof Error ? error.message : 'Failed to load models')
+        setModelOptions([]);
+        setModel('');
+        setModelsError(error instanceof Error ? error.message : 'Failed to load models');
       } finally {
-        setModelsLoading(false)
+        setModelsLoading(false);
       }
     }
 
-    void loadModels()
-  }, [provider])
+    void loadModels();
+  }, [provider]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setValidationError(null)
+    event.preventDefault();
+    setValidationError(null);
 
     if (!topic.trim()) {
-      setValidationError('Topic is required.')
-      return
+      setValidationError('Topic is required.');
+      return;
     }
 
     if (!model.trim()) {
-      setValidationError('Model is required.')
-      return
+      setValidationError('Model is required.');
+      return;
     }
 
     if (selectedLocales.length === 0) {
-      setValidationError('Select at least one localization.')
-      return
+      setValidationError('Select at least one localization.');
+      return;
     }
 
     await onSubmitCampaign({
@@ -132,10 +130,10 @@ export function CreateCampaignForm({ onSubmitCampaign, loading }: CreateCampaign
       provider,
       model: model.trim(),
       languages: selectedLocales,
-    })
+    });
 
-    setTopic('')
-    setDescription('')
+    setTopic('');
+    setDescription('');
   }
 
   return (
@@ -238,5 +236,5 @@ export function CreateCampaignForm({ onSubmitCampaign, loading }: CreateCampaign
 
       {validationError && <p className="campaign-form__error">{validationError}</p>}
     </form>
-  )
+  );
 }

@@ -19,7 +19,10 @@ export class EventsService implements OnModuleInit, OnModuleDestroy {
   private readonly channel: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.channel = this.configService.get<string>('REDIS_EVENTS_CHANNEL', 'content_workflow_events');
+    this.channel = this.configService.get<string>(
+      'REDIS_EVENTS_CHANNEL',
+      'content_workflow_events',
+    );
   }
 
   async onModuleInit(): Promise<void> {
