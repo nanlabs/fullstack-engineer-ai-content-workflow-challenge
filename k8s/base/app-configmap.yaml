@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: content-workflow-config
+data:
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  DB_USER: postgres
+  DB_NAME: content_workflow
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  REDIS_EVENTS_CHANNEL: content-workflow-events
+  SEED_ON_BOOT: "true"
