@@ -1,4 +1,44 @@
 services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: content-workflow-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: content_workflow
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_EVENTS_CHANNEL: content-workflow-events
+      SEED_ON_BOOT: true
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: content-workflow-frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://backend:3000
+    ports:
+      - "5173:5173"
+    depends_on:
+      backend:
+        condition: service_started
+
   postgres:
     image: postgres:16-alpine
     container_name: content-workflow-postgres
