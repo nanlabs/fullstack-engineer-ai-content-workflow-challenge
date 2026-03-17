@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Campaign } from './campaign.entity';
@@ -9,6 +9,8 @@ import { AiService } from '../ai/ai.service';
 
 @Injectable()
 export class CampaignService {
+  private readonly logger = new Logger(CampaignService.name);
+
   constructor(
     @InjectRepository(Campaign)
     private readonly campaignRepo: Repository<Campaign>,
@@ -28,7 +30,12 @@ export class CampaignService {
       model: payload.model,
     });
 
-    await this.aiService.generateCampaignContent(campaign, normalizedLocalizations);
+    // Run AI generation in background so the API can return immediately and the UI
+    // can show realtime progress while processing continues.
+    void this.aiService.generateCampaignContent(campaign, normalizedLocalizations).catch((error) => {
+      const reason = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Background AI generation failed for campaign ${campaign.id}: ${reason}`);
+    });
 
     return campaign;
   }

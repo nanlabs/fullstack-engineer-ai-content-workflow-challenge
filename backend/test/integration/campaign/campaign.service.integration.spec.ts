@@ -20,7 +20,7 @@ describe('CampaignService (integration)', () => {
   };
 
   const aiService = {
-    generateCampaignContent: jest.fn(),
+    generateCampaignContent: jest.fn().mockResolvedValue(undefined),
   };
 
   beforeEach(async () => {
