@@ -8,6 +8,9 @@ import { ContentLocalization } from '../content-localization/content-localizatio
 import { AiService } from '../ai/ai.service';
 import { AiController } from '../ai/ai.controller';
 import { RealtimeModule } from '../realtime/realtime.module';
+import { AiModelCatalogService } from '../ai/ai-model-catalog.service';
+import { AiGenerationService } from '../ai/ai-generation.service';
+import { AiInvokeService } from '../ai/ai-invoke.service';
 
 @Module({
   imports: [
@@ -15,7 +18,13 @@ import { RealtimeModule } from '../realtime/realtime.module';
     RealtimeModule,
   ],
   controllers: [CampaignController, AiController],
-  providers: [CampaignService, AiService],
+  providers: [
+    CampaignService,
+    AiService,
+    AiModelCatalogService,
+    AiGenerationService,
+    AiInvokeService,
+  ],
   exports: [CampaignService],
 })
 export class CampaignModule {}
