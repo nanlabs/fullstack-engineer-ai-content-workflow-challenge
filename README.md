@@ -20,7 +20,7 @@ It includes:
   - `DRAFT -> AI_SUGGESTED -> REVIEWED -> APPROVED/REJECTED`
 - Inline editing for AI suggestions
 - Realtime events for processing and status transitions
-- Dashboard + campaign detail views with live progress timeline
+- Dashboard + create flow with live progress timeline + campaign detail review view
 
 ## Tech Stack
 
@@ -131,6 +131,7 @@ Socket.IO campaign room event flow includes:
 - `content:suggested`
 - `content:update`
 - `status:change`
+- `generation:completed`
 
 The frontend consumes these events to show live generation progress and status updates.
 
@@ -190,6 +191,12 @@ Kubernetes manifests:
 Argo CD app manifest:
 
 - `argocd/application.yaml`
+
+## Argo CD running
+
+Argo CD application status in local Kubernetes (`docker-desktop`):
+
+![Argo CD app healthy and synced](docs/images/argocd-healthy.png)
 
 Deploy with kubectl:
 
