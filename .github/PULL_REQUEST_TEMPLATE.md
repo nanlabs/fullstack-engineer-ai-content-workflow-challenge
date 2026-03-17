@@ -1,3 +1,13 @@
+## Summary
+- Describe what changed and why.
+
+## Test Plan
+- [ ] Backend runs locally
+- [ ] Database migrations/schema are valid
+- [ ] Frontend changes verified (if applicable)
+
+## Notes
+- Any trade-offs or follow-up tasks.
 ## Description
 
 Please include a summary of the changes and the related issue. List any dependencies that are required for this change.

@@ -1,0 +1,264 @@
+.campaign-details-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px;
+}
+
+.campaign-details-page__card {
+  width: 100%;
+  max-width: 1000px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.campaign-details-page__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.campaign-details-page__subtitle {
+  margin-top: 0;
+  color: #6b7280;
+}
+
+.campaign-details-page__back-link {
+  color: #1d4ed8;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.campaign-details-page__back-link:hover {
+  text-decoration: underline;
+}
+
+.campaign-details-page__meta {
+  margin: 12px 0 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.campaign-details-page__meta span {
+  font-size: 13px;
+  background: #f3f4f6;
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.campaign-details-page__live-indicator {
+  margin: 0 0 12px;
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: #ecfeff;
+  color: #0e7490;
+  border: 1px solid #67e8f9;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.campaign-details-page__pieces {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.campaign-details-page__piece-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px;
+  background: #fafafa;
+}
+
+.campaign-details-page__piece-card h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.campaign-details-page__piece-type {
+  margin: 4px 0 12px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.campaign-details-page__localizations {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 10px;
+}
+
+.campaign-details-page__loc-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 10px;
+}
+
+.campaign-details-page__loc-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+
+.campaign-details-page__status-tag {
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.campaign-details-page__status-tag--draft {
+  background: #e2e8f0;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+
+.campaign-details-page__status-tag--ai-suggested {
+  background: #ede9fe;
+  color: #5b21b6;
+  border-color: #c4b5fd;
+}
+
+.campaign-details-page__status-tag--reviewed {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+
+.campaign-details-page__status-tag--approved {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #86efac;
+}
+
+.campaign-details-page__status-tag--rejected {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #fca5a5;
+}
+
+.campaign-details-page__field-label {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.campaign-details-page__editable {
+  min-height: 38px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 10px;
+  white-space: pre-wrap;
+  cursor: text;
+}
+
+.campaign-details-page__editable--disabled {
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.campaign-details-page__body {
+  min-height: 90px;
+}
+
+.campaign-details-page__editor {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #93c5fd;
+  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  resize: none;
+  overflow: hidden;
+}
+
+.campaign-details-page__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.campaign-details-page__actions button {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.campaign-details-page__actions .campaign-details-page__cancel {
+  background: #64748b;
+}
+
+.campaign-details-page__error {
+  margin-top: 10px;
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.campaign-details-page__status-actions {
+  margin-top: 8px;
+}
+
+.campaign-details-page__status-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.campaign-details-page__status-button {
+  border: none;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: #0f766e;
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.campaign-details-page__status-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.campaign-details-page__status-final {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.campaign-details-page__status-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  user-select: none;
+  pointer-events: none;
+}
+
+.campaign-details-page__status-pill--approved {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.campaign-details-page__status-pill--rejected {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}

@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: content-workflow
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/SofiaInchausti/fullstack-engineer-ai-content-workflow-challenge
+    targetRevision: feature/ai-content-workflow
+    path: k8s/overlays/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: content-workflow
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
