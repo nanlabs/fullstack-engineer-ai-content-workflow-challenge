@@ -32,10 +32,13 @@ export class CampaignService {
 
     // Run AI generation in background so the API can return immediately and the UI
     // can show realtime progress while processing continues.
-    void this.aiService.generateCampaignContent(campaign, normalizedLocalizations).catch((error) => {
-      const reason = error instanceof Error ? error.message : String(error);
-      this.logger.error(`Background AI generation failed for campaign ${campaign.id}: ${reason}`);
-    });
+    // Delay slightly to let frontend join the campaign socket room before first events.
+    setTimeout(() => {
+      void this.aiService.generateCampaignContent(campaign, normalizedLocalizations).catch((error) => {
+        const reason = error instanceof Error ? error.message : String(error);
+        this.logger.error(`Background AI generation failed for campaign ${campaign.id}: ${reason}`);
+      });
+    }, 500);
 
     return campaign;
   }

@@ -48,6 +48,8 @@ describe('CampaignService (integration)', () => {
   });
 
   it('normalizes locales and calls AI generation on campaign creation', async () => {
+    jest.useFakeTimers();
+
     campaignRepo.save.mockResolvedValue({
       id: 'campaign-1',
       topic: 'Summer skincare',
@@ -73,8 +75,11 @@ describe('CampaignService (integration)', () => {
       llmProvider: 'openai',
       model: 'gpt-4o-mini',
     });
+    jest.advanceTimersByTime(500);
+    await Promise.resolve();
     expect(aiService.generateCampaignContent).toHaveBeenCalledWith(created, ['en-US', 'fr-FR']);
     expect(created.languages).toEqual(['en-US', 'fr-FR']);
+    jest.useRealTimers();
   });
 
   it('returns dashboard-safe summary without full suggestion bodies', async () => {

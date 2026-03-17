@@ -101,6 +101,12 @@ export class AiGenerationService {
         this.generateLocalizationContentWithFallback(modelCandidates, campaign, localization),
       ),
     );
+
+    await this.eventsService.publish('generation:completed', {
+      campaignId: campaign.id,
+      stage: 'generation',
+      message: 'AI generation completed.',
+    });
   }
 
   private async generateContentPiecesWithFallback(

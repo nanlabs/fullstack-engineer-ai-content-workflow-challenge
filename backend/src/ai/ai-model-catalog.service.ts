@@ -46,6 +46,7 @@ export class AiModelCatalogService {
     return (payload.data ?? [])
       .map((item) => item.id)
       .filter((id): id is string => Boolean(id))
+      .filter((id) => this.isChatCompatibleOpenAiModel(id))
       .sort((a, b) => a.localeCompare(b))
       .map((id) => ({ id, label: id }));
   }
@@ -81,5 +82,23 @@ export class AiModelCatalogService {
       }))
       .filter((item) => item.id.length > 0)
       .sort((a, b) => a.id.localeCompare(b.id));
+  }
+
+  private isChatCompatibleOpenAiModel(modelId: string): boolean {
+    const normalized = modelId.toLowerCase();
+
+    // The app invokes chat completions through ChatOpenAI.
+    // Keep only known chat-capable families and exclude non-chat endpoints.
+    if (
+      normalized.startsWith('gpt-') ||
+      normalized.startsWith('chatgpt-') ||
+      normalized.startsWith('o1') ||
+      normalized.startsWith('o3') ||
+      normalized.startsWith('o4')
+    ) {
+      return true;
+    }
+
+    return false;
   }
 }
