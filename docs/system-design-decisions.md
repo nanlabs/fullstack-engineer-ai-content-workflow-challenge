@@ -15,3 +15,16 @@ The system supports multiple AI providers such as OpenAI and Anthropic. This all
 ## Why localization generation?
 
 Marketing campaigns often require localized content for different markets and languages. The system generates localized versions of campaign pieces automatically.
+
+## Why LangChain?
+
+LangChain is used to standardize interactions with multiple LLM providers such as OpenAI and Anthropic.
+
+It provides:
+
+- A unified interface for different AI models
+- Prompt management
+- Easier provider switching
+- Structured output handling
+
+This abstraction allows the system to support multiple AI providers without tightly coupling the business logic to a specific LLM implementation.
