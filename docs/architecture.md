@@ -1,71 +1,49 @@
-# Architecture Overview
+# System Architecture
 
-This project is a fullstack AI-assisted content workflow platform with a human review loop.
+This system generates AI-driven marketing campaigns using an asynchronous workflow.
 
-## High-level diagram
+The architecture is composed of:
 
-```mermaid
-flowchart LR
-  U[User] --> FE[Frontend React + Vite]
-  FE -->|REST /api| BE[NestJS Backend]
-  FE <-->|WebSocket events| RT[Socket.IO Gateway]
-  BE --> PG[(PostgreSQL)]
-  BE --> AI[AI Providers: OpenAI / Anthropic]
-  BE <--> REDIS[(Redis Pub/Sub)]
-  RT <--> REDIS
-```
+Frontend
+- React application
+- Allows users to create campaigns and monitor progress
 
-## Backend modules
+Backend
+- NestJS API
+- Manages workflows and orchestrates AI generation
 
-- `campaign`: create/list campaigns and orchestrate campaign-level operations.
-- `content-piece`: manage piece definitions inside a campaign (example: email, banner, social post).
-- `content-localization`: edit generated content and review status transitions.
-- `ai`: provider model discovery + AI generation.
-- `events`: Redis pub/sub event bus.
-- `realtime`: WebSocket gateway for live UI updates.
-- `seed`: demo data initialization (configurable with `SEED_ON_BOOT`).
+Queue & Background Processing
+- Redis queue
+- Handles asynchronous AI tasks
 
-## Domain flow
+Realtime Updates
+- WebSockets
+- Push workflow updates to the frontend
 
-`Campaign` is the root aggregate and contains multiple `ContentPiece` records.
-Each `ContentPiece` contains multiple localized suggestions in `ContentLocalization`.
+Database
+- PostgreSQL
+- Stores campaigns, content pieces, and generation steps
 
-## Data model
+AI Providers
+- OpenAI
+- Anthropic
 
-```mermaid
-erDiagram
-  CAMPAIGN ||--o{ CONTENT_PIECE : has
-  CONTENT_PIECE ||--o{ CONTENT_LOCALIZATION : has
 
-  CAMPAIGN {
-    uuid id
-    string topic
-    string description
-    string[] languages
-    string llmProvider
-    string model
-    date createdAt
-  }
+# Architecture diagram
 
-  CONTENT_PIECE {
-    uuid id
-    string name
-    string type
-  }
-
-  CONTENT_LOCALIZATION {
-    uuid id
-    string languageCode
-    string titleSuggestion
-    string bodySuggestion
-    enum status
-    json aiMetadata
-    date updatedAt
-  }
-```
-
-## Runtime/deployment options
-
-- Local development: `docker compose up --build`
-- Kubernetes: manifests under `k8s/` with `kustomize` overlay
-- GitOps: Argo CD `Application` under `argocd/application.yaml`
+User
+ ↓
+React Frontend
+ ↓
+NestJS API
+ ↓
+Campaign Service
+ ↓
+Redis Queue
+ ↓
+Worker / Orchestrator
+ ↓
+AI Providers
+(OpenAI / Anthropic)
+ ↓
+PostgreSQL

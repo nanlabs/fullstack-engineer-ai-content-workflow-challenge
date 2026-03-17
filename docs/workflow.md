@@ -1,57 +1,32 @@
-# Content Workflow
+# Campaign Generation Workflow
 
-This workflow combines AI draft generation with manual review and live updates.
+The system generates AI campaigns through an asynchronous workflow.
 
-## Campaign creation and generation
+Steps:
 
-```mermaid
-sequenceDiagram
-  participant User
-  participant Frontend
-  participant Backend
-  participant AI
-  participant DB
-  participant Redis
-  participant WS as WebSocket Gateway
+1. User creates a campaign
+2. Backend creates campaign record
+3. Campaign pieces are created
+4. Localizations are generated
+5. AI providers generate content
+6. Progress is streamed via WebSocket
+7. Campaign completes
+8. User receives notification and can edit content
 
-  User->>Frontend: Create campaign (topic, provider, model, locales)
-  Frontend->>Backend: POST /campaigns
-  Backend->>DB: Save campaign + pieces/localizations
-  Backend->>Redis: publish content:processing
-  Redis->>WS: event fanout
-  WS->>Frontend: content:processing
-  Backend->>AI: Generate localized suggestions
-  AI-->>Backend: title/body suggestions
-  Backend->>DB: Save generated content + AI_SUGGESTED
-  Backend->>Redis: publish content:suggested + status:change
-  Redis->>WS: event fanout
-  WS->>Frontend: content:suggested + status:change
-```
+# Diagram workflow
 
-## Review lifecycle
-
-```mermaid
-stateDiagram-v2
-  [*] --> DRAFT
-  DRAFT --> AI_SUGGESTED
-  AI_SUGGESTED --> REVIEWED
-  AI_SUGGESTED --> REJECTED
-  REVIEWED --> APPROVED
-  REVIEWED --> REJECTED
-  APPROVED --> [*]
-  REJECTED --> [*]
-```
-
-Notes:
-
-- Editing content in non-final states sets status to `REVIEWED`.
-- Final states (`APPROVED`, `REJECTED`) block further content edits.
-- Every significant transition emits real-time events for connected clients.
-
-## Realtime events used
-
-- `campaign:join`
-- `content:processing`
-- `content:suggested`
-- `content:update`
-- `status:change`
+User enters topic
+      ↓
+Create Campaign
+      ↓
+Create Content Pieces
+      ↓
+Generate Localizations
+      ↓
+AI Generation
+      ↓
+Store Results
+      ↓
+Campaign Completed
+      ↓
+User Reviews Content
