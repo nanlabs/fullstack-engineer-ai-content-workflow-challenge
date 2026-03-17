@@ -226,3 +226,11 @@ See:
 - `docs/realtime-updates.md`
 - `docs/system-design-decisions.md`
 - `docs/infrastructure-devops-decisions.md`
+
+## Small Improvements (Next Steps)
+
+- Add `Husky` + `lint-staged` to run lint/tests before each commit.
+- Add pagination to `GET /campaigns` (`page`, `limit`, `total`) for better scalability.
+- Add basic filters to campaigns list (status, provider, date range).
+- Improve frontend list UX with stronger loading/empty/error states.
+- Add a health check endpoint (`/health`) for Docker/Kubernetes probes.
