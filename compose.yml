@@ -6,7 +6,7 @@ services:
     container_name: content-workflow-backend
     restart: unless-stopped
     env_file:
-      - ./backend/.env
+      - ./.env
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
