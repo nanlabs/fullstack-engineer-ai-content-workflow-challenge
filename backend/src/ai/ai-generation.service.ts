@@ -31,6 +31,12 @@ export class AiGenerationService {
   ) {}
 
   async generateCampaignContent(campaign: Campaign, languages: string[]): Promise<void> {
+    await this.eventsService.publish('content:processing', {
+      campaignId: campaign.id,
+      stage: 'pieces',
+      message: 'Creating campaign content pieces...',
+    });
+
     const modelCandidates = this.buildModelCandidates(campaign.llmProvider, campaign.model);
     let pieces = this.defaultPieces;
     let piecesError: AiErrorDetail[] | null = null;
@@ -55,6 +61,14 @@ export class AiGenerationService {
       savedPieces.push(saved);
     }
 
+    await this.eventsService.publish('content:processing', {
+      campaignId: campaign.id,
+      stage: 'localizations',
+      message: `Creating localizations for ${savedPieces.length} piece(s)...`,
+      piecesCount: savedPieces.length,
+      localesCount: languages.length,
+    });
+
     const localizations: ContentLocalization[] = [];
 
     for (const piece of savedPieces) {
@@ -71,6 +85,8 @@ export class AiGenerationService {
         });
         await this.eventsService.publish('content:processing', {
           campaignId: campaign.id,
+          stage: 'generation',
+          message: `Generating suggestion for ${piece.type} in ${language}...`,
           contentPieceId: piece.id,
           localizationId: localization.id,
           locale: language,

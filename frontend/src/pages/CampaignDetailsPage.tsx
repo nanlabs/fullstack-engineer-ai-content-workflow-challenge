@@ -25,9 +25,17 @@ type RealtimeLocalizationEvent = {
   localizationId?: string;
   contentPieceId?: string;
   locale?: string;
+  stage?: 'pieces' | 'localizations' | 'generation';
+  message?: string;
   titleSuggestion?: string;
   bodySuggestion?: string;
   status?: ReviewStatus;
+};
+
+type TimelineEvent = {
+  id: number;
+  message: string;
+  at: string;
 };
 
 export function CampaignDetailsPage({ campaignId }: CampaignDetailsPageProps) {
@@ -39,7 +47,19 @@ export function CampaignDetailsPage({ campaignId }: CampaignDetailsPageProps) {
   const [statusSavingId, setStatusSavingId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [realtimeMessage, setRealtimeMessage] = useState<string | null>(null);
+  const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([]);
   const editingTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const timelineCounter = useRef(0);
+
+  function addTimelineEvent(message: string) {
+    timelineCounter.current += 1;
+    const nextEvent: TimelineEvent = {
+      id: timelineCounter.current,
+      message,
+      at: new Date().toLocaleTimeString(),
+    };
+    setTimelineEvents((current) => [nextEvent, ...current].slice(0, 12));
+  }
 
   useEffect(() => {
     async function loadCampaign() {
@@ -110,26 +130,35 @@ export function CampaignDetailsPage({ campaignId }: CampaignDetailsPageProps) {
 
     socket.on('campaign:join', () => {
       setRealtimeMessage('Realtime connected');
+      addTimelineEvent('Realtime connected to campaign room');
     });
 
     socket.on('content:processing', (payload: RealtimeLocalizationEvent) => {
       applyRealtimePatch(payload);
-      setRealtimeMessage(`Processing ${payload.locale ?? ''}`.trim());
+      const message = payload.message ?? `Processing ${payload.locale ?? ''}`.trim();
+      setRealtimeMessage(message);
+      addTimelineEvent(message);
     });
 
     socket.on('content:suggested', (payload: RealtimeLocalizationEvent) => {
       applyRealtimePatch(payload);
-      setRealtimeMessage(`AI suggested content for ${payload.locale ?? 'localization'}`);
+      const message = `AI suggested content for ${payload.locale ?? 'localization'}`;
+      setRealtimeMessage(message);
+      addTimelineEvent(message);
     });
 
     socket.on('content:update', (payload: RealtimeLocalizationEvent) => {
       applyRealtimePatch(payload);
-      setRealtimeMessage(`Content updated for ${payload.locale ?? 'localization'}`);
+      const message = `Content updated for ${payload.locale ?? 'localization'}`;
+      setRealtimeMessage(message);
+      addTimelineEvent(message);
     });
 
     socket.on('status:change', (payload: RealtimeLocalizationEvent) => {
       applyRealtimePatch(payload);
-      setRealtimeMessage(`Status changed to ${payload.status ?? 'updated'}`);
+      const message = `Status changed to ${payload.status ?? 'updated'}`;
+      setRealtimeMessage(message);
+      addTimelineEvent(message);
     });
 
     return () => {
@@ -143,6 +172,45 @@ export function CampaignDetailsPage({ campaignId }: CampaignDetailsPageProps) {
       return 0;
     }
     return campaign.pieces.reduce((sum, piece) => sum + piece.localizations.length, 0);
+  }, [campaign]);
+
+  const progress = useMemo(() => {
+    if (!campaign) {
+      return {
+        total: 0,
+        generated: 0,
+        pending: 0,
+        percent: 0,
+        byStatus: {
+          DRAFT: 0,
+          AI_SUGGESTED: 0,
+          REVIEWED: 0,
+          APPROVED: 0,
+          REJECTED: 0,
+        } as Record<ReviewStatus, number>,
+      };
+    }
+
+    const allLocalizations = campaign.pieces.flatMap((piece) => piece.localizations);
+    const byStatus: Record<ReviewStatus, number> = {
+      DRAFT: 0,
+      AI_SUGGESTED: 0,
+      REVIEWED: 0,
+      APPROVED: 0,
+      REJECTED: 0,
+    };
+
+    allLocalizations.forEach((loc) => {
+      byStatus[loc.status] += 1;
+    });
+
+    const total = allLocalizations.length;
+    const generated =
+      byStatus.AI_SUGGESTED + byStatus.REVIEWED + byStatus.APPROVED + byStatus.REJECTED;
+    const pending = byStatus.DRAFT;
+    const percent = total === 0 ? 0 : Math.round((generated / total) * 100);
+
+    return { total, generated, pending, percent, byStatus };
   }, [campaign]);
 
   function startEditing(localization: ContentLocalization, field: EditableField) {
@@ -266,6 +334,42 @@ export function CampaignDetailsPage({ campaignId }: CampaignDetailsPageProps) {
         {realtimeMessage ? (
           <p className="campaign-details-page__live-indicator">{realtimeMessage}</p>
         ) : null}
+
+        <section className="campaign-details-page__progress-card">
+          <div className="campaign-details-page__progress-head">
+            <h2>Generation progress</h2>
+            <span>
+              {progress.generated}/{progress.total} ready
+            </span>
+          </div>
+          <div className="campaign-details-page__progress-track">
+            <div
+              className="campaign-details-page__progress-fill"
+              style={{ width: `${progress.percent}%` }}
+            />
+          </div>
+          <div className="campaign-details-page__progress-meta">
+            <span>{progress.percent}% completed</span>
+            <span>{progress.pending} pending</span>
+            <span>{progress.byStatus.REVIEWED} reviewed</span>
+            <span>{progress.byStatus.APPROVED} approved</span>
+            <span>{progress.byStatus.REJECTED} rejected</span>
+          </div>
+          {timelineEvents.length > 0 ? (
+            <ul className="campaign-details-page__timeline">
+              {timelineEvents.map((eventItem) => (
+                <li key={eventItem.id}>
+                  <span className="campaign-details-page__timeline-time">{eventItem.at}</span>
+                  <span>{eventItem.message}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="campaign-details-page__timeline-empty">
+              Waiting for generation updates...
+            </p>
+          )}
+        </section>
 
         {saveError && <p className="campaign-details-page__error">{saveError}</p>}
 
