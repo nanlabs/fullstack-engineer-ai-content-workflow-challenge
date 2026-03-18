@@ -1,0 +1,59 @@
+services:
+  db:
+    image: postgres:16
+    container_name: acme-db
+    environment:
+      POSTGRES_DB: acme_content
+      POSTGRES_USER: acme
+      POSTGRES_PASSWORD: acme
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U acme -d acme_content"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: acme-backend
+    environment:
+      DATABASE_URL: postgresql://acme:acme@db:5432/acme_content
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      ENVIRONMENT: container
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: acme-frontend
+    depends_on:
+      - backend
+    environment:
+      # ARCHITECTURAL NOTE:
+      # We use 'localhost' instead of the Docker service name 'backend' because:
+      # 1. The frontend container serves static files to the browser
+      # 2. JavaScript executes in the user's browser, NOT inside Docker
+      # 3. Browsers cannot resolve Docker's internal service names
+      # 4. Port 8000 on the host is mapped to the backend container
+      #
+      # This is the correct approach for local development.
+      # For production, this would be replaced with the actual backend URL.
+      # VITE_API_BASE_URL: http://backend:8000
+      VITE_API_BASE_URL: http://localhost:8000
+    ports:
+      - "5173:5173"
+
+volumes:
+  db_data:
