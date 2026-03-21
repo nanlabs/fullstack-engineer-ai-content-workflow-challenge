@@ -1,4 +1,5 @@
 import { Controller, Sse, Query, UnauthorizedException, Logger, Res } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { Observable, Subject, interval, merge } from 'rxjs';
 import { map, finalize } from 'rxjs/operators';
 import { OnEvent } from '@nestjs/event-emitter';
@@ -10,6 +11,7 @@ interface SseEvent {
   data: unknown;
 }
 
+@ApiTags('Events')
 @Controller('events')
 export class EventsController {
   private readonly logger = new Logger(EventsController.name);
@@ -18,6 +20,7 @@ export class EventsController {
   constructor(private readonly jwtService: JwtService) {}
 
   @Sse()
+  @ApiOperation({ summary: 'SSE stream for real-time updates (JWT via ?token= query param)' })
   sse(
     @Query('token') token: string,
     @Res() res: Response,

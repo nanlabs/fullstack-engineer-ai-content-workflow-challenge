@@ -6,6 +6,7 @@ import {
   MinLength,
   IsUUID,
 } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 import { ContentStatus } from '@prisma/client';
 
 export class CreateContentPieceDto {
@@ -44,6 +45,7 @@ export class UpdateContentPieceDto {
 }
 
 export class UpdateStatusDto {
+  @ApiProperty({ enum: ['DRAFT', 'AI_SUGGESTED', 'REVIEWED', 'APPROVED', 'REJECTED'] })
   @IsEnum(ContentStatus)
   status!: ContentStatus;
 

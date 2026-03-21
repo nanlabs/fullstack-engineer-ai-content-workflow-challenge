@@ -29,6 +29,7 @@ docker compose -f compose.dev.yml up (for local development)
 # 3. Access
 # Frontend: http://localhost:8080
 # Backend API: http://localhost:3000/api
+# Swagger UI: http://localhost:3000/api/docs
 # Demo login: demo@acme.com / demo1234
 ```
 
@@ -154,6 +155,18 @@ DRAFT → AI_SUGGESTED → REVIEWED → APPROVED
 | GET | `/api/events` | SSE stream for real-time updates (JWT via query param) |
 
 > All endpoints except `/auth/*` require `Authorization: Bearer <token>` header. SSE uses `?token=<jwt>` query parameter.
+
+### Swagger / OpenAPI
+
+Interactive API docs are available at **`/api/docs`** when the backend is running.
+
+```bash
+# Get a JWT to paste into Swagger's "Authorize" dialog
+./scripts/get-token.sh                              # demo account
+./scripts/get-token.sh user@example.com mypassword  # custom credentials
+```
+
+Click **Authorize** in the Swagger UI, paste the token (without the `Bearer ` prefix), and you can send requests directly from the browser.
 
 ## Security
 

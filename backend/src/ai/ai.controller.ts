@@ -10,6 +10,7 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ContentStatus } from '@prisma/client';
@@ -21,6 +22,8 @@ import { ModelFactory } from './model-factory.service';
 import { AiGenerateDto, AiTranslateDto, AiChainDto, AiCompareDto } from './ai.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+@ApiTags('AI')
+@ApiBearerAuth()
 @Controller()
 @UseGuards(JwtAuthGuard)
 export class AiController {
@@ -34,6 +37,7 @@ export class AiController {
   ) {}
 
   @Get('ai/providers')
+  @ApiOperation({ summary: 'List available LLM providers and default' })
   getProviders() {
     return {
       all: this.modelFactory.getAllProviders(),
@@ -44,6 +48,7 @@ export class AiController {
 
   @Post('content/:id/generate')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'AI: Generate draft content' })
   async generate(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AiGenerateDto,
@@ -82,6 +87,7 @@ export class AiController {
 
   @Post('content/:id/translate')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'AI: Translate content to target language' })
   async translate(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AiTranslateDto,
@@ -137,6 +143,7 @@ export class AiController {
 
   @Post('content/:id/extract')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'AI: Extract metadata (keywords, tone, summary)' })
   async extract(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AiGenerateDto,
@@ -166,6 +173,7 @@ export class AiController {
 
   @Post('content/:id/chain')
   @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @ApiOperation({ summary: 'AI: Full pipeline — generate, translate all, extract metadata' })
   async chain(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AiChainDto,
@@ -225,6 +233,7 @@ export class AiController {
 
   @Post('content/:id/compare')
   @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @ApiOperation({ summary: 'AI: Compare draft generation across multiple models' })
   async compare(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AiCompareDto,

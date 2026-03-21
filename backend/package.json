@@ -33,6 +33,7 @@
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^10.4.0",
+    "@nestjs/swagger": "^8.1.1",
     "@nestjs/throttler": "^6.0.0",
     "@prisma/client": "^5.20.0",
     "bcryptjs": "^3.0.3",
@@ -86,7 +87,11 @@
       "!**/*.module.ts",
       "!**/main.ts"
     ],
-    "coverageReporters": ["text", "text-summary", "lcov"],
+    "coverageReporters": [
+      "text",
+      "text-summary",
+      "lcov"
+    ],
     "coverageDirectory": "../coverage/backend",
     "testEnvironment": "node"
   },
