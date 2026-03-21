@@ -8,13 +8,11 @@ export interface Campaign {
   contentPieces?: ContentPiece[];
 }
 
-export type ContentType = 'HEADLINE' | 'PRODUCT_DESCRIPTION' | 'AD_COPY' | 'BLOG_POST';
 export type ContentStatus = 'DRAFT' | 'AI_SUGGESTED' | 'REVIEWED' | 'APPROVED' | 'REJECTED';
 
 export interface ContentPiece {
   id: string;
   campaignId: string;
-  type: ContentType;
   title: string;
   body: string;
   language: string;

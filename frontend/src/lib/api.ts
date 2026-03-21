@@ -33,7 +33,7 @@ export const campaignsApi = {
 // Content
 export const contentApi = {
   get: (id: string) => request<import('./types').ContentPiece>(`/content/${id}`),
-  create: (campaignId: string, data: { type: string; title: string; body?: string; language?: string }) =>
+  create: (campaignId: string, data: { title: string; body?: string; language?: string }) =>
     request<import('./types').ContentPiece>(`/campaigns/${campaignId}/content`, {
       method: 'POST',
       body: JSON.stringify(data),
@@ -55,10 +55,10 @@ export const contentApi = {
 // AI
 export const aiApi = {
   providers: () => request<import('./types').ProvidersResponse>('/ai/providers'),
-  generate: (id: string, model?: string) =>
+  generate: (id: string, model?: string, prompt?: string, wordCount?: number) =>
     request<import('./types').ContentPiece>(`/content/${id}/generate`, {
       method: 'POST',
-      body: JSON.stringify({ model }),
+      body: JSON.stringify({ model, prompt, wordCount }),
     }),
   translate: (id: string, targetLanguage: string, model?: string) =>
     request<import('./types').ContentPiece>(`/content/${id}/translate`, {
@@ -70,10 +70,10 @@ export const aiApi = {
       method: 'POST',
       body: JSON.stringify({ model }),
     }),
-  chain: (id: string, model?: string) =>
+  chain: (id: string, model?: string, prompt?: string, wordCount?: number) =>
     request<import('./types').ChainResponse>(`/content/${id}/chain`, {
       method: 'POST',
-      body: JSON.stringify({ model }),
+      body: JSON.stringify({ model, prompt, wordCount }),
     }),
   compare: (id: string, models?: string[]) =>
     request<import('./types').CompareResponse>(`/content/${id}/compare`, {

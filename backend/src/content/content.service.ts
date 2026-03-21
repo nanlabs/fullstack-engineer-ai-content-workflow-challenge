@@ -19,7 +19,6 @@ export class ContentService {
     const piece = await this.prisma.contentPiece.create({
       data: {
         campaignId,
-        type: dto.type,
         title: dto.title,
         body: dto.body ?? '',
         language: dto.language ?? 'en',

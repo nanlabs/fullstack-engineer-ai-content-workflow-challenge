@@ -5,16 +5,17 @@ export const generateDraftPrompt = ChatPromptTemplate.fromMessages([
     'system',
     `You are a senior marketing copywriter at a global media agency.
 Generate high-quality content for international marketing campaigns.
-Be creative, concise, and match the requested content type.
+Be creative, concise, and follow the user's instructions closely.
 Respond ONLY with the generated content — no explanations or preamble.`,
   ],
   [
     'human',
     `Campaign: {campaignName}
 Campaign description: {campaignDescription}
-Content type: {contentType}
 Title/Topic: {title}
 Language: {language}
+Instructions: {userPrompt}
+Length guidance: {lengthGuidance}
 
 Generate the content body for this piece.`,
   ],

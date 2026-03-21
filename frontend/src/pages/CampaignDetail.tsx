@@ -3,16 +3,8 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { campaignsApi, contentApi } from '../lib/api';
 import { StatusBadge } from '../components/StatusBadge';
-import type { ContentType } from '../lib/types';
 
 const PAGE_SIZE = 10;
-
-const CONTENT_TYPES: ContentType[] = [
-  'HEADLINE',
-  'PRODUCT_DESCRIPTION',
-  'AD_COPY',
-  'BLOG_POST',
-];
 
 export default function CampaignDetail() {
   const { id } = useParams<{ id: string }>();
@@ -20,7 +12,6 @@ export default function CampaignDetail() {
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState('');
-  const [type, setType] = useState<ContentType>('HEADLINE');
   const [editingLangs, setEditingLangs] = useState(false);
   const [langInput, setLangInput] = useState('');
   const [filter, setFilter] = useState('');
@@ -33,7 +24,7 @@ export default function CampaignDetail() {
   });
 
   const createContent = useMutation({
-    mutationFn: (data: { type: string; title: string }) =>
+    mutationFn: (data: { title: string }) =>
       contentApi.create(id!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['campaigns', id] });
@@ -60,7 +51,7 @@ export default function CampaignDetail() {
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    createContent.mutate({ type, title });
+    createContent.mutate({ title });
   };
 
   const handleAddLang = () => {
@@ -196,20 +187,6 @@ export default function CampaignDetail() {
           className="mb-8 card p-6 space-y-4 bg-zinc-50/50"
         >
           <div>
-            <label className="block text-sm font-medium text-zinc-700 mb-1">Content Type</label>
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value as ContentType)}
-              className="input-field"
-            >
-              {CONTENT_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {t.replace('_', ' ')}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
             <label className="block text-sm font-medium text-zinc-700 mb-1">Title or Topic</label>
             <input
               type="text"
@@ -253,10 +230,6 @@ export default function CampaignDetail() {
                 <div>
                   <h3 className="font-semibold text-zinc-900 group-hover:text-blue-600 transition-colors text-lg">{piece.title}</h3>
                   <div className="flex gap-2 mt-2 items-center">
-                    <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                      {piece.type.replace('_', ' ')}
-                    </span>
-                    <span className="text-xs text-zinc-300">•</span>
                     <span className="text-xs font-medium text-zinc-500 uppercase">{piece.language}</span>
                     {piece.aiModel && (
                       <>

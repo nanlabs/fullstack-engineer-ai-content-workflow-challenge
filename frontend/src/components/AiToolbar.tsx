@@ -1,7 +1,4 @@
 interface AiToolbarProps {
-  selectedModel: string | undefined;
-  onModelChange: (model: string | undefined) => void;
-  providers: { all: string[]; default: string; available: string[] } | undefined;
   hasBody: boolean;
   hasMetadata: boolean;
   availableLangs: string[];
@@ -20,9 +17,6 @@ interface AiToolbarProps {
 }
 
 export function AiToolbar({
-  selectedModel,
-  onModelChange,
-  providers,
   hasBody,
   hasMetadata,
   availableLangs,
@@ -41,21 +35,6 @@ export function AiToolbar({
 }: AiToolbarProps) {
   return (
     <div>
-      <div className="flex items-center gap-3 mb-4">
-        <label className="text-sm font-medium text-zinc-700">Provider Model:</label>
-        <select
-          value={selectedModel ?? ''}
-          onChange={(e) => onModelChange(e.target.value || undefined)}
-          className="input-field max-w-[200px]"
-        >
-          <option value="">Default ({providers?.default})</option>
-          {providers?.all.map((p) => (
-            <option key={p} value={p} disabled={!providers?.available.includes(p)}>
-              {p}{!providers?.available.includes(p) ? ' (no key)' : ''}
-            </option>
-          ))}
-        </select>
-      </div>
       <div className="flex gap-2 flex-wrap">
         <button
           onClick={onGenerate}

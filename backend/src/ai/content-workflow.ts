@@ -5,11 +5,12 @@ import { AiService } from './ai.service';
 const ContentWorkflowState = Annotation.Root({
   campaignName: Annotation<string>,
   campaignDescription: Annotation<string>,
-  contentType: Annotation<string>,
   title: Annotation<string>,
+  userPrompt: Annotation<string>,
   language: Annotation<string>,
   targetLanguages: Annotation<string[]>,
   provider: Annotation<string | undefined>,
+  wordCount: Annotation<number | undefined>,
   // Outputs
   generatedBody: Annotation<string>,
   translations: Annotation<Record<string, { title: string; body: string }>>,
@@ -29,10 +30,11 @@ export class ContentWorkflow {
   async runFullPipeline(input: {
     campaignName: string;
     campaignDescription: string;
-    contentType: string;
     title: string;
     language: string;
     targetLanguages: string[];
+    userPrompt?: string;
+    wordCount?: number;
     provider?: string;
   }): Promise<WorkflowState> {
     const graph = this.buildGraph();
@@ -40,6 +42,7 @@ export class ContentWorkflow {
 
     const result = await app.invoke({
       ...input,
+      userPrompt: input.userPrompt || 'Generate professional marketing content based on the title and campaign context',
       generatedBody: '',
       translations: {},
       metadata: null,
@@ -57,8 +60,9 @@ export class ContentWorkflow {
         const body = await this.aiService.generateDraft({
           campaignName: state.campaignName,
           campaignDescription: state.campaignDescription,
-          contentType: state.contentType,
           title: state.title,
+          userPrompt: state.userPrompt,
+          wordCount: state.wordCount,
           language: state.language,
           provider: state.provider,
         });

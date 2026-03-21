@@ -8,13 +8,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum ContentType {
-  HEADLINE
-  PRODUCT_DESCRIPTION
-  AD_COPY
-  BLOG_POST
-}
-
 enum ContentStatus {
   DRAFT
   AI_SUGGESTED
@@ -38,7 +31,6 @@ model Campaign {
 model ContentPiece {
   id           String        @id @default(uuid())
   campaignId   String
-  type         ContentType
   title        String
   body         String        @default("")
   language     String        @default("en")

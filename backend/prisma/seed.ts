@@ -1,4 +1,4 @@
-import { PrismaClient, ContentType, ContentStatus } from '@prisma/client';
+import { PrismaClient, ContentStatus } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -16,21 +16,18 @@ async function main() {
       contentPieces: {
         create: [
           {
-            type: ContentType.HEADLINE,
             title: 'Main Campaign Headline',
             body: '',
             language: 'en',
             status: ContentStatus.DRAFT,
           },
           {
-            type: ContentType.PRODUCT_DESCRIPTION,
             title: 'Eco Water Bottle Product Description',
             body: '',
             language: 'en',
             status: ContentStatus.DRAFT,
           },
           {
-            type: ContentType.AD_COPY,
             title: 'Social Media Ad - Instagram',
             body: '',
             language: 'en',
@@ -50,14 +47,12 @@ async function main() {
       contentPieces: {
         create: [
           {
-            type: ContentType.HEADLINE,
             title: 'Holiday Gift Guide Headline',
             body: '',
             language: 'en',
             status: ContentStatus.DRAFT,
           },
           {
-            type: ContentType.BLOG_POST,
             title: 'Top 10 Sustainable Gifts for 2026',
             body: '',
             language: 'en',

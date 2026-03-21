@@ -15,7 +15,7 @@ export class CampaignsService {
       include: {
         contentPieces: {
           where: { parentId: null },
-          select: { id: true, status: true, type: true, title: true, language: true },
+          select: { id: true, status: true, title: true, language: true },
         },
       },
       orderBy: { createdAt: 'desc' },

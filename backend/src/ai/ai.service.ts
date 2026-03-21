@@ -10,9 +10,10 @@ import {
 export interface GenerateInput {
   campaignName: string;
   campaignDescription: string;
-  contentType: string;
   title: string;
   language: string;
+  userPrompt?: string;
+  wordCount?: number;
   provider?: string;
 }
 
@@ -56,9 +57,12 @@ export class AiService {
     const result = await chain.invoke({
       campaignName: input.campaignName,
       campaignDescription: input.campaignDescription || 'No description provided',
-      contentType: input.contentType,
       title: input.title,
       language: input.language,
+      userPrompt: input.userPrompt || 'Generate professional marketing content based on the title and campaign context',
+      lengthGuidance: input.wordCount
+        ? `Aim for approximately ${input.wordCount} words.`
+        : 'Use your best judgment for an appropriate length.',
     });
     return result.trim();
   }

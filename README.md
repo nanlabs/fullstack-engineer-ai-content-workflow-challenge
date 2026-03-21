@@ -67,7 +67,7 @@ npm run dev          # http://localhost:5173
 ### ModelFactory — Provider-Agnostic LLM Design
 
 ```
-.env: DEFAULT_LLM_PROVIDER=gemini   ← default for all AI endpoints
+.env: DEFAULT_LLM_PROVIDER=anthropic   ← default for all AI endpoints
 POST /api/content/:id/generate       ← uses default
 POST /api/content/:id/generate { "model": "openai" }  ← per-request override
 GET  /api/ai/providers               ← lists available + default

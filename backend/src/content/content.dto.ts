@@ -6,12 +6,9 @@ import {
   MinLength,
   IsUUID,
 } from 'class-validator';
-import { ContentType, ContentStatus } from '@prisma/client';
+import { ContentStatus } from '@prisma/client';
 
 export class CreateContentPieceDto {
-  @IsEnum(ContentType)
-  type!: ContentType;
-
   @IsString()
   @MinLength(1)
   @MaxLength(500)

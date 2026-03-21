@@ -14,10 +14,13 @@ export default function ContentDetail() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [selectedModel, setSelectedModel] = useState<string | undefined>();
   const [comparison, setComparison] = useState<CompareResponse | null>(null);
   const [translateLang, setTranslateLang] = useState('');
   const [compareModels, setCompareModels] = useState<string[]>([]);
+  const [promptModal, setPromptModal] = useState<{ action: 'generate' | 'chain' } | null>(null);
+  const [generationPrompt, setGenerationPrompt] = useState('');
+  const [modalModel, setModalModel] = useState<string | undefined>();
+  const [modalWordCount, setModalWordCount] = useState('');
 
   const { data: piece, isLoading } = useQuery({
     queryKey: ['content', id],
@@ -42,12 +45,13 @@ export default function ContentDetail() {
   };
 
   const generateMut = useMutation({
-    mutationFn: () => aiApi.generate(id!, selectedModel),
+    mutationFn: (params: { prompt?: string; model?: string; wordCount?: number }) =>
+      aiApi.generate(id!, params.model, params.prompt, params.wordCount),
     onSuccess: invalidate,
   });
 
   const translateMut = useMutation({
-    mutationFn: () => aiApi.translate(id!, translateLang, selectedModel),
+    mutationFn: () => aiApi.translate(id!, translateLang),
     onSuccess: () => {
       invalidate();
       setTranslateLang('');
@@ -55,12 +59,13 @@ export default function ContentDetail() {
   });
 
   const extractMut = useMutation({
-    mutationFn: () => aiApi.extract(id!, selectedModel),
+    mutationFn: () => aiApi.extract(id!),
     onSuccess: invalidate,
   });
 
   const chainMut = useMutation({
-    mutationFn: () => aiApi.chain(id!, selectedModel),
+    mutationFn: (params: { prompt?: string; model?: string; wordCount?: number }) =>
+      aiApi.chain(id!, params.model, params.prompt, params.wordCount),
     onSuccess: invalidate,
   });
 
@@ -136,8 +141,6 @@ export default function ContentDetail() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-zinc-900">{piece.title}</h1>
             <div className="flex gap-2 mt-2 items-center text-[11px] font-medium text-zinc-500 uppercase tracking-wider">
-              <span>{piece.type.replace('_', ' ')}</span>
-              <span className="text-zinc-300">•</span>
               <span>{piece.language}</span>
               {piece.aiModel && (
                 <>
@@ -177,7 +180,7 @@ export default function ContentDetail() {
           onApprove={() => statusMut.mutate({ pieceId: id!, status: 'APPROVED' })}
           onReject={() => statusMut.mutate({ pieceId: id!, status: 'REJECTED' })}
           onReopen={() => statusMut.mutate({ pieceId: id!, status: 'DRAFT' })}
-          onRegenerate={() => generateMut.mutate()}
+          onRegenerate={() => setPromptModal({ action: 'generate' })}
           onSave={(body, notes) => updateMut.mutate({ body, notes })}
         />
       </Accordion>
@@ -185,18 +188,15 @@ export default function ContentDetail() {
       {/* AI Tools accordion */}
       <Accordion title="AI Tools" defaultOpen={piece.status === 'DRAFT'}>
         <AiToolbar
-          selectedModel={selectedModel}
-          onModelChange={setSelectedModel}
-          providers={providers}
           hasBody={!!piece.body}
           hasMetadata={hasMetadata}
           availableLangs={availableLangs}
           translateLang={translateLang}
           onTranslateLangChange={setTranslateLang}
           isAiLoading={isAiLoading}
-          onGenerate={() => generateMut.mutate()}
+          onGenerate={() => setPromptModal({ action: 'generate' })}
           onExtract={() => extractMut.mutate()}
-          onChain={() => chainMut.mutate()}
+          onChain={() => setPromptModal({ action: 'chain' })}
           onTranslate={() => translateMut.mutate()}
           generating={generateMut.isPending}
           extracting={extractMut.isPending}
@@ -324,6 +324,85 @@ export default function ContentDetail() {
           </p>
         )}
       </Accordion>
+
+      {/* Prompt Modal */}
+      {promptModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setPromptModal(null)}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-zinc-900">
+              {promptModal.action === 'chain' ? 'Full Pipeline' : 'Content Generation'}
+            </h2>
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 mb-1">Provider Model</label>
+              <select
+                value={modalModel ?? ''}
+                onChange={(e) => setModalModel(e.target.value || undefined)}
+                className="input-field w-full"
+              >
+                <option value="">Default ({providers?.default})</option>
+                {providers?.all.map((p) => (
+                  <option key={p} value={p} disabled={!providers?.available.includes(p)}>
+                    {p}{!providers?.available.includes(p) ? ' (no key)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 mb-1">Prompt</label>
+              <textarea
+                value={generationPrompt}
+                onChange={(e) => setGenerationPrompt(e.target.value)}
+                placeholder="Describe the type of content you want to generate"
+                rows={3}
+                className="input-field w-full resize-none"
+                maxLength={2000}
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 mb-1">Approximate word count <span className="text-zinc-400 font-normal">(optional)</span></label>
+              <input
+                type="number"
+                value={modalWordCount}
+                onChange={(e) => setModalWordCount(e.target.value)}
+                placeholder="e.g. 150"
+                min={10}
+                max={10000}
+                className="input-field w-full"
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={() => { setPromptModal(null); setGenerationPrompt(''); setModalWordCount(''); setModalModel(undefined); }}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const params = {
+                    prompt: generationPrompt.trim() || undefined,
+                    model: modalModel,
+                    wordCount: modalWordCount ? parseInt(modalWordCount, 10) : undefined,
+                  };
+                  if (promptModal.action === 'chain') {
+                    chainMut.mutate(params);
+                  } else {
+                    generateMut.mutate(params);
+                  }
+                  setPromptModal(null);
+                  setGenerationPrompt('');
+                  setModalWordCount('');
+                  setModalModel(undefined);
+                }}
+                className="btn-primary"
+              >
+                {promptModal.action === 'chain' ? 'Run Pipeline' : 'Generate'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

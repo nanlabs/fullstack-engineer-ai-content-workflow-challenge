@@ -52,9 +52,10 @@ export class AiController {
       body = await this.aiService.generateDraft({
         campaignName: campaign.name,
         campaignDescription: campaign.description ?? '',
-        contentType: piece.type,
         title: piece.title,
         language: piece.language,
+        userPrompt: dto.prompt,
+        wordCount: dto.wordCount,
         provider: dto.model,
       });
     } catch (err) {
@@ -97,7 +98,6 @@ export class AiController {
     const translation = await this.prisma.contentPiece.create({
       data: {
         campaignId: piece.campaignId,
-        type: piece.type,
         title: result.title,
         body: result.body,
         language: dto.targetLanguage,
@@ -153,10 +153,11 @@ export class AiController {
       result = await this.contentWorkflow.runFullPipeline({
         campaignName: campaign.name,
         campaignDescription: campaign.description ?? '',
-        contentType: piece.type,
         title: piece.title,
         language: piece.language,
         targetLanguages: campaign.targetLanguages,
+        userPrompt: dto.prompt,
+        wordCount: dto.wordCount,
         provider: dto.model,
       });
     } catch (err) {
@@ -181,7 +182,6 @@ export class AiController {
       const translation = await this.prisma.contentPiece.create({
         data: {
           campaignId: piece.campaignId,
-          type: piece.type,
           title: content.title,
           body: content.body,
           language: lang,
@@ -212,9 +212,9 @@ export class AiController {
         {
           campaignName: campaign.name,
           campaignDescription: campaign.description ?? '',
-          contentType: piece.type,
           title: piece.title,
           language: piece.language,
+          userPrompt: dto.prompt,
         },
         dto.models,
       );

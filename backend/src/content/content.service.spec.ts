@@ -35,10 +35,10 @@ describe('ContentService', () => {
 
   describe('create', () => {
     it('creates a content piece and emits event', async () => {
-      const piece = { id: '1', type: 'HEADLINE', title: 'Test', body: '', language: 'en', status: 'DRAFT' };
+      const piece = { id: '1', title: 'Test', body: '', language: 'en', status: 'DRAFT' };
       mockPrisma.contentPiece.create.mockResolvedValue(piece);
 
-      const result = await service.create('camp-1', { type: 'HEADLINE' as any, title: 'Test' });
+      const result = await service.create('camp-1', { title: 'Test' });
       expect(result).toEqual(piece);
       expect(mockEvents.emit).toHaveBeenCalledWith('content.created', piece);
     });
