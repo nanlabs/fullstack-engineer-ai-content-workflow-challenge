@@ -5,7 +5,6 @@ import { contentApi, aiApi } from '../lib/api';
 import { StatusBadge } from '../components/StatusBadge';
 import { Accordion } from '../components/Accordion';
 import { ContentCard } from '../components/ContentCard';
-import { AiToolbar } from '../components/AiToolbar';
 import { ModelComparison } from '../components/ModelComparison';
 import { MetadataPanel } from '../components/MetadataPanel';
 import type { ContentStatus, CompareResponse } from '../lib/types';
@@ -138,10 +137,10 @@ export default function ContentDetail() {
   const hasTranslations = (piece.translations?.length ?? 0) > 0;
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
+    <div className="w-full">
       <Link
         to={`/campaigns/${piece.campaignId}`}
-        className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors text-sm mb-8 inline-flex items-center gap-2 font-medium"
+        className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors text-sm mb-6 inline-flex items-center gap-2 font-medium"
       >
         ← Back to Campaign
       </Link>
@@ -180,6 +179,124 @@ export default function ContentDetail() {
         </div>
       </div>
 
+      {/* Two-column layout: sticky left panel + main content */}
+      <div className="flex gap-5 items-start">
+
+        {/* ── Left floating panel ── */}
+        <aside className="w-52 shrink-0 sticky top-20 space-y-3">
+
+          {/* AI Tools */}
+          <div className="card p-4">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-3">
+              AI Tools
+            </p>
+            <div className="space-y-2">
+              <button
+                onClick={() => setPromptModal({ action: 'generate' })}
+                disabled={isAiLoading || !!piece.body}
+                title={piece.body ? 'Draft already generated — use Regenerate in the Content section' : undefined}
+                className="btn-primary w-full text-sm disabled:opacity-40"
+              >
+                {generateMut.isPending ? 'Generating…' : piece.body ? 'Draft Generated ✓' : 'Generate Draft'}
+              </button>
+              <button
+                onClick={() => extractMut.mutate()}
+                disabled={isAiLoading || !piece.body || hasMetadata}
+                title={hasMetadata ? 'Metadata already extracted' : undefined}
+                className="btn-secondary w-full text-sm disabled:opacity-40"
+              >
+                {extractMut.isPending ? 'Extracting…' : hasMetadata ? 'Metadata Extracted ✓' : 'Extract Metadata'}
+              </button>
+              <button
+                onClick={() => setPromptModal({ action: 'chain' })}
+                disabled={isAiLoading || (!!piece.body && hasMetadata)}
+                title={piece.body && hasMetadata ? 'Pipeline already completed' : undefined}
+                className="btn-primary w-full text-sm bg-purple-600 hover:bg-purple-700 border-none shadow-sm disabled:opacity-40"
+              >
+                {chainMut.isPending
+                  ? 'Running…'
+                  : piece.body && hasMetadata
+                    ? 'Pipeline Completed ✓'
+                    : 'Full Pipeline'}
+              </button>
+            </div>
+
+            {availableLangs.length > 0 && (
+              <div className="pt-3 mt-3 border-t border-zinc-200/60 dark:border-zinc-700/60 space-y-2">
+                <select
+                  value={translateLang}
+                  onChange={(e) => setTranslateLang(e.target.value)}
+                  className="input-field w-full text-sm"
+                >
+                  <option value="">Translate to…</option>
+                  {availableLangs.map((l) => (
+                    <option key={l} value={l}>{l}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => translateMut.mutate()}
+                  disabled={isAiLoading || !translateLang || !piece.body}
+                  className="btn-secondary w-full text-sm disabled:opacity-40"
+                >
+                  {translateMut.isPending ? 'Translating…' : 'Translate'}
+                </button>
+              </div>
+            )}
+
+            {aiError && (
+              <div className="mt-3 p-2.5 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs rounded-md border border-red-200 dark:border-red-800">
+                {aiError.message}
+              </div>
+            )}
+          </div>
+
+          {/* Compare Models */}
+          {(providers?.all.length ?? 0) >= 2 && (
+            <div className="card p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-3">
+                Compare Models
+              </p>
+              <div className="space-y-1.5 mb-3">
+                {providers!.all.map((p) => (
+                  <label key={p} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={compareModels.includes(p)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setCompareModels((prev) => [...prev, p]);
+                        } else {
+                          setCompareModels((prev) => prev.filter((m) => m !== p));
+                        }
+                      }}
+                      disabled={!providers!.available.includes(p)}
+                      className="rounded border-zinc-300 dark:border-zinc-600 text-zinc-800 focus:ring-zinc-500 disabled:opacity-40"
+                    />
+                    <span className={`text-sm ${providers!.available.includes(p) ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-400'}`}>
+                      {p}{!providers!.available.includes(p) ? ' (no key)' : ''}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <button
+                onClick={() => compareMut.mutate(compareModels)}
+                disabled={isAiLoading || compareModels.length < 2}
+                className="btn-primary w-full text-sm disabled:opacity-40"
+              >
+                {compareMut.isPending ? 'Comparing…' : 'Compare'}
+              </button>
+              {compareMut.error && (
+                <div className="mt-2 p-2.5 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs rounded-md border border-red-200 dark:border-red-800">
+                  {compareMut.error.message}
+                </div>
+              )}
+            </div>
+          )}
+        </aside>
+
+        {/* ── Main content column ── */}
+        <div className="flex-1 min-w-0 space-y-4">
+
       {/* Content accordion */}
       <Accordion title="Content" badge={<StatusBadge status={piece.status} />} defaultOpen>
         <ContentCard
@@ -196,74 +313,13 @@ export default function ContentDetail() {
         />
       </Accordion>
 
-      {/* AI Tools accordion */}
-      <Accordion title="AI Tools" defaultOpen={piece.status === 'DRAFT'}>
-        <AiToolbar
-          hasBody={!!piece.body}
-          hasMetadata={hasMetadata}
-          availableLangs={availableLangs}
-          translateLang={translateLang}
-          onTranslateLangChange={setTranslateLang}
-          isAiLoading={isAiLoading}
-          onGenerate={() => setPromptModal({ action: 'generate' })}
-          onExtract={() => extractMut.mutate()}
-          onChain={() => setPromptModal({ action: 'chain' })}
-          onTranslate={() => translateMut.mutate()}
-          generating={generateMut.isPending}
-          extracting={extractMut.isPending}
-          chaining={chainMut.isPending}
-          translating={translateMut.isPending}
-          error={aiError}
+      {/* Comparison result */}
+      {comparison && (
+        <ModelComparison
+          comparison={comparison}
+          onSelect={(provider, body) => applyComparisonMut.mutate({ body, provider })}
+          selecting={applyComparisonMut.isPending}
         />
-      </Accordion>
-
-      {/* Compare Models accordion */}
-      {(providers?.all.length ?? 0) >= 2 && (
-        <Accordion title="Compare Models">
-          <div className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {providers!.all.map((p) => (
-                <label key={p} className="inline-flex items-center gap-1.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={compareModels.includes(p)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setCompareModels((prev) => [...prev, p]);
-                      } else {
-                        setCompareModels((prev) => prev.filter((m) => m !== p));
-                      }
-                    }}
-                    disabled={!providers!.available.includes(p)}
-                    className="rounded border-zinc-300 dark:border-zinc-600 text-zinc-800 focus:ring-zinc-500 disabled:opacity-40"
-                  />
-                  <span className={`text-sm ${providers!.available.includes(p) ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-400'}`}>
-                    {p}{!providers!.available.includes(p) ? ' (no key)' : ''}
-                  </span>
-                </label>
-              ))}
-            </div>
-            <button
-              onClick={() => compareMut.mutate(compareModels)}
-              disabled={isAiLoading || compareModels.length < 2}
-              className="btn-primary disabled:opacity-40"
-            >
-              {compareMut.isPending ? 'Comparing...' : `Run Comparison (${compareModels.length} models)`}
-            </button>
-            {compareMut.error && (
-              <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-sm rounded-md border border-red-200 dark:border-red-800">
-                {compareMut.error.message}
-              </div>
-            )}
-            {comparison && (
-              <ModelComparison
-                comparison={comparison}
-                onSelect={(provider, body) => applyComparisonMut.mutate({ body, provider })}
-                selecting={applyComparisonMut.isPending}
-              />
-            )}
-          </div>
-        </Accordion>
       )}
 
       {/* Metadata accordion */}
@@ -292,7 +348,7 @@ export default function ContentDetail() {
         {hasTranslations ? (
           <div className="space-y-4">
             {piece.translations!.map((t) => (
-              <details key={t.id} className="group border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden">
+              <details key={t.id} open className="group border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden">
                 <summary className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-zinc-50/60 dark:hover:bg-zinc-800/60 transition-colors select-none">
                   <div className="flex items-center gap-3">
                     <span className="bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-600 px-2 py-0.5 rounded-full text-[11px] font-medium uppercase tracking-wider">
@@ -348,6 +404,9 @@ export default function ContentDetail() {
           </p>
         )}
       </Accordion>
+
+        </div>{/* end main content column */}
+      </div>{/* end two-column layout */}
 
       {/* Prompt Modal */}
       {promptModal && (
