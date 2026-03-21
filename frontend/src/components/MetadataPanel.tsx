@@ -4,8 +4,7 @@ interface MetadataPanelProps {
 
 export function MetadataPanel({ metadata }: MetadataPanelProps) {
   return (
-    <div className="card p-6 mb-6">
-      <h2 className="text-lg font-semibold text-zinc-900 mb-4">Metadata</h2>
+    <div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-sm">
         <div>
           <span className="text-zinc-500 font-medium">Tone</span>

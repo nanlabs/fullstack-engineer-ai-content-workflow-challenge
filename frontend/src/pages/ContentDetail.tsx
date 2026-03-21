@@ -1,22 +1,20 @@
 import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { contentApi, aiApi } from '../lib/api';
 import { StatusBadge } from '../components/StatusBadge';
-import { ReviewActions } from '../components/ReviewActions';
+import { Accordion } from '../components/Accordion';
+import { ContentCard } from '../components/ContentCard';
 import { AiToolbar } from '../components/AiToolbar';
 import { ModelComparison } from '../components/ModelComparison';
 import { MetadataPanel } from '../components/MetadataPanel';
-import { TranslationsList } from '../components/TranslationsList';
 import type { ContentStatus, CompareResponse } from '../lib/types';
 
 export default function ContentDetail() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [selectedModel, setSelectedModel] = useState<string | undefined>();
-  const [editBody, setEditBody] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
-  const [reviewNotes, setReviewNotes] = useState('');
   const [comparison, setComparison] = useState<CompareResponse | null>(null);
   const [translateLang, setTranslateLang] = useState('');
 
@@ -56,9 +54,7 @@ export default function ContentDetail() {
 
   const chainMut = useMutation({
     mutationFn: () => aiApi.chain(id!, selectedModel),
-    onSuccess: () => {
-      invalidate();
-    },
+    onSuccess: invalidate,
   });
 
   const compareMut = useMutation({
@@ -67,17 +63,22 @@ export default function ContentDetail() {
   });
 
   const statusMut = useMutation({
-    mutationFn: ({ status, notes }: { status: ContentStatus; notes?: string }) =>
-      contentApi.updateStatus(id!, { status, reviewNotes: notes }),
+    mutationFn: ({ pieceId, status, notes }: { pieceId: string; status: ContentStatus; notes?: string }) =>
+      contentApi.updateStatus(pieceId, { status, reviewNotes: notes }),
     onSuccess: invalidate,
   });
 
   const updateMut = useMutation({
-    mutationFn: () =>
-      contentApi.update(id!, { body: editBody, reviewNotes: reviewNotes || undefined }),
+    mutationFn: ({ body, notes }: { body: string; notes: string }) =>
+      contentApi.update(id!, { body, reviewNotes: notes || undefined }),
+    onSuccess: () => invalidate(),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: () => contentApi.delete(id!),
     onSuccess: () => {
-      invalidate();
-      setIsEditing(false);
+      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+      navigate('/');
     },
   });
 
@@ -100,6 +101,9 @@ export default function ContentDetail() {
         l !== piece.language &&
         !piece.translations?.some((t) => t.language === l),
     ) ?? [];
+
+  const hasMetadata = !!piece.metadata;
+  const hasTranslations = (piece.translations?.length ?? 0) > 0;
 
   return (
     <div className="max-w-5xl mx-auto p-6">
@@ -129,112 +133,135 @@ export default function ContentDetail() {
               )}
             </div>
           </div>
-          <StatusBadge status={piece.status} />
+          <div className="flex items-center gap-3">
+            <StatusBadge status={piece.status} />
+            <button
+              onClick={() => {
+                if (window.confirm(`Delete "${piece.title}"? This cannot be undone.`)) {
+                  deleteMut.mutate();
+                }
+              }}
+              disabled={deleteMut.isPending}
+              className="text-sm font-medium text-red-600 hover:text-red-700 border border-red-200 hover:border-red-400 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+            >
+              {deleteMut.isPending ? 'Deleting…' : 'Delete'}
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Content Body */}
-      <div className="card p-6 mb-6">
-        <h2 className="text-lg font-semibold text-zinc-900 mb-4">Content</h2>
-        {isEditing ? (
+      {/* Content accordion */}
+      <Accordion title="Content" badge={<StatusBadge status={piece.status} />} defaultOpen>
+        <ContentCard
+          body={piece.body}
+          status={piece.status}
+          reviewNotes={piece.reviewNotes}
+          isPending={statusMut.isPending}
+          error={statusMut.error}
+          onApprove={() => statusMut.mutate({ pieceId: id!, status: 'APPROVED' })}
+          onReject={() => statusMut.mutate({ pieceId: id!, status: 'REJECTED' })}
+          onReopen={() => statusMut.mutate({ pieceId: id!, status: 'DRAFT' })}
+          onRegenerate={() => generateMut.mutate()}
+          onSave={(body, notes) => updateMut.mutate({ body, notes })}
+        />
+      </Accordion>
+
+      {/* AI Tools accordion */}
+      <Accordion title="AI Tools" defaultOpen={piece.status === 'DRAFT'}>
+        <AiToolbar
+          selectedModel={selectedModel}
+          onModelChange={setSelectedModel}
+          providers={providers}
+          hasBody={!!piece.body}
+          hasMetadata={hasMetadata}
+          availableLangs={availableLangs}
+          translateLang={translateLang}
+          onTranslateLangChange={setTranslateLang}
+          isAiLoading={isAiLoading}
+          onGenerate={() => generateMut.mutate()}
+          onExtract={() => extractMut.mutate()}
+          onChain={() => chainMut.mutate()}
+          onCompare={() => compareMut.mutate()}
+          onTranslate={() => translateMut.mutate()}
+          generating={generateMut.isPending}
+          extracting={extractMut.isPending}
+          chaining={chainMut.isPending}
+          comparing={compareMut.isPending}
+          translating={translateMut.isPending}
+          error={aiError}
+        />
+        {comparison && <ModelComparison comparison={comparison} />}
+      </Accordion>
+
+      {/* Metadata accordion */}
+      <Accordion title="Metadata" defaultOpen={hasMetadata}>
+        {hasMetadata ? (
+          <MetadataPanel metadata={piece.metadata as unknown as Record<string, unknown>} />
+        ) : (
+          <p className="text-zinc-500 text-sm">
+            No metadata extracted yet. Use &ldquo;Extract Metadata&rdquo; in AI Tools.
+          </p>
+        )}
+      </Accordion>
+
+      {/* Translations accordion */}
+      <Accordion
+        title="Translations"
+        badge={
+          hasTranslations ? (
+            <span className="bg-zinc-100 text-zinc-600 border border-zinc-200 px-2 py-0.5 rounded-full text-[11px] font-medium">
+              {piece.translations!.length}
+            </span>
+          ) : undefined
+        }
+        defaultOpen={hasTranslations}
+      >
+        {hasTranslations ? (
           <div className="space-y-4">
-            <textarea
-              value={editBody}
-              onChange={(e) => setEditBody(e.target.value)}
-              className="input-field min-h-[200px] font-mono whitespace-pre-wrap leading-relaxed"
-              maxLength={10000}
-            />
-            <textarea
-              value={reviewNotes}
-              onChange={(e) => setReviewNotes(e.target.value)}
-              placeholder="Review notes (optional)"
-              className="input-field"
-              rows={2}
-              maxLength={5000}
-            />
-            <div className="flex gap-2 pt-2">
-              <button
-                onClick={() => updateMut.mutate()}
-                disabled={updateMut.isPending}
-                className="btn-primary"
-              >
-                Save Changes
-              </button>
-              <button
-                onClick={() => setIsEditing(false)}
-                className="btn-secondary"
-              >
-                Cancel
-              </button>
-            </div>
+            {piece.translations!.map((t) => (
+              <details key={t.id} className="group border border-zinc-200 rounded-lg overflow-hidden">
+                <summary className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-zinc-50/60 transition-colors select-none">
+                  <div className="flex items-center gap-3">
+                    <span className="bg-zinc-100 text-zinc-600 border border-zinc-200 px-2 py-0.5 rounded-full text-[11px] font-medium uppercase tracking-wider">
+                      {t.language}
+                    </span>
+                    <span className="font-semibold text-zinc-900 text-sm">{t.title}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <StatusBadge status={t.status} />
+                    <svg
+                      className="w-4 h-4 text-zinc-400 transition-transform duration-200 group-open:rotate-180"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </summary>
+                <div className="px-4 pb-4 pt-2 border-t border-zinc-100">
+                  <ContentCard
+                    body={t.body}
+                    status={t.status}
+                    reviewNotes={t.reviewNotes}
+                    isPending={statusMut.isPending}
+                    error={statusMut.error}
+                    onApprove={() => statusMut.mutate({ pieceId: t.id, status: 'APPROVED' })}
+                    onReject={() => statusMut.mutate({ pieceId: t.id, status: 'REJECTED' })}
+                    onReopen={() => statusMut.mutate({ pieceId: t.id, status: 'DRAFT' })}
+                    regenerateLabel="Re-translate"
+                  />
+                </div>
+              </details>
+            ))}
           </div>
         ) : (
-          <div>
-            {piece.body ? (
-              <p className="whitespace-pre-wrap text-zinc-800 leading-relaxed text-[15px]">{piece.body}</p>
-            ) : (
-              <div className="bg-zinc-50 border border-dashed border-zinc-200 rounded-md p-8 text-center bg-zinc-50/50">
-                <p className="text-zinc-500 text-sm">
-                  No content yet. Generate a draft using AI below.
-                </p>
-              </div>
-            )}
-            {piece.body && (
-              <button
-                onClick={() => {
-                  setEditBody(piece.body);
-                  setReviewNotes(piece.reviewNotes ?? '');
-                  setIsEditing(true);
-                }}
-                className="mt-6 text-sm font-medium text-zinc-600 hover:text-zinc-900 underline-offset-4 hover:underline transition-colors"
-              >
-                Edit content manually
-              </button>
-            )}
-          </div>
+          <p className="text-zinc-500 text-sm">
+            No translations yet. Use the translate option in AI Tools.
+          </p>
         )}
-      </div>
-
-      <ReviewActions
-        status={piece.status}
-        body={piece.body}
-        reviewNotes={piece.reviewNotes}
-        isPending={statusMut.isPending}
-        error={statusMut.error}
-        onChangeStatus={(status, notes) => statusMut.mutate({ status, notes })}
-      />
-
-      <AiToolbar
-        selectedModel={selectedModel}
-        onModelChange={setSelectedModel}
-        providers={providers}
-        hasBody={!!piece.body}
-        availableLangs={availableLangs}
-        translateLang={translateLang}
-        onTranslateLangChange={setTranslateLang}
-        isAiLoading={isAiLoading}
-        onGenerate={() => generateMut.mutate()}
-        onExtract={() => extractMut.mutate()}
-        onChain={() => chainMut.mutate()}
-        onCompare={() => compareMut.mutate()}
-        onTranslate={() => translateMut.mutate()}
-        generating={generateMut.isPending}
-        extracting={extractMut.isPending}
-        chaining={chainMut.isPending}
-        comparing={compareMut.isPending}
-        translating={translateMut.isPending}
-        error={aiError}
-      />
-
-      {comparison && <ModelComparison comparison={comparison} />}
-
-      {piece.metadata && (
-        <MetadataPanel metadata={piece.metadata as unknown as Record<string, unknown>} />
-      )}
-
-      {piece.translations && piece.translations.length > 0 && (
-        <TranslationsList translations={piece.translations} />
-      )}
+      </Accordion>
     </div>
   );
 }

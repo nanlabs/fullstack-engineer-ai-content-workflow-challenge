@@ -15,17 +15,22 @@ const PROVIDERS: Record<string, ProviderConfig> = {
   openai: {
     envKey: 'OPENAI_API_KEY',
     factory: (apiKey) =>
-      new ChatOpenAI({ openAIApiKey: apiKey, modelName: 'gpt-4o-mini', temperature: 0.7 }),
+      new ChatOpenAI({ openAIApiKey: apiKey, modelName: 'gpt-4o-mini', temperature: 0.7, maxRetries: 2, timeout: 30000 }),
   },
   anthropic: {
     envKey: 'ANTHROPIC_API_KEY',
     factory: (apiKey) =>
-      new ChatAnthropic({ anthropicApiKey: apiKey, modelName: 'claude-sonnet-4-20250514', temperature: 0.7 }),
+      new ChatAnthropic({ anthropicApiKey: apiKey, modelName: 'claude-sonnet-4-20250514', temperature: 0.7, maxRetries: 2 }),
   },
   gemini: {
     envKey: 'GOOGLE_API_KEY',
     factory: (apiKey) =>
-      new ChatGoogleGenerativeAI({ apiKey, modelName: 'gemini-2.0-flash', temperature: 0.7 }),
+      new ChatGoogleGenerativeAI({ apiKey, modelName: 'gemini-2.5-flash-lite', temperature: 0.7, maxRetries: 2 }),
+  },
+  'gemini-flash': {
+    envKey: 'GOOGLE_API_KEY',
+    factory: (apiKey) =>
+      new ChatGoogleGenerativeAI({ apiKey, modelName: 'gemini-2.5-flash', temperature: 0.7, maxRetries: 2 }),
   },
 };
 

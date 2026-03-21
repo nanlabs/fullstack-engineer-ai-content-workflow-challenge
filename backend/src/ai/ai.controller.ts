@@ -5,6 +5,8 @@ import {
   Param,
   Body,
   ParseUUIDPipe,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -44,14 +46,19 @@ export class AiController {
     const piece = await this.contentService.findOne(id);
     const campaign = piece.campaign;
 
-    const body = await this.aiService.generateDraft({
-      campaignName: campaign.name,
-      campaignDescription: campaign.description ?? '',
-      contentType: piece.type,
-      title: piece.title,
-      language: piece.language,
-      provider: dto.model,
-    });
+    let body: string;
+    try {
+      body = await this.aiService.generateDraft({
+        campaignName: campaign.name,
+        campaignDescription: campaign.description ?? '',
+        contentType: piece.type,
+        title: piece.title,
+        language: piece.language,
+        provider: dto.model,
+      });
+    } catch (err) {
+      throw this.wrapAiError(err);
+    }
 
     const updated = await this.prisma.contentPiece.update({
       where: { id },
@@ -73,13 +80,18 @@ export class AiController {
     @Body() dto: AiTranslateDto,
   ) {
     const piece = await this.contentService.findOne(id);
-    const result = await this.aiService.translate({
-      title: piece.title,
-      body: piece.body,
-      sourceLanguage: piece.language,
-      targetLanguage: dto.targetLanguage,
-      provider: dto.model,
-    });
+    let result;
+    try {
+      result = await this.aiService.translate({
+        title: piece.title,
+        body: piece.body,
+        sourceLanguage: piece.language,
+        targetLanguage: dto.targetLanguage,
+        provider: dto.model,
+      });
+    } catch (err) {
+      throw this.wrapAiError(err);
+    }
 
     const translation = await this.prisma.contentPiece.create({
       data: {
@@ -105,12 +117,17 @@ export class AiController {
     @Body() dto: AiGenerateDto,
   ) {
     const piece = await this.contentService.findOne(id);
-    const metadata = await this.aiService.extractMetadata({
-      title: piece.title,
-      body: piece.body,
-      language: piece.language,
-      provider: dto.model,
-    });
+    let metadata;
+    try {
+      metadata = await this.aiService.extractMetadata({
+        title: piece.title,
+        body: piece.body,
+        language: piece.language,
+        provider: dto.model,
+      });
+    } catch (err) {
+      throw this.wrapAiError(err);
+    }
 
     const updated = await this.prisma.contentPiece.update({
       where: { id },
@@ -130,15 +147,20 @@ export class AiController {
     const piece = await this.contentService.findOne(id);
     const campaign = piece.campaign;
 
-    const result = await this.contentWorkflow.runFullPipeline({
-      campaignName: campaign.name,
-      campaignDescription: campaign.description ?? '',
-      contentType: piece.type,
-      title: piece.title,
-      language: piece.language,
-      targetLanguages: campaign.targetLanguages,
-      provider: dto.model,
-    });
+    let result;
+    try {
+      result = await this.contentWorkflow.runFullPipeline({
+        campaignName: campaign.name,
+        campaignDescription: campaign.description ?? '',
+        contentType: piece.type,
+        title: piece.title,
+        language: piece.language,
+        targetLanguages: campaign.targetLanguages,
+        provider: dto.model,
+      });
+    } catch (err) {
+      throw this.wrapAiError(err);
+    }
 
     // Update the original content piece
     const providerUsed = dto.model ?? this.modelFactory.getDefaultProvider();
@@ -182,14 +204,32 @@ export class AiController {
     const piece = await this.contentService.findOne(id);
     const campaign = piece.campaign;
 
-    const results = await this.aiService.compare({
-      campaignName: campaign.name,
-      campaignDescription: campaign.description ?? '',
-      contentType: piece.type,
-      title: piece.title,
-      language: piece.language,
-    });
+    let results;
+    try {
+      results = await this.aiService.compare({
+        campaignName: campaign.name,
+        campaignDescription: campaign.description ?? '',
+        contentType: piece.type,
+        title: piece.title,
+        language: piece.language,
+      });
+    } catch (err) {
+      throw this.wrapAiError(err);
+    }
 
     return { contentId: id, comparisons: results };
+  }
+
+  private wrapAiError(err: unknown): HttpException {
+    const message =
+      err instanceof Error ? err.message : 'Unknown AI service error';
+    const status =
+      message.includes('429') || message.includes('quota')
+        ? HttpStatus.TOO_MANY_REQUESTS
+        : HttpStatus.BAD_GATEWAY;
+    return new HttpException(
+      { statusCode: status, message: `AI provider error: ${message.slice(0, 300)}` },
+      status,
+    );
   }
 }

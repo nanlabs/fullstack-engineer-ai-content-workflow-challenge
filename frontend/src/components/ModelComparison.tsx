@@ -6,8 +6,7 @@ interface ModelComparisonProps {
 
 export function ModelComparison({ comparison }: ModelComparisonProps) {
   return (
-    <div className="card p-6 mb-6">
-      <h2 className="text-lg font-semibold text-zinc-900 mb-4">Model Comparison</h2>
+    <div>
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         {Object.entries(comparison.comparisons).map(([provider, body]) => (
           <div key={provider} className="border border-zinc-200 rounded-lg p-5 bg-zinc-50/50">

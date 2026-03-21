@@ -2,14 +2,19 @@ import { ContentStatus } from '@prisma/client';
 import { BadRequestException } from '@nestjs/common';
 
 const VALID_TRANSITIONS: Record<ContentStatus, ContentStatus[]> = {
-  [ContentStatus.DRAFT]: [ContentStatus.AI_SUGGESTED],
+  [ContentStatus.DRAFT]: [
+    ContentStatus.AI_SUGGESTED,
+    ContentStatus.REVIEWED,
+    ContentStatus.APPROVED,
+    ContentStatus.REJECTED,
+  ],
   [ContentStatus.AI_SUGGESTED]: [
     ContentStatus.REVIEWED,
     ContentStatus.APPROVED,
     ContentStatus.REJECTED,
   ],
   [ContentStatus.REVIEWED]: [ContentStatus.APPROVED, ContentStatus.REJECTED],
-  [ContentStatus.APPROVED]: [],
+  [ContentStatus.APPROVED]: [ContentStatus.DRAFT],
   [ContentStatus.REJECTED]: [ContentStatus.DRAFT],
 };
 

@@ -60,7 +60,7 @@ npm run dev          # http://localhost:5173
 
 ### Why LangGraph (not just LangChain)?
 
-- The job title is "AI Engineer — Agentic Systems"; LangGraph is the standard for building agent/workflow graphs
+- LangGraph is the standard for building agent/workflow graphs
 - The content pipeline has branching (translate to N languages), conditional logic, and potential human-in-the-loop interrupts
 - StateGraph provides explicit, debuggable workflow visualization vs imperative chains
 
@@ -75,7 +75,7 @@ POST /api/content/:id/compare        ← runs all available providers in paralle
 ```
 
 Set any combination of API keys to enable providers:
-- `GOOGLE_API_KEY` → Gemini 2.0 Flash (free tier available)
+- `GOOGLE_API_KEY` → Gemini 2.5 Flash (free tier available)
 - `OPENAI_API_KEY` → GPT-4o Mini
 - `ANTHROPIC_API_KEY` → Claude Sonnet 4
 

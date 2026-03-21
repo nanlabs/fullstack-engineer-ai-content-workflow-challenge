@@ -5,6 +5,7 @@ enum LlmProvider {
   OPENAI = 'openai',
   ANTHROPIC = 'anthropic',
   GEMINI = 'gemini',
+  GEMINI_FLASH = 'gemini-flash',
 }
 
 class EnvironmentVariables {
@@ -39,6 +40,7 @@ const PROVIDER_KEY_MAP: Record<LlmProvider, string> = {
   [LlmProvider.OPENAI]: 'OPENAI_API_KEY',
   [LlmProvider.ANTHROPIC]: 'ANTHROPIC_API_KEY',
   [LlmProvider.GEMINI]: 'GOOGLE_API_KEY',
+  [LlmProvider.GEMINI_FLASH]: 'GOOGLE_API_KEY',
 };
 
 export function validateEnv(config: Record<string, unknown>) {

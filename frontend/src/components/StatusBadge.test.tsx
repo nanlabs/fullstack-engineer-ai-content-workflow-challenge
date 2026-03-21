@@ -20,6 +20,6 @@ describe('StatusBadge', () => {
   it('applies correct css class for APPROVED', () => {
     render(<StatusBadge status="APPROVED" />);
     const badge = screen.getByText('Approved');
-    expect(badge.className).toContain('bg-green-100');
+    expect(badge.className).toContain('bg-emerald-50');
   });
 });

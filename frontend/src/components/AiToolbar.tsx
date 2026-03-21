@@ -3,6 +3,7 @@ interface AiToolbarProps {
   onModelChange: (model: string | undefined) => void;
   providers: { default: string; available: string[] } | undefined;
   hasBody: boolean;
+  hasMetadata: boolean;
   availableLangs: string[];
   translateLang: string;
   onTranslateLangChange: (lang: string) => void;
@@ -25,6 +26,7 @@ export function AiToolbar({
   onModelChange,
   providers,
   hasBody,
+  hasMetadata,
   availableLangs,
   translateLang,
   onTranslateLangChange,
@@ -42,8 +44,7 @@ export function AiToolbar({
   error,
 }: AiToolbarProps) {
   return (
-    <div className="card p-6 mb-6">
-      <h2 className="text-lg font-semibold text-zinc-900 mb-4">AI Tools</h2>
+    <div>
       <div className="flex items-center gap-3 mb-4">
         <label className="text-sm font-medium text-zinc-700">Provider Model:</label>
         <select
@@ -62,26 +63,31 @@ export function AiToolbar({
       <div className="flex gap-2 flex-wrap">
         <button
           onClick={onGenerate}
-          disabled={isAiLoading}
-          className="btn-primary"
+          disabled={isAiLoading || hasBody}
+          className="btn-primary disabled:opacity-40"
+          title={hasBody ? 'Draft already generated — use Regenerate in the Content section' : undefined}
         >
-          {generating ? 'Generating...' : 'Generate Draft'}
+          {generating ? 'Generating...' : hasBody ? 'Draft Generated ✓' : 'Generate Draft'}
         </button>
         <button
           onClick={onExtract}
-          disabled={isAiLoading || !hasBody}
-          className="btn-secondary"
+          disabled={isAiLoading || !hasBody || hasMetadata}
+          className="btn-secondary disabled:opacity-40"
+          title={hasMetadata ? 'Metadata already extracted — regenerate from the Metadata section' : undefined}
         >
-          {extracting ? 'Extracting...' : 'Extract Metadata'}
+          {extracting ? 'Extracting...' : hasMetadata ? 'Metadata Extracted ✓' : 'Extract Metadata'}
         </button>
         <button
           onClick={onChain}
-          disabled={isAiLoading}
-          className="btn-primary bg-purple-600 hover:bg-purple-700 border-none shadow-sm"
+          disabled={isAiLoading || (hasBody && hasMetadata)}
+          className="btn-primary bg-purple-600 hover:bg-purple-700 border-none shadow-sm disabled:opacity-40"
+          title={hasBody && hasMetadata ? 'Pipeline already completed' : undefined}
         >
           {chaining
             ? 'Running pipeline...'
-            : 'Full Pipeline (Gen → Trans → Extract)'}
+            : hasBody && hasMetadata
+              ? 'Pipeline Completed ✓'
+              : 'Full Pipeline (Gen → Trans → Extract)'}
         </button>
         <button
           onClick={onCompare}
@@ -129,3 +135,5 @@ export function AiToolbar({
     </div>
   );
 }
+
+export type { AiToolbarProps };
