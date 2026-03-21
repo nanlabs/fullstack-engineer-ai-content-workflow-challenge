@@ -63,6 +63,11 @@ export default function ContentDetail() {
     onSuccess: invalidate,
   });
 
+  const deleteTranslationMut = useMutation({
+    mutationFn: (translationId: string) => contentApi.delete(translationId),
+    onSuccess: invalidate,
+  });
+
   const extractMut = useMutation({
     mutationFn: () => aiApi.extract(id!),
     onSuccess: invalidate,
@@ -297,6 +302,18 @@ export default function ContentDetail() {
                   </div>
                   <div className="flex items-center gap-3">
                     <StatusBadge status={t.status} />
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (window.confirm(`Delete ${t.language} translation? This cannot be undone.`)) {
+                          deleteTranslationMut.mutate(t.id);
+                        }
+                      }}
+                      disabled={deleteTranslationMut.isPending}
+                      className="text-xs font-medium text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 px-2 py-1 rounded-md transition-colors disabled:opacity-40"
+                    >
+                      Delete
+                    </button>
                     <svg
                       className="w-4 h-4 text-zinc-400 transition-transform duration-200 group-open:rotate-180"
                       fill="none"
