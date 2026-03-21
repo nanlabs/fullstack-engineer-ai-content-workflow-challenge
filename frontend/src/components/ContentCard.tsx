@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import type { ContentStatus } from '../lib/types';
 
 interface ContentCardProps {
@@ -33,6 +33,15 @@ export function ContentCard({
   const [isEditing, setIsEditing] = useState(false);
   const [editBody, setEditBody] = useState('');
   const [editNotes, setEditNotes] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(() => {
+    if (!body) return;
+    navigator.clipboard.writeText(body).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [body]);
 
   const startEdit = () => {
     setEditBody(body);
@@ -100,7 +109,7 @@ export function ContentCard({
     <div>
       {/* Body */}
       {body ? (
-        <div className="relative">
+        <div className="relative group/body">
           {isGenerating && (
             <div className="absolute inset-0 bg-white/70 dark:bg-zinc-900/70 rounded flex items-center justify-center z-10 gap-2">
               <svg className="animate-spin h-4 w-4 text-zinc-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -110,7 +119,23 @@ export function ContentCard({
               <span className="text-sm text-zinc-500">Regenerating…</span>
             </div>
           )}
-          <p className={`whitespace-pre-wrap text-zinc-800 dark:text-zinc-200 leading-relaxed text-[15px] ${isGenerating ? 'opacity-30' : ''}`}>{body}</p>
+          <button
+            onClick={handleCopy}
+            title="Copy to clipboard"
+            className="absolute top-0 right-0 p-1.5 rounded-md text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 opacity-0 group-hover/body:opacity-100 focus:opacity-100 transition-all z-20"
+          >
+            {copied ? (
+              <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 text-emerald-500" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M20 6L9 17L4 12" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth={2}>
+                <rect x="9" y="9" width="13" height="13" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+              </svg>
+            )}
+          </button>
+          <p className={`whitespace-pre-wrap text-zinc-800 dark:text-zinc-200 leading-relaxed text-[15px] pr-8 ${isGenerating ? 'opacity-30' : ''}`}>{body}</p>
         </div>
       ) : (
         <div className="bg-zinc-50 dark:bg-zinc-800/50 border border-dashed border-zinc-200 dark:border-zinc-700 rounded-md p-8 text-center">
@@ -170,14 +195,28 @@ export function ContentCard({
             </>
           ) : (
             <>
-              <button onClick={onApprove} disabled={isPending} className="btn-primary">
+              <button
+                onClick={onApprove}
+                disabled={isPending}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+                  bg-emerald-600 hover:bg-emerald-700 text-white
+                  dark:bg-emerald-600 dark:hover:bg-emerald-500"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 flex-shrink-0" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 6L9 17L4 12" />
+                </svg>
                 Approve
               </button>
               <button
                 onClick={onReject}
                 disabled={isPending}
-                className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-800"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+                  border border-red-300 text-red-600 hover:bg-red-50
+                  dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20"
               >
+                <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 flex-shrink-0" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M18 6L6 18M6 6l12 12" />
+                </svg>
                 Reject
               </button>
               {onRegenerate && (

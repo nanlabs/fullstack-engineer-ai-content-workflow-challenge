@@ -172,7 +172,6 @@ export default function ContentDetail() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <StatusBadge status={piece.status} />
             <button
               onClick={() => {
                 if (window.confirm(`Delete "${piece.title}"? This cannot be undone.`)) {

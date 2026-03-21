@@ -31,7 +31,7 @@ describe('ModelFactory', () => {
     factory.onModuleInit();
 
     expect(factory.getAvailableProviders()).toEqual([
-      'gpt-5.4-mini', 'gpt-5.4', 'gemini-pro-3.1', 'gemini-flash-2.5',
+      'gpt-5.4-mini', 'gpt-5.4', 'gemini-2.5-flash-lite', 'gemini-flash-2.5',
     ]);
     expect(factory.getDefaultProvider()).toBe('gpt-5.4-mini');
   });
@@ -67,7 +67,7 @@ describe('ModelFactory', () => {
     const factory = new ModelFactory(config);
     factory.onModuleInit();
 
-    const model = factory.getModel('gemini-pro-3.1');
+    const model = factory.getModel('gemini-2.5-flash-lite');
     expect(model).toBeDefined();
   });
 

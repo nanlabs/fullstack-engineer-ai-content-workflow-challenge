@@ -32,10 +32,10 @@ const PROVIDERS: Record<string, ProviderConfig> = {
     factory: (apiKey) =>
       new ChatAnthropic({ anthropicApiKey: apiKey, modelName: 'claude-haiku-4.5', temperature: 0.7, maxRetries: 2 }),
   },
-  'gemini-pro-3.1': {
+  'gemini-2.5-flash-lite': {
     envKey: 'GOOGLE_API_KEY',
     factory: (apiKey) =>
-      new ChatGoogleGenerativeAI({ apiKey, modelName: 'gemini-pro-3.1', temperature: 0.7, maxRetries: 2 }),
+      new ChatGoogleGenerativeAI({ apiKey, modelName: 'gemini-2.5-flash-lite', temperature: 0.7, maxRetries: 2 }),
   },
   'gemini-flash-2.5': {
     envKey: 'GOOGLE_API_KEY',

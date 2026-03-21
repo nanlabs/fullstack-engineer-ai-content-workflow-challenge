@@ -6,7 +6,7 @@ enum LlmProvider {
   GPT_5_4 = 'gpt-5.4',
   CLAUDE_SONNET = 'claude-sonnet-4.6',
   CLAUDE_HAIKU = 'claude-haiku-4.5',
-  GEMINI_PRO = 'gemini-pro-3.1',
+  GEMINI_PRO = 'gemini-2.5-flash-lite',
   GEMINI_FLASH = 'gemini-flash-2.5',
 }
 
