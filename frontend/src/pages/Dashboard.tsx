@@ -56,10 +56,10 @@ export default function Dashboard() {
       {showForm && (
         <form
           onSubmit={handleCreate}
-          className="mb-8 card p-6 space-y-4 bg-zinc-50/50"
+          className="mb-8 card p-6 space-y-4 bg-zinc-50/50 dark:bg-zinc-800/30"
         >
           <div>
-            <label className="block text-sm font-medium text-zinc-700 mb-1">Campaign Name</label>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Campaign Name</label>
             <input
               type="text"
               placeholder="e.g. Summer Sale 2026"
@@ -71,7 +71,7 @@ export default function Dashboard() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-zinc-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Description</label>
             <textarea
               placeholder="Brief overview of the campaign..."
               value={description}
@@ -82,7 +82,7 @@ export default function Dashboard() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-zinc-700 mb-1">Target Languages</label>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Target Languages</label>
             <LanguagePicker selected={languages} onChange={setLanguages} />
             <p className="text-xs text-zinc-400 mt-1">Search by name or code. Press Backspace to remove the last one.</p>
             {languages.length === 0 && <p className="text-xs text-red-500 mt-1">At least one language is required.</p>}
@@ -103,7 +103,7 @@ export default function Dashboard() {
       )}
 
       {!campaigns?.length ? (
-        <div className="text-center py-12 card bg-zinc-50 border-dashed">
+          <div className="text-center py-12 card bg-zinc-50 dark:bg-zinc-800/50 border-dashed">
           <p className="text-zinc-500 text-sm">No campaigns yet. Create one to get started.</p>
         </div>
       ) : (
@@ -126,7 +126,7 @@ export default function Dashboard() {
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <h2 className="text-lg font-semibold text-zinc-900 group-hover:text-blue-600 transition-colors">{c.name}</h2>
+                    <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{c.name}</h2>
                     {c.description && (
                       <p className="text-zinc-500 text-sm mt-1 line-clamp-2">
                         {c.description}
@@ -136,7 +136,7 @@ export default function Dashboard() {
                       {c.targetLanguages.map((lang) => (
                         <span
                           key={lang}
-                          className="bg-zinc-100 text-zinc-600 border border-zinc-200 px-2 py-0.5 rounded-full text-[11px] font-medium uppercase tracking-wider"
+                          className="bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-600 px-2 py-0.5 rounded-full text-[11px] font-medium uppercase tracking-wider"
                         >
                           {lang}
                         </span>

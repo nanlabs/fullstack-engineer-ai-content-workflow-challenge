@@ -177,13 +177,13 @@ export function LanguagePicker({ selected, onChange, className = '' }: LanguageP
     <div ref={containerRef} className={`relative ${className}`}>
       {/* Tag + input row */}
       <div
-        className="flex flex-wrap gap-1.5 min-h-[2.25rem] px-2 py-1.5 border border-zinc-300 rounded-lg bg-white focus-within:ring-2 focus-within:ring-zinc-900 focus-within:border-transparent cursor-text"
+        className="flex flex-wrap gap-1.5 min-h-[2.25rem] px-2 py-1.5 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 focus-within:ring-2 focus-within:ring-zinc-900 dark:focus-within:ring-zinc-400 focus-within:border-transparent cursor-text"
         onClick={() => inputRef.current?.focus()}
       >
         {selected.map((code) => (
           <span
             key={code}
-            className="inline-flex items-center gap-1 bg-zinc-100 text-zinc-700 border border-zinc-200 px-2 py-0.5 rounded-full text-[11px] font-medium uppercase tracking-wider"
+            className="inline-flex items-center gap-1 bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-600 px-2 py-0.5 rounded-full text-[11px] font-medium uppercase tracking-wider"
           >
             {code}
             <button
@@ -208,7 +208,7 @@ export function LanguagePicker({ selected, onChange, className = '' }: LanguageP
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder={selected.length ? '' : 'Search languages…'}
-          className="flex-1 min-w-[120px] outline-none bg-transparent text-sm text-zinc-800 placeholder:text-zinc-400 py-0.5"
+          className="flex-1 min-w-[120px] outline-none bg-transparent text-sm text-zinc-800 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 py-0.5"
           autoComplete="off"
           spellCheck={false}
         />
@@ -218,7 +218,7 @@ export function LanguagePicker({ selected, onChange, className = '' }: LanguageP
       {open && suggestions.length > 0 && (
         <ul
           ref={listRef}
-          className="absolute z-50 mt-1 w-full max-h-52 overflow-y-auto bg-white border border-zinc-200 rounded-lg shadow-lg py-1"
+          className="absolute z-50 mt-1 w-full max-h-52 overflow-y-auto bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg dark:shadow-2xl py-1"
         >
           {suggestions.map((lang, i) => (
             <li key={lang.code}>
@@ -227,14 +227,14 @@ export function LanguagePicker({ selected, onChange, className = '' }: LanguageP
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => addLanguage(lang.code)}
                 className={`w-full text-left px-3 py-2 flex items-center gap-3 transition-colors ${
-                  i === highlighted ? 'bg-zinc-100' : 'hover:bg-zinc-50'
+                  i === highlighted ? 'bg-zinc-100 dark:bg-zinc-700' : 'hover:bg-zinc-50 dark:hover:bg-zinc-700'
                 }`}
                 onMouseEnter={() => setHighlighted(i)}
               >
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 w-10 shrink-0">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 w-10 shrink-0">
                   {lang.code}
                 </span>
-                <span className="text-sm text-zinc-800">{lang.name}</span>
+                <span className="text-sm text-zinc-800 dark:text-zinc-100">{lang.name}</span>
               </button>
             </li>
           ))}

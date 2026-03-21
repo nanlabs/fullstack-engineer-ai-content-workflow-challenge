@@ -67,7 +67,7 @@ export function AiToolbar({
       </div>
 
       {availableLangs.length > 0 && (
-        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-zinc-200/60">
+        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-zinc-200/60 dark:border-zinc-700/60">
           <select
             value={translateLang}
             onChange={(e) => onTranslateLangChange(e.target.value)}
@@ -91,7 +91,7 @@ export function AiToolbar({
       )}
 
       {error && (
-        <div className="mt-4 p-3 bg-red-50 text-red-700 text-sm rounded-md border border-red-200">
+        <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-sm rounded-md border border-red-200 dark:border-red-800">
           {error.message}
         </div>
       )}
