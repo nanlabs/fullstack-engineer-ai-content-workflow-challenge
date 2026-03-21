@@ -4,6 +4,15 @@ Fullstack implementation of the **ACME Global Media AI Content Workflow** challe
 
 > See [CHALLENGE_BRIEF.md](CHALLENGE_BRIEF.md) for the original challenge requirements.
 
+### 📄 Documentation
+
+| Document | Contents |
+|----------|----------|
+| [docs/decisions.md](docs/decisions.md) | Assumptions, tradeoffs & design decisions |
+| [docs/ai-design.md](docs/ai-design.md) | ModelFactory pattern, LangGraph pipeline, prompt engineering |
+| [docs/workflow.md](docs/workflow.md) | Content review state machine, SSE real-time, authentication |
+| [docs/kubernetes.md](docs/kubernetes.md) | Kubernetes deployment architecture & Helm chart guide |
+
 ## Quick Start
 
 ```bash
@@ -159,19 +168,37 @@ DRAFT → AI_SUGGESTED → REVIEWED → APPROVED
 ## Testing
 
 ```bash
-# Backend (Jest) — 45 tests
+# Backend (Jest) — 122 tests across 11 suites
 cd backend && npm test
 
-# Frontend (Vitest + Testing Library) — 6 tests
+# Frontend (Vitest + Testing Library) — 51 tests across 4 suites
 cd frontend && npm test
 ```
 
 Test coverage:
+
+**Backend — Core logic:**
 - **status-machine.spec.ts** — All valid/invalid state transitions
 - **model-factory.spec.ts** — Provider registration, default selection, error cases
 - **campaigns.service.spec.ts** — CRUD operations with mocked Prisma
 - **content.service.spec.ts** — CRUD, status transitions, event emission
+
+**Backend — AI layer:**
+- **ai.service.spec.ts** — Generate, translate, extract, compare with mocked models
+- **content-workflow.spec.ts** — LangGraph pipeline (generate → translate → extract)
+- **ai.controller.spec.ts** — All AI endpoints, error handling (429/502), event emission
+
+**Backend — Auth & common:**
+- **auth.service.spec.ts** — Signup (hashing, conflicts), login (valid/invalid), JWT payload
+- **sanitize.pipe.spec.ts** — HTML stripping, XSS prevention, recursive sanitization
+- **env.validation.spec.ts** — Required fields, provider validation, key matching
+- **events.controller.spec.ts** — SSE JWT auth, event routing, user isolation
+
+**Frontend:**
 - **StatusBadge.test.tsx** — Component rendering for all statuses
+- **api.test.ts** — Token injection, 401 handling, error parsing, AI endpoint payloads
+- **AiToolbar.test.tsx** — Button states, disabled logic, loading labels, error display
+- **ContentCard.test.tsx** — CRUD actions, edit mode, status-dependent UI, skeleton states
 
 ## Bonus Points Addressed
 
@@ -181,7 +208,8 @@ Test coverage:
 | Multi-model comparison | Done | `/compare` endpoint runs all providers in parallel |
 | Real-time | Done | SSE via NestJS `@Sse()` + EventEmitter2 |
 | CI Pipeline | Done | GitHub Actions — typecheck, test, build for both projects |
-| Automated tests | Done | Jest (backend) + Vitest (frontend), 51 tests total |
+| Automated tests | Done | Jest (backend) + Vitest (frontend), 173 tests across 15 suites |
+| Kubernetes deploy | Done | Helm chart in `k8s/` — PostgreSQL StatefulSet, backend/frontend Deployments, Ingress |
 
 ## Project Structure
 
@@ -205,7 +233,16 @@ Test coverage:
 │   │   └── lib/                 # API client, types
 │   ├── nginx.conf               # Production proxy config
 │   └── Dockerfile
+├── k8s/
+│   └── acme-content/             # Helm chart for Kubernetes deployment
+│       ├── Chart.yaml
+│       ├── values.yaml
+│       └── templates/            # Backend, frontend, postgres, ingress, secrets
 ├── compose.yml
 ├── .env.example
 └── docs/
+    ├── ai-design.md              # ModelFactory + LangGraph architecture
+    ├── workflow.md                # Status machine, SSE, authentication
+    ├── decisions.md               # Assumptions, tradeoffs & design decisions
+    └── kubernetes.md              # K8s deployment architecture & Helm guide
 ```
