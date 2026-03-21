@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:cov": "vitest run --coverage"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.60.0",
@@ -39,6 +40,7 @@
     "typescript": "^5.6.0",
     "typescript-eslint": "^8.57.1",
     "vite": "^5.4.0",
-    "vitest": "^2.1.9"
+    "vitest": "^2.1.9",
+    "@vitest/coverage-v8": "^2.1.9"
   }
 }

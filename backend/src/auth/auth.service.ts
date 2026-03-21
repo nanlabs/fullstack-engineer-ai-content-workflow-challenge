@@ -42,16 +42,22 @@ export class AuthService {
     };
   }
 
+  // Pre-hashed dummy value used when user is not found, ensures bcrypt.compare
+  // always runs to prevent timing-based email enumeration.
+  private readonly DUMMY_HASH =
+    '$2a$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ01234';
+
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
 
-    const passwordValid = await bcrypt.compare(dto.password, user.password);
-    if (!passwordValid) {
+    // Always run bcrypt.compare to prevent timing attacks that reveal valid emails
+    const passwordValid = await bcrypt.compare(
+      dto.password,
+      user?.password ?? this.DUMMY_HASH,
+    );
+    if (!user || !passwordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 

@@ -81,9 +81,13 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "**/*.(t|j)s",
+      "!**/*.spec.(t|j)s",
+      "!**/*.module.ts",
+      "!**/main.ts"
     ],
-    "coverageDirectory": "../coverage",
+    "coverageReporters": ["text", "text-summary", "lcov"],
+    "coverageDirectory": "../coverage/backend",
     "testEnvironment": "node"
   },
   "prisma": {

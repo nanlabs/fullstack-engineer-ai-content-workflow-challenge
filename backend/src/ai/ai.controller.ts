@@ -255,10 +255,14 @@ export class AiController {
   private wrapAiError(err: unknown): HttpException {
     const message =
       err instanceof Error ? err.message : 'Unknown AI service error';
-    const status =
-      message.includes('429') || message.includes('quota')
-        ? HttpStatus.TOO_MANY_REQUESTS
-        : HttpStatus.BAD_GATEWAY;
+    let status: HttpStatus;
+    if (message.includes('is not available')) {
+      status = HttpStatus.BAD_REQUEST;
+    } else if (message.includes('429') || message.includes('quota')) {
+      status = HttpStatus.TOO_MANY_REQUESTS;
+    } else {
+      status = HttpStatus.BAD_GATEWAY;
+    }
     return new HttpException(
       { statusCode: status, message: `AI provider error: ${message.slice(0, 300)}` },
       status,

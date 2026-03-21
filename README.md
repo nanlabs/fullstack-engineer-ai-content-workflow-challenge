@@ -11,6 +11,7 @@ Fullstack implementation of the **ACME Global Media AI Content Workflow** challe
 | [docs/decisions.md](docs/decisions.md) | Assumptions, tradeoffs & design decisions |
 | [docs/ai-design.md](docs/ai-design.md) | ModelFactory pattern, LangGraph pipeline, prompt engineering |
 | [docs/workflow.md](docs/workflow.md) | Content review state machine, SSE real-time, authentication |
+| [docs/nginx.md](docs/nginx.md) | nginx role, reverse proxy config, SSE streaming, security headers |
 | [docs/kubernetes.md](docs/kubernetes.md) | Kubernetes deployment architecture & Helm chart guide |
 
 ## Quick Start
@@ -21,7 +22,9 @@ cp .env.example .env
 # Edit .env — set JWT_SECRET to a random string, and set at least one API key
 
 # 2. Run with Docker Compose
-docker compose up --build
+docker compose up --build   
+
+docker compose -f compose.dev.yml up (for local development)
 
 # 3. Access
 # Frontend: http://localhost:8080
@@ -168,11 +171,17 @@ DRAFT → AI_SUGGESTED → REVIEWED → APPROVED
 ## Testing
 
 ```bash
-# Backend (Jest) — 122 tests across 11 suites
-cd backend && npm test
+# Run all tests (works from any directory)
+./scripts/run-tests.sh
 
-# Frontend (Vitest + Testing Library) — 51 tests across 4 suites
-cd frontend && npm test
+# Run with coverage reports → coverage/backend/ and coverage/frontend/
+./scripts/run-tests.sh --coverage
+
+# Or run individually:
+cd backend && npm test           # Jest — 122 tests, 11 suites
+cd backend && npm run test:cov   # Jest with coverage
+cd frontend && npm test          # Vitest — 51 tests, 4 suites
+cd frontend && npm run test:cov  # Vitest with coverage
 ```
 
 Test coverage:
@@ -244,5 +253,6 @@ Test coverage:
     ├── ai-design.md              # ModelFactory + LangGraph architecture
     ├── workflow.md                # Status machine, SSE, authentication
     ├── decisions.md               # Assumptions, tradeoffs & design decisions
+    ├── nginx.md                   # nginx config, reverse proxy, SSE streaming
     └── kubernetes.md              # K8s deployment architecture & Helm guide
 ```

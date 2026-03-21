@@ -36,13 +36,12 @@ export class ContentService {
     return piece;
   }
 
-  async findOne(id: string, userId?: string) {
+  async findOne(id: string, userId: string) {
     const piece = await this.prisma.contentPiece.findUnique({
       where: { id },
       include: { translations: true, campaign: true },
     });
-    if (!piece) throw new NotFoundException(`Content piece ${id} not found`);
-    if (userId && piece.campaign.userId !== userId) {
+    if (!piece || piece.campaign.userId !== userId) {
       throw new NotFoundException(`Content piece ${id} not found`);
     }
     return piece;
