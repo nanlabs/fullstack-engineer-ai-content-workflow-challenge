@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: acme
+      POSTGRES_PASSWORD: acme_pass
+      POSTGRES_DB: acme_content
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U acme']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://acme:acme_pass@postgres:5432/acme_content
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - '8080:80'
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

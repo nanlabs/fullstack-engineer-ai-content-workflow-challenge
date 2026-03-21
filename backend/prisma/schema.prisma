@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ContentType {
+  HEADLINE
+  PRODUCT_DESCRIPTION
+  AD_COPY
+  BLOG_POST
+}
+
+enum ContentStatus {
+  DRAFT
+  AI_SUGGESTED
+  REVIEWED
+  APPROVED
+  REJECTED
+}
+
+model Campaign {
+  id              String         @id @default(uuid())
+  name            String
+  description     String?
+  targetLanguages String[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  contentPieces   ContentPiece[]
+
+  @@map("campaigns")
+}
+
+model ContentPiece {
+  id           String        @id @default(uuid())
+  campaignId   String
+  type         ContentType
+  title        String
+  body         String        @default("")
+  language     String        @default("en")
+  status       ContentStatus @default(DRAFT)
+  aiModel      String?
+  parentId     String?
+  metadata     Json?
+  reviewNotes  String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  campaign     Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  parent       ContentPiece? @relation("Translations", fields: [parentId], references: [id], onDelete: SetNull)
+  translations ContentPiece[] @relation("Translations")
+
+  @@index([campaignId])
+  @@index([parentId])
+  @@map("content_pieces")
+}

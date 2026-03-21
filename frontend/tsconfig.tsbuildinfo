@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/main.tsx","./src/test-setup.ts","./src/components/StatusBadge.test.tsx","./src/components/StatusBadge.tsx","./src/hooks/useEventSource.ts","./src/lib/api.ts","./src/lib/types.ts","./src/pages/CampaignDetail.tsx","./src/pages/ContentDetail.tsx","./src/pages/Dashboard.tsx"],"version":"5.9.3"}
