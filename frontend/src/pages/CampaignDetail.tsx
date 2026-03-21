@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { campaignsApi, contentApi } from '../lib/api';
 import { StatusBadge } from '../components/StatusBadge';
+import { LanguagePicker } from '../components/LanguagePicker';
 
 const PAGE_SIZE = 10;
 
@@ -13,7 +14,6 @@ export default function CampaignDetail() {
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState('');
   const [editingLangs, setEditingLangs] = useState(false);
-  const [langInput, setLangInput] = useState('');
   const [filter, setFilter] = useState('');
   const [page, setPage] = useState(1);
 
@@ -54,29 +54,6 @@ export default function CampaignDetail() {
     createContent.mutate({ title });
   };
 
-  const handleAddLang = () => {
-    const lang = langInput.trim().toLowerCase();
-    if (!lang || !campaign) return;
-    if (campaign.targetLanguages.includes(lang)) {
-      setLangInput('');
-      return;
-    }
-    updateLangs.mutate([...campaign.targetLanguages, lang]);
-    setLangInput('');
-  };
-
-  const handleRemoveLang = (lang: string) => {
-    if (!campaign) return;
-    updateLangs.mutate(campaign.targetLanguages.filter((l) => l !== lang));
-  };
-
-  const handleLangKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAddLang();
-    }
-  };
-
   const filteredPieces = useMemo(() => {
     const pieces = campaign?.contentPieces ?? [];
     if (!filter.trim()) return pieces;
@@ -114,49 +91,37 @@ export default function CampaignDetail() {
         {campaign.description && (
           <p className="text-zinc-500 mt-2 text-base max-w-2xl">{campaign.description}</p>
         )}
-        <div className="flex gap-2 mt-4 items-center flex-wrap">
-          {campaign.targetLanguages.map((lang) => (
-            <span
-              key={lang}
-              className="bg-zinc-100 text-zinc-600 border border-zinc-200 px-2.5 py-1 rounded-full text-[11px] font-medium uppercase tracking-wider inline-flex items-center gap-1.5"
-            >
-              {lang}
-              {editingLangs && (
-                <button
-                  onClick={() => handleRemoveLang(lang)}
-                  className="text-zinc-400 hover:text-red-500 transition-colors"
-                  title={`Remove ${lang}`}
-                >
-                  ×
-                </button>
-              )}
-            </span>
-          ))}
+        <div className="mt-4">
           {editingLangs ? (
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={langInput}
-                onChange={(e) => setLangInput(e.target.value)}
-                onKeyDown={handleLangKeyDown}
-                placeholder="e.g. fr"
-                maxLength={10}
-                className="input-field w-20 !py-1 text-xs"
+            <div className="space-y-2">
+              <LanguagePicker
+                selected={campaign.targetLanguages}
+                onChange={(langs) => updateLangs.mutate(langs)}
               />
-              <button onClick={handleAddLang} className="text-emerald-600 hover:text-emerald-700 text-sm font-medium">
-                Add
-              </button>
-              <button onClick={() => setEditingLangs(false)} className="text-zinc-400 hover:text-zinc-600 text-sm font-medium">
+              <button
+                onClick={() => setEditingLangs(false)}
+                className="text-xs font-medium text-zinc-500 hover:text-zinc-800 transition-colors"
+              >
                 Done
               </button>
             </div>
           ) : (
-            <button
-              onClick={() => setEditingLangs(true)}
-              className="text-zinc-400 hover:text-zinc-600 text-xs font-medium transition-colors"
-            >
-              Edit
-            </button>
+            <div className="flex gap-2 items-center flex-wrap">
+              {campaign.targetLanguages.map((lang) => (
+                <span
+                  key={lang}
+                  className="bg-zinc-100 text-zinc-600 border border-zinc-200 px-2.5 py-1 rounded-full text-[11px] font-medium uppercase tracking-wider"
+                >
+                  {lang}
+                </span>
+              ))}
+              <button
+                onClick={() => setEditingLangs(true)}
+                className="text-zinc-400 hover:text-zinc-600 text-xs font-medium transition-colors"
+              >
+                Edit
+              </button>
+            </div>
           )}
         </div>
       </div>
