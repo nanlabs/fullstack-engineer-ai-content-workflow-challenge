@@ -95,17 +95,35 @@ export class AiController {
       throw this.wrapAiError(err);
     }
 
-    const translation = await this.prisma.contentPiece.create({
-      data: {
-        campaignId: piece.campaignId,
-        title: result.title,
-        body: result.body,
-        language: dto.targetLanguage,
-        status: ContentStatus.AI_SUGGESTED,
-        aiModel: dto.model ?? this.modelFactory.getDefaultProvider(),
-        parentId: piece.id,
-      },
+    const providerUsed = dto.model ?? this.modelFactory.getDefaultProvider();
+    const existingTranslation = await this.prisma.contentPiece.findFirst({
+      where: { parentId: piece.id, language: dto.targetLanguage },
     });
+
+    let translation;
+    if (existingTranslation) {
+      translation = await this.prisma.contentPiece.update({
+        where: { id: existingTranslation.id },
+        data: {
+          title: result.title,
+          body: result.body,
+          status: ContentStatus.AI_SUGGESTED,
+          aiModel: providerUsed,
+        },
+      });
+    } else {
+      translation = await this.prisma.contentPiece.create({
+        data: {
+          campaignId: piece.campaignId,
+          title: result.title,
+          body: result.body,
+          language: dto.targetLanguage,
+          status: ContentStatus.AI_SUGGESTED,
+          aiModel: providerUsed,
+          parentId: piece.id,
+        },
+      });
+    }
 
     this.events.emit('content.translated', translation);
     return translation;

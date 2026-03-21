@@ -58,6 +58,11 @@ export default function ContentDetail() {
     },
   });
 
+  const retranslateMut = useMutation({
+    mutationFn: (lang: string) => aiApi.translate(id!, lang),
+    onSuccess: invalidate,
+  });
+
   const extractMut = useMutation({
     mutationFn: () => aiApi.extract(id!),
     onSuccess: invalidate,
@@ -106,6 +111,7 @@ export default function ContentDetail() {
   const isAiLoading =
     generateMut.isPending ||
     translateMut.isPending ||
+    retranslateMut.isPending ||
     extractMut.isPending ||
     chainMut.isPending ||
     compareMut.isPending;
@@ -307,11 +313,12 @@ export default function ContentDetail() {
                     body={t.body}
                     status={t.status}
                     reviewNotes={t.reviewNotes}
-                    isPending={statusMut.isPending}
-                    error={statusMut.error}
+                    isPending={statusMut.isPending || retranslateMut.isPending}
+                    error={statusMut.error ?? retranslateMut.error}
                     onApprove={() => statusMut.mutate({ pieceId: t.id, status: 'APPROVED' })}
                     onReject={() => statusMut.mutate({ pieceId: t.id, status: 'REJECTED' })}
                     onReopen={() => statusMut.mutate({ pieceId: t.id, status: 'DRAFT' })}
+                    onRegenerate={() => retranslateMut.mutate(t.language)}
                     regenerateLabel="Re-translate"
                   />
                 </div>
