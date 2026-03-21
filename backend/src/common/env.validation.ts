@@ -14,6 +14,13 @@ class EnvironmentVariables {
   @IsString()
   DATABASE_URL!: string;
 
+  @IsString()
+  JWT_SECRET!: string;
+
+  @IsString()
+  @IsOptional()
+  JWT_EXPIRATION?: string;
+
   @IsEnum(LlmProvider)
   DEFAULT_LLM_PROVIDER!: LlmProvider;
 

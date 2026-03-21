@@ -7,6 +7,7 @@ import { CampaignsModule } from './campaigns/campaigns.module';
 import { ContentModule } from './content/content.module';
 import { AiModule } from './ai/ai.module';
 import { EventsModule } from './events/events.module';
+import { AuthModule } from './auth/auth.module';
 import { validateEnv } from './common/env.validation';
 
 @Module({
@@ -19,8 +20,9 @@ import { validateEnv } from './common/env.validation';
       ttl: 60000,
       limit: 20,
     }]),
-    EventEmitterModule.forRoot(),
+    EventEmitterModule.forRoot({ wildcard: true }),
     PrismaModule,
+    AuthModule,
     CampaignsModule,
     ContentModule,
     AiModule,

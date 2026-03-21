@@ -1,17 +1,24 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../common/prisma.service';
 import { CreateCampaignDto, UpdateCampaignDto } from './campaigns.dto';
 
 @Injectable()
 export class CampaignsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly events: EventEmitter2,
+  ) {}
 
-  async create(dto: CreateCampaignDto) {
-    return this.prisma.campaign.create({ data: dto });
+  async create(dto: CreateCampaignDto, userId: string) {
+    const campaign = await this.prisma.campaign.create({ data: { ...dto, userId } });
+    this.events.emit('campaign.created', { ...campaign, userId });
+    return campaign;
   }
 
-  async findAll() {
+  async findAll(userId: string) {
     return this.prisma.campaign.findMany({
+      where: { userId },
       include: {
         contentPieces: {
           where: { parentId: null },
@@ -22,7 +29,7 @@ export class CampaignsService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, userId: string) {
     const campaign = await this.prisma.campaign.findUnique({
       where: { id },
       include: {
@@ -33,17 +40,23 @@ export class CampaignsService {
         },
       },
     });
-    if (!campaign) throw new NotFoundException(`Campaign ${id} not found`);
+    if (!campaign || campaign.userId !== userId) {
+      throw new NotFoundException(`Campaign ${id} not found`);
+    }
     return campaign;
   }
 
-  async update(id: string, dto: UpdateCampaignDto) {
-    await this.findOne(id);
-    return this.prisma.campaign.update({ where: { id }, data: dto });
+  async update(id: string, dto: UpdateCampaignDto, userId: string) {
+    await this.findOne(id, userId);
+    const updated = await this.prisma.campaign.update({ where: { id }, data: dto });
+    this.events.emit('campaign.updated', { ...updated, userId });
+    return updated;
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
-    return this.prisma.campaign.delete({ where: { id } });
+  async remove(id: string, userId: string) {
+    await this.findOne(id, userId);
+    const deleted = await this.prisma.campaign.delete({ where: { id } });
+    this.events.emit('campaign.deleted', { id, userId });
+    return deleted;
   }
 }

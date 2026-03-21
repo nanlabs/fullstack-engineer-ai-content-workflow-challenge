@@ -9,7 +9,7 @@ Fullstack implementation of the **ACME Global Media AI Content Workflow** challe
 ```bash
 # 1. Clone and configure
 cp .env.example .env
-# Edit .env — set at least one API key (GOOGLE_API_KEY is free via Google AI Studio)
+# Edit .env — set JWT_SECRET to a random string, and set at least one API key
 
 # 2. Run with Docker Compose
 docker compose up --build
@@ -17,6 +17,7 @@ docker compose up --build
 # 3. Access
 # Frontend: http://localhost:8080
 # Backend API: http://localhost:3000/api
+# Demo login: demo@acme.com / demo1234
 ```
 
 ### Local Development (without Docker)
@@ -43,11 +44,12 @@ npm run dev          # http://localhost:5173
 | Layer | Choice | Why |
 |-------|--------|-----|
 | **Backend** | NestJS (TypeScript) | Modular DI, built-in validation/pipes/guards, decorators for SSE, aligns with job stack |
+| **Authentication** | JWT + bcrypt + Passport | Stateless JWT auth with bcrypt password hashing (salt rounds: 10). Per-user data isolation. |
 | **Frontend** | React + Vite + TypeScript | Fast HMR, clean SPA, TanStack Query for server state, Tailwind CSS |
 | **Database** | PostgreSQL + Prisma | Type-safe ORM with auto-generated types, migrations, seeding |
 | **AI Orchestration** | LangGraph.js + LangChain.js | LangGraph for stateful multi-step workflows (generate → translate → extract pipeline); LangChain for individual LLM calls |
 | **API Style** | REST | AI endpoints are action-based (POST /generate, /translate). Simple CRUD patterns don't benefit from GraphQL's flexibility. SSE covers real-time. |
-| **Real-time** | Server-Sent Events (SSE) | Unidirectional server→client fits perfectly (status changes, AI completions). No WebSocket overhead. |
+| **Real-time** | Server-Sent Events (SSE) | Per-user event routing with JWT auth via query param. Cross-device sync for same user, isolation between users. |
 | **LLM Abstraction** | ModelFactory pattern | Provider-agnostic: switch between OpenAI / Anthropic / Gemini via env var or per-request. Enables multi-model comparison. |
 | **Containerization** | Docker + Docker Compose | Multi-stage builds, single `docker compose up` for full stack |
 
@@ -119,6 +121,8 @@ DRAFT → AI_SUGGESTED → REVIEWED → APPROVED
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
+| POST | `/api/auth/signup` | Register new user (public) |
+| POST | `/api/auth/login` | Login and receive JWT (public) |
 | POST | `/api/campaigns` | Create campaign |
 | GET | `/api/campaigns` | List campaigns with content summaries |
 | GET | `/api/campaigns/:id` | Campaign detail with content pieces |
@@ -135,17 +139,22 @@ DRAFT → AI_SUGGESTED → REVIEWED → APPROVED
 | POST | `/api/content/:id/chain` | AI: Full pipeline (generate → translate all → extract) |
 | POST | `/api/content/:id/compare` | AI: Compare all available models |
 | GET | `/api/ai/providers` | List available LLM providers |
-| GET | `/api/events` | SSE stream for real-time updates |
+| GET | `/api/events` | SSE stream for real-time updates (JWT via query param) |
+
+> All endpoints except `/auth/*` require `Authorization: Bearer <token>` header. SSE uses `?token=<jwt>` query parameter.
 
 ## Security
 
+- **JWT Authentication** — Stateless token-based auth via `@nestjs/passport` + `passport-jwt`. Tokens expire after 24h.
+- **bcrypt Password Hashing** — Passwords stored with bcrypt (salt rounds: 10). Plaintext never stored or logged.
+- **Per-User Data Isolation** — All campaigns/content scoped by `userId`. Cross-user access returns 404.
 - **Helmet** — HTTP security headers
 - **CORS** — Restricted to `FRONTEND_URL`
 - **Rate Limiting** — `@nestjs/throttler` on AI endpoints (10 req/min)
 - **Input Validation** — `class-validator` + `class-transformer` on all DTOs
 - **HTML Sanitization** — Global `SanitizePipe` using `sanitize-html`
 - **UUID Validation** — `ParseUUIDPipe` on all ID params
-- **Env Validation** — Startup check for required env vars
+- **Env Validation** — Startup check for required env vars including `JWT_SECRET`
 
 ## Testing
 

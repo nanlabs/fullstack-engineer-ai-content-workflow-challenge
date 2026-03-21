@@ -15,7 +15,15 @@ export class ContentService {
     private readonly events: EventEmitter2,
   ) {}
 
-  async create(campaignId: string, dto: CreateContentPieceDto) {
+  async create(campaignId: string, dto: CreateContentPieceDto, userId: string) {
+    // Verify campaign ownership
+    const campaign = await this.prisma.campaign.findUnique({
+      where: { id: campaignId },
+    });
+    if (!campaign || campaign.userId !== userId) {
+      throw new NotFoundException(`Campaign ${campaignId} not found`);
+    }
+
     const piece = await this.prisma.contentPiece.create({
       data: {
         campaignId,
@@ -24,31 +32,34 @@ export class ContentService {
         language: dto.language ?? 'en',
       },
     });
-    this.events.emit('content.created', piece);
+    this.events.emit('content.created', { ...piece, userId });
     return piece;
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, userId?: string) {
     const piece = await this.prisma.contentPiece.findUnique({
       where: { id },
       include: { translations: true, campaign: true },
     });
     if (!piece) throw new NotFoundException(`Content piece ${id} not found`);
+    if (userId && piece.campaign.userId !== userId) {
+      throw new NotFoundException(`Content piece ${id} not found`);
+    }
     return piece;
   }
 
-  async update(id: string, dto: UpdateContentPieceDto) {
-    const piece = await this.findOne(id);
+  async update(id: string, dto: UpdateContentPieceDto, userId: string) {
+    const piece = await this.findOne(id, userId);
     const updated = await this.prisma.contentPiece.update({
       where: { id },
       data: dto,
     });
-    this.events.emit('content.updated', updated);
+    this.events.emit('content.updated', { ...updated, userId });
     return updated;
   }
 
-  async updateStatus(id: string, dto: UpdateStatusDto) {
-    const piece = await this.findOne(id);
+  async updateStatus(id: string, dto: UpdateStatusDto, userId: string) {
+    const piece = await this.findOne(id, userId);
     validateStatusTransition(piece.status, dto.status);
 
     const updated = await this.prisma.contentPiece.update({
@@ -58,12 +69,12 @@ export class ContentService {
         reviewNotes: dto.reviewNotes ?? piece.reviewNotes,
       },
     });
-    this.events.emit('content.statusChanged', updated);
+    this.events.emit('content.statusChanged', { ...updated, userId });
     return updated;
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, userId: string) {
+    await this.findOne(id, userId);
     return this.prisma.contentPiece.delete({ where: { id } });
   }
 }

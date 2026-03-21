@@ -1,4 +1,5 @@
 import { PrismaClient, ContentStatus } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -6,6 +7,17 @@ async function main() {
   // Clean existing data
   await prisma.contentPiece.deleteMany();
   await prisma.campaign.deleteMany();
+  await prisma.user.deleteMany();
+
+  // Create demo user
+  const hashedPassword = await bcrypt.hash('demo1234', 10);
+  const demoUser = await prisma.user.create({
+    data: {
+      email: 'demo@acme.com',
+      password: hashedPassword,
+      name: 'Demo User',
+    },
+  });
 
   const campaign1 = await prisma.campaign.create({
     data: {
@@ -13,6 +25,7 @@ async function main() {
       description:
         'Global launch campaign for our new eco-friendly product line. Targeting young professionals across LATAM, Europe, and North America.',
       targetLanguages: ['en', 'es', 'pt', 'fr'],
+      userId: demoUser.id,
       contentPieces: {
         create: [
           {
@@ -44,6 +57,7 @@ async function main() {
       description:
         'End-of-year holiday campaign focused on gift-giving and special offers. Warm, festive tone for global markets.',
       targetLanguages: ['en', 'es', 'de'],
+      userId: demoUser.id,
       contentPieces: {
         create: [
           {
@@ -63,6 +77,7 @@ async function main() {
     },
   });
 
+  console.log(`Seeded user: ${demoUser.email} (password: demo1234)`);
   console.log(`Seeded campaigns: ${campaign1.name}, ${campaign2.name}`);
 }
 

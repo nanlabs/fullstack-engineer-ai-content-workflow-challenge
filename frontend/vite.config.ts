@@ -12,6 +12,12 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
+      '/api/events': {
+        target: process.env.API_URL || 'http://localhost:3000',
+        changeOrigin: true,
+        // SSE requires no response buffering and no timeout
+        timeout: 0,
+      },
       '/api': {
         target: process.env.API_URL || 'http://localhost:3000',
         changeOrigin: true,

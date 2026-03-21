@@ -13,6 +13,7 @@ interface ContentCardProps {
   onReopen?: () => void;
   onSave?: (body: string, notes: string) => void;
   regenerateLabel?: string;
+  isGenerating?: boolean;
 }
 
 export function ContentCard({
@@ -27,6 +28,7 @@ export function ContentCard({
   onReopen,
   onSave,
   regenerateLabel = 'Regenerate',
+  isGenerating = false,
 }: ContentCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editBody, setEditBody] = useState('');
@@ -73,11 +75,43 @@ export function ContentCard({
     );
   }
 
+  if (isGenerating && !body) {
+    return (
+      <div className="animate-pulse space-y-2 py-2">
+        <div className="h-3.5 bg-zinc-200 dark:bg-zinc-700 rounded w-full" />
+        <div className="h-3.5 bg-zinc-200 dark:bg-zinc-700 rounded w-11/12" />
+        <div className="h-3.5 bg-zinc-200 dark:bg-zinc-700 rounded w-4/5" />
+        <div className="h-3.5 bg-zinc-200 dark:bg-zinc-700 rounded w-full" />
+        <div className="h-3.5 bg-zinc-200 dark:bg-zinc-700 rounded w-3/4" />
+        <div className="h-3.5 bg-zinc-200 dark:bg-zinc-700 rounded w-5/6" />
+        <div className="h-3.5 bg-zinc-200 dark:bg-zinc-700 rounded w-2/3" />
+        <div className="flex items-center gap-2 mt-3 text-xs text-zinc-400">
+          <svg className="animate-spin h-3.5 w-3.5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          Generating content…
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       {/* Body */}
       {body ? (
-        <p className="whitespace-pre-wrap text-zinc-800 dark:text-zinc-200 leading-relaxed text-[15px]">{body}</p>
+        <div className="relative">
+          {isGenerating && (
+            <div className="absolute inset-0 bg-white/70 dark:bg-zinc-900/70 rounded flex items-center justify-center z-10 gap-2">
+              <svg className="animate-spin h-4 w-4 text-zinc-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              <span className="text-sm text-zinc-500">Regenerating…</span>
+            </div>
+          )}
+          <p className={`whitespace-pre-wrap text-zinc-800 dark:text-zinc-200 leading-relaxed text-[15px] ${isGenerating ? 'opacity-30' : ''}`}>{body}</p>
+        </div>
       ) : (
         <div className="bg-zinc-50 dark:bg-zinc-800/50 border border-dashed border-zinc-200 dark:border-zinc-700 rounded-md p-8 text-center">
           <p className="text-zinc-500 text-sm">

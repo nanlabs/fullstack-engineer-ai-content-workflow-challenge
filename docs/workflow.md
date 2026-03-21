@@ -45,4 +45,35 @@ The ContentDetail page adapts its available actions based on the current status:
 
 ## Real-time Updates
 
-When any status change occurs, the backend emits a `content.statusChanged` event via EventEmitter2. The SSE controller picks this up and pushes it to all connected clients, so the dashboard and other views stay in sync.
+When any status change occurs, the backend emits a `content.statusChanged` event via EventEmitter2. The SSE controller routes events to the **specific user's connections** based on the `userId` attached to the event payload. This ensures:
+
+- **Cross-device sync**: If a user has two browsers/devices open, both receive real-time updates when content changes.
+- **User isolation**: User A's actions never trigger SSE events in User B's stream.
+- **Per-connection subjects**: Each SSE connection gets its own RxJS `Subject`, mapped by userId. When a user disconnects, their Subject is cleaned up.
+
+The frontend `useEventSource` hook passes the JWT token via query parameter (`/api/events?token=xxx`) since the browser `EventSource` API does not support custom headers. The backend verifies the token and registers the connection for the authenticated user.
+
+## Authentication
+
+### JWT-Based Authentication
+
+The system uses JSON Web Tokens (JWT) for stateless authentication:
+
+1. **Signup** (`POST /api/auth/signup`) — Creates a new user with bcrypt-hashed password (salt rounds: 10), returns a JWT token + user info.
+2. **Login** (`POST /api/auth/login`) — Validates credentials against bcrypt hash, returns a JWT token + user info.
+3. **Protected routes** — All campaign, content, and AI endpoints require a valid `Authorization: Bearer <token>` header. The JWT contains `{ sub: userId, email }`.
+4. **Token expiration** — JWTs expire after 24h (configurable via `JWT_EXPIRATION` env var). On 401, the frontend clears the stored token and redirects to login.
+
+### User Scoping
+
+All data is scoped per user to ensure complete isolation:
+
+- **Campaigns** — The `Campaign` model has a `userId` foreign key. `GET /api/campaigns` only returns campaigns belonging to the authenticated user.
+- **Content pieces** — Ownership is verified through the parent campaign's `userId`. Users cannot access, modify, or trigger AI on content belonging to other users.
+- **Seed data** — Running `prisma db seed` creates a demo user (`demo@acme.com` / `demo1234`) with sample campaigns.
+
+### Password Security
+
+- Passwords are hashed using **bcrypt** with a cost factor of 10 before storage.
+- Plaintext passwords are never stored or logged.
+- Login responses never include the password hash.

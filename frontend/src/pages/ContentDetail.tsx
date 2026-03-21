@@ -136,6 +136,15 @@ export default function ContentDetail() {
   const hasMetadata = !!piece.metadata;
   const hasTranslations = (piece.translations?.length ?? 0) > 0;
 
+  const isGeneratingContent = generateMut.isPending || chainMut.isPending;
+  const isExtractingMetadata = extractMut.isPending || chainMut.isPending;
+  const isTranslatingContent = translateMut.isPending || chainMut.isPending;
+  const pendingTranslationLangs = chainMut.isPending
+    ? availableLangs
+    : translateMut.isPending && translateLang
+      ? [translateLang]
+      : [];
+
   return (
     <div className="w-full">
       <Link
@@ -298,7 +307,7 @@ export default function ContentDetail() {
         <div className="flex-1 min-w-0 space-y-4">
 
       {/* Content accordion */}
-      <Accordion title="Content" badge={<StatusBadge status={piece.status} />} defaultOpen>
+      <Accordion title="Content" badge={<StatusBadge status={piece.status} />} defaultOpen forceOpen={isGeneratingContent} isLoading={isGeneratingContent}>
         <ContentCard
           body={piece.body}
           status={piece.status}
@@ -310,6 +319,7 @@ export default function ContentDetail() {
           onReopen={() => statusMut.mutate({ pieceId: id!, status: 'DRAFT' })}
           onRegenerate={() => setPromptModal({ action: 'generate' })}
           onSave={(body, notes) => updateMut.mutate({ body, notes })}
+          isGenerating={isGeneratingContent}
         />
       </Accordion>
 
@@ -323,8 +333,24 @@ export default function ContentDetail() {
       )}
 
       {/* Metadata accordion */}
-      <Accordion title="Metadata" defaultOpen={hasMetadata}>
-        {hasMetadata ? (
+      <Accordion title="Metadata" defaultOpen={hasMetadata} forceOpen={isExtractingMetadata} isLoading={isExtractingMetadata}>
+        {isExtractingMetadata ? (
+          <div className="animate-pulse space-y-3 py-1">
+            {['w-3/4', 'w-full', 'w-5/6', 'w-2/3', 'w-4/5'].map((w, i) => (
+              <div key={i} className="flex gap-4 items-center">
+                <div className="h-3 bg-zinc-200 dark:bg-zinc-700 rounded w-28 flex-shrink-0" />
+                <div className={`h-3 bg-zinc-200 dark:bg-zinc-700 rounded ${w}`} />
+              </div>
+            ))}
+            <div className="flex items-center gap-2 pt-1 text-xs text-zinc-400">
+              <svg className="animate-spin h-3.5 w-3.5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              Extracting metadata…
+            </div>
+          </div>
+        ) : hasMetadata ? (
           <MetadataPanel metadata={piece.metadata as unknown as Record<string, unknown>} />
         ) : (
           <p className="text-zinc-500 text-sm">
@@ -344,8 +370,10 @@ export default function ContentDetail() {
           ) : undefined
         }
         defaultOpen={hasTranslations}
+        forceOpen={isTranslatingContent}
+        isLoading={isTranslatingContent}
       >
-        {hasTranslations ? (
+        {hasTranslations || pendingTranslationLangs.length > 0 ? (
           <div className="space-y-4">
             {piece.translations!.map((t) => (
               <details key={t.id} open className="group border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden">
@@ -393,9 +421,32 @@ export default function ContentDetail() {
                     onReopen={() => statusMut.mutate({ pieceId: t.id, status: 'DRAFT' })}
                     onRegenerate={() => retranslateMut.mutate(t.language)}
                     regenerateLabel="Re-translate"
+                    isGenerating={retranslateMut.isPending && retranslateMut.variables === t.language}
                   />
                 </div>
               </details>
+            ))}
+            {pendingTranslationLangs.map((lang) => (
+              <div key={`pending-${lang}`} className="border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-3 animate-pulse">
+                <div className="flex items-center gap-3">
+                  <span className="bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-600 px-2 py-0.5 rounded-full text-[11px] font-medium uppercase tracking-wider">
+                    {lang}
+                  </span>
+                  <div className="h-3 bg-zinc-200 dark:bg-zinc-700 rounded w-36" />
+                  <div className="ml-auto flex items-center gap-2 text-xs text-zinc-400">
+                    <svg className="animate-spin h-3.5 w-3.5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Translating…
+                  </div>
+                </div>
+                <div className="mt-3 space-y-1.5">
+                  <div className="h-3 bg-zinc-200 dark:bg-zinc-700 rounded w-full" />
+                  <div className="h-3 bg-zinc-200 dark:bg-zinc-700 rounded w-3/4" />
+                  <div className="h-3 bg-zinc-200 dark:bg-zinc-700 rounded w-5/6" />
+                </div>
+              </div>
             ))}
           </div>
         ) : (

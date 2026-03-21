@@ -7,6 +7,8 @@ import {
   ParseUUIDPipe,
   HttpException,
   HttpStatus,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -17,8 +19,10 @@ import { AiService } from './ai.service';
 import { ContentWorkflow } from './content-workflow';
 import { ModelFactory } from './model-factory.service';
 import { AiGenerateDto, AiTranslateDto, AiChainDto, AiCompareDto } from './ai.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller()
+@UseGuards(JwtAuthGuard)
 export class AiController {
   constructor(
     private readonly aiService: AiService,
@@ -43,8 +47,9 @@ export class AiController {
   async generate(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AiGenerateDto,
+    @Request() req: any,
   ) {
-    const piece = await this.contentService.findOne(id);
+    const piece = await this.contentService.findOne(id, req.user.id);
     const campaign = piece.campaign;
 
     let body: string;
@@ -71,7 +76,7 @@ export class AiController {
       },
     });
 
-    this.events.emit('content.aiGenerated', updated);
+    this.events.emit('content.aiGenerated', { ...updated, userId: req.user.id });
     return updated;
   }
 
@@ -80,8 +85,9 @@ export class AiController {
   async translate(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AiTranslateDto,
+    @Request() req: any,
   ) {
-    const piece = await this.contentService.findOne(id);
+    const piece = await this.contentService.findOne(id, req.user.id);
     let result;
     try {
       result = await this.aiService.translate({
@@ -125,7 +131,7 @@ export class AiController {
       });
     }
 
-    this.events.emit('content.translated', translation);
+    this.events.emit('content.translated', { ...translation, userId: req.user.id });
     return translation;
   }
 
@@ -134,8 +140,9 @@ export class AiController {
   async extract(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AiGenerateDto,
+    @Request() req: any,
   ) {
-    const piece = await this.contentService.findOne(id);
+    const piece = await this.contentService.findOne(id, req.user.id);
     let metadata;
     try {
       metadata = await this.aiService.extractMetadata({
@@ -153,7 +160,7 @@ export class AiController {
       data: { metadata: metadata as any },
     });
 
-    this.events.emit('content.metadataExtracted', updated);
+    this.events.emit('content.metadataExtracted', { ...updated, userId: req.user.id });
     return updated;
   }
 
@@ -162,8 +169,9 @@ export class AiController {
   async chain(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AiChainDto,
+    @Request() req: any,
   ) {
-    const piece = await this.contentService.findOne(id);
+    const piece = await this.contentService.findOne(id, req.user.id);
     const campaign = piece.campaign;
 
     let result;
@@ -211,7 +219,7 @@ export class AiController {
       translations.push(translation);
     }
 
-    this.events.emit('content.chainCompleted', { piece: updated, translations });
+    this.events.emit('content.chainCompleted', { piece: updated, translations, userId: req.user.id });
     return { piece: updated, translations };
   }
 
@@ -220,8 +228,9 @@ export class AiController {
   async compare(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AiCompareDto,
+    @Request() req: any,
   ) {
-    const piece = await this.contentService.findOne(id);
+    const piece = await this.contentService.findOne(id, req.user.id);
     const campaign = piece.campaign;
 
     let results;

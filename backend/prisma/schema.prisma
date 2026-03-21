@@ -16,15 +16,31 @@ enum ContentStatus {
   REJECTED
 }
 
+model User {
+  id        String     @id @default(uuid())
+  email     String     @unique
+  password  String
+  name      String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  campaigns Campaign[]
+
+  @@map("users")
+}
+
 model Campaign {
   id              String         @id @default(uuid())
   name            String
   description     String?
   targetLanguages String[]
+  userId          String
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
-  contentPieces   ContentPiece[]
 
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contentPieces ContentPiece[]
+
+  @@index([userId])
   @@map("campaigns")
 }
 
