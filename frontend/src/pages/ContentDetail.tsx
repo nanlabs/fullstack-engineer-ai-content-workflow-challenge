@@ -3,6 +3,11 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { contentApi, aiApi } from '../lib/api';
 import { StatusBadge } from '../components/StatusBadge';
+import { ReviewActions } from '../components/ReviewActions';
+import { AiToolbar } from '../components/AiToolbar';
+import { ModelComparison } from '../components/ModelComparison';
+import { MetadataPanel } from '../components/MetadataPanel';
+import { TranslationsList } from '../components/TranslationsList';
 import type { ContentStatus, CompareResponse } from '../lib/types';
 
 export default function ContentDetail() {
@@ -82,6 +87,9 @@ export default function ContentDetail() {
     extractMut.isPending ||
     chainMut.isPending ||
     compareMut.isPending;
+
+  const aiError =
+    generateMut.error ?? translateMut.error ?? extractMut.error ?? chainMut.error ?? compareMut.error ?? null;
 
   if (isLoading) return <div className="p-8 text-center">Loading...</div>;
   if (!piece) return <div className="p-8 text-center">Content not found</div>;
@@ -183,253 +191,45 @@ export default function ContentDetail() {
         )}
       </div>
 
-      {/* Review Actions */}
-      <div className="bg-white rounded-lg shadow p-5 mb-4">
-        <h2 className="font-semibold mb-3">Review Actions</h2>
-        {piece.reviewNotes && (
-          <p className="text-sm text-gray-500 mb-3 bg-gray-50 p-2 rounded">
-            <strong>Notes:</strong> {piece.reviewNotes}
-          </p>
-        )}
-        <div className="flex gap-2 flex-wrap">
-          {piece.status === 'AI_SUGGESTED' && (
-            <>
-              <button
-                onClick={() => statusMut.mutate({ status: 'APPROVED' })}
-                disabled={statusMut.isPending}
-                className="bg-green-600 text-white px-3 py-1.5 rounded text-sm hover:bg-green-700 disabled:opacity-50"
-              >
-                Approve
-              </button>
-              <button
-                onClick={() => statusMut.mutate({ status: 'REVIEWED' })}
-                disabled={statusMut.isPending}
-                className="bg-yellow-500 text-white px-3 py-1.5 rounded text-sm hover:bg-yellow-600 disabled:opacity-50"
-              >
-                Mark as Reviewed
-              </button>
-              <button
-                onClick={() => statusMut.mutate({ status: 'REJECTED', notes: reviewNotes || undefined })}
-                disabled={statusMut.isPending}
-                className="bg-red-600 text-white px-3 py-1.5 rounded text-sm hover:bg-red-700 disabled:opacity-50"
-              >
-                Reject
-              </button>
-            </>
-          )}
-          {piece.status === 'REVIEWED' && (
-            <>
-              <button
-                onClick={() => statusMut.mutate({ status: 'APPROVED' })}
-                disabled={statusMut.isPending}
-                className="bg-green-600 text-white px-3 py-1.5 rounded text-sm hover:bg-green-700 disabled:opacity-50"
-              >
-                Approve
-              </button>
-              <button
-                onClick={() => statusMut.mutate({ status: 'REJECTED' })}
-                disabled={statusMut.isPending}
-                className="bg-red-600 text-white px-3 py-1.5 rounded text-sm hover:bg-red-700 disabled:opacity-50"
-              >
-                Reject
-              </button>
-            </>
-          )}
-          {piece.status === 'REJECTED' && (
-            <button
-              onClick={() => statusMut.mutate({ status: 'DRAFT' })}
-              disabled={statusMut.isPending}
-              className="bg-gray-600 text-white px-3 py-1.5 rounded text-sm hover:bg-gray-700 disabled:opacity-50"
-            >
-              Reset to Draft
-            </button>
-          )}
-          {(piece.status === 'APPROVED' || piece.status === 'DRAFT') &&
-            piece.status === 'APPROVED' && (
-              <p className="text-green-600 text-sm">✓ This content is approved.</p>
-            )}
-          {piece.status === 'DRAFT' && !piece.body && (
-            <p className="text-gray-400 text-sm">Generate a draft first to enable review actions.</p>
-          )}
-        </div>
-        {statusMut.isError && (
-          <p className="text-red-600 text-sm mt-2">{statusMut.error.message}</p>
-        )}
-      </div>
+      <ReviewActions
+        status={piece.status}
+        body={piece.body}
+        reviewNotes={piece.reviewNotes}
+        isPending={statusMut.isPending}
+        error={statusMut.error}
+        onChangeStatus={(status, notes) => statusMut.mutate({ status, notes })}
+      />
 
-      {/* AI Controls */}
-      <div className="bg-white rounded-lg shadow p-5 mb-4">
-        <h2 className="font-semibold mb-3">AI Tools</h2>
-        <div className="flex items-center gap-3 mb-3">
-          <label className="text-sm text-gray-500">Model:</label>
-          <select
-            value={selectedModel ?? ''}
-            onChange={(e) =>
-              setSelectedModel(e.target.value || undefined)
-            }
-            className="border rounded px-2 py-1 text-sm"
-          >
-            <option value="">Default ({providers?.default})</option>
-            {providers?.available.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={() => generateMut.mutate()}
-            disabled={isAiLoading}
-            className="bg-purple-600 text-white px-3 py-1.5 rounded text-sm hover:bg-purple-700 disabled:opacity-50"
-          >
-            {generateMut.isPending ? 'Generating...' : 'Generate Draft'}
-          </button>
-          <button
-            onClick={() => extractMut.mutate()}
-            disabled={isAiLoading || !piece.body}
-            className="bg-indigo-600 text-white px-3 py-1.5 rounded text-sm hover:bg-indigo-700 disabled:opacity-50"
-          >
-            {extractMut.isPending ? 'Extracting...' : 'Extract Metadata'}
-          </button>
-          <button
-            onClick={() => chainMut.mutate()}
-            disabled={isAiLoading}
-            className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-1.5 rounded text-sm hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50"
-          >
-            {chainMut.isPending
-              ? 'Running pipeline...'
-              : 'Full Pipeline (Generate → Translate → Extract)'}
-          </button>
-          <button
-            onClick={() => compareMut.mutate()}
-            disabled={isAiLoading || (providers?.available.length ?? 0) < 2}
-            className="bg-amber-600 text-white px-3 py-1.5 rounded text-sm hover:bg-amber-700 disabled:opacity-50"
-            title={
-              (providers?.available.length ?? 0) < 2
-                ? 'Need 2+ providers for comparison'
-                : undefined
-            }
-          >
-            {compareMut.isPending ? 'Comparing...' : 'Compare Models'}
-          </button>
-        </div>
+      <AiToolbar
+        selectedModel={selectedModel}
+        onModelChange={setSelectedModel}
+        providers={providers}
+        hasBody={!!piece.body}
+        availableLangs={availableLangs}
+        translateLang={translateLang}
+        onTranslateLangChange={setTranslateLang}
+        isAiLoading={isAiLoading}
+        onGenerate={() => generateMut.mutate()}
+        onExtract={() => extractMut.mutate()}
+        onChain={() => chainMut.mutate()}
+        onCompare={() => compareMut.mutate()}
+        onTranslate={() => translateMut.mutate()}
+        generating={generateMut.isPending}
+        extracting={extractMut.isPending}
+        chaining={chainMut.isPending}
+        comparing={compareMut.isPending}
+        translating={translateMut.isPending}
+        error={aiError}
+      />
 
-        {/* Translate */}
-        {availableLangs.length > 0 && (
-          <div className="flex items-center gap-2 mt-3">
-            <select
-              value={translateLang}
-              onChange={(e) => setTranslateLang(e.target.value)}
-              className="border rounded px-2 py-1 text-sm"
-            >
-              <option value="">Translate to...</option>
-              {availableLangs.map((l) => (
-                <option key={l} value={l}>
-                  {l}
-                </option>
-              ))}
-            </select>
-            <button
-              onClick={() => translateMut.mutate()}
-              disabled={isAiLoading || !translateLang || !piece.body}
-              className="bg-teal-600 text-white px-3 py-1.5 rounded text-sm hover:bg-teal-700 disabled:opacity-50"
-            >
-              {translateMut.isPending ? 'Translating...' : 'Translate'}
-            </button>
-          </div>
-        )}
+      {comparison && <ModelComparison comparison={comparison} />}
 
-        {/* AI errors */}
-        {(generateMut.isError ||
-          translateMut.isError ||
-          extractMut.isError ||
-          chainMut.isError ||
-          compareMut.isError) && (
-          <p className="text-red-600 text-sm mt-2">
-            {(generateMut.error ?? translateMut.error ?? extractMut.error ?? chainMut.error ?? compareMut.error)?.message}
-          </p>
-        )}
-      </div>
-
-      {/* Comparison Results */}
-      {comparison && (
-        <div className="bg-white rounded-lg shadow p-5 mb-4">
-          <h2 className="font-semibold mb-3">Model Comparison</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {Object.entries(comparison.comparisons).map(([provider, body]) => (
-              <div key={provider} className="border rounded p-3">
-                <h3 className="text-sm font-medium text-purple-600 mb-2">
-                  {provider}
-                </h3>
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">{body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Metadata */}
       {piece.metadata && (
-        <div className="bg-white rounded-lg shadow p-5 mb-4">
-          <h2 className="font-semibold mb-3">Metadata</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-            <div>
-              <span className="text-gray-500">Tone:</span>
-              <p className="font-medium capitalize">{(piece.metadata as any).tone}</p>
-            </div>
-            <div>
-              <span className="text-gray-500">Sentiment:</span>
-              <p className="font-medium capitalize">{(piece.metadata as any).sentiment}</p>
-            </div>
-            <div>
-              <span className="text-gray-500">Readability:</span>
-              <p className="font-medium capitalize">{(piece.metadata as any).readability}</p>
-            </div>
-            <div>
-              <span className="text-gray-500">Keywords:</span>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {((piece.metadata as any).keywords ?? []).map((kw: string) => (
-                  <span
-                    key={kw}
-                    className="bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded text-xs"
-                  >
-                    {kw}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+        <MetadataPanel metadata={piece.metadata as unknown as Record<string, unknown>} />
       )}
 
-      {/* Translations */}
       {piece.translations && piece.translations.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-5 mb-4">
-          <h2 className="font-semibold mb-3">Translations</h2>
-          <div className="space-y-3">
-            {piece.translations.map((t) => (
-              <Link
-                key={t.id}
-                to={`/content/${t.id}`}
-                className="block border rounded p-3 hover:bg-gray-50 transition"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs mr-2">
-                      {t.language}
-                    </span>
-                    <span className="font-medium text-sm">{t.title}</span>
-                  </div>
-                  <StatusBadge status={t.status} />
-                </div>
-                {t.body && (
-                  <p className="text-sm text-gray-500 mt-1 line-clamp-2">{t.body}</p>
-                )}
-              </Link>
-            ))}
-          </div>
-        </div>
+        <TranslationsList translations={piece.translations} />
       )}
     </div>
   );
