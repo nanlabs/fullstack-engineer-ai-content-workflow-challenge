@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { campaignsApi, contentApi } from '../lib/api';
 import { StatusBadge } from '../components/StatusBadge';
 import { LanguagePicker } from '../components/LanguagePicker';
+import { ConfirmModal } from '../components/ConfirmModal';
 
 const PAGE_SIZE = 10;
 
@@ -16,6 +17,7 @@ export default function CampaignDetail() {
   const [editingLangs, setEditingLangs] = useState(false);
   const [filter, setFilter] = useState('');
   const [page, setPage] = useState(1);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const { data: campaign, isLoading } = useQuery({
     queryKey: ['campaigns', id],
@@ -74,16 +76,22 @@ export default function CampaignDetail() {
           ← Back to Campaigns
         </Link>
         <button
-          onClick={() => {
-            if (window.confirm(`Delete campaign "${campaign.name}"? This cannot be undone.`)) {
-              deleteCampaign.mutate();
-            }
-          }}
+          onClick={() => setShowDeleteConfirm(true)}
           disabled={deleteCampaign.isPending}
           className="text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border border-red-200 dark:border-red-800 hover:border-red-400 dark:hover:border-red-700 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
         >
           {deleteCampaign.isPending ? 'Deleting…' : 'Delete Campaign'}
         </button>
+        <ConfirmModal
+          open={showDeleteConfirm}
+          title="Delete Campaign"
+          message={`Delete "${campaign.name}"? All content pieces will be permanently removed. This cannot be undone.`}
+          confirmLabel="Delete Campaign"
+          variant="danger"
+          loading={deleteCampaign.isPending}
+          onConfirm={() => { setShowDeleteConfirm(false); deleteCampaign.mutate(); }}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
       </div>
 
       <div className="mb-10">

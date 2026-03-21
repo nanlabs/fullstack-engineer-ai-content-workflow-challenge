@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '../lib/auth';
 
 export function useEventSource() {
   const queryClient = useQueryClient();
+  const { token } = useAuth();
   const esRef = useRef<EventSource | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout>>();
 
@@ -17,7 +19,6 @@ export function useEventSource() {
         esRef.current = null;
       }
 
-      const token = localStorage.getItem('auth_token');
       if (!token) return;
 
       const es = new EventSource(`/api/events?token=${encodeURIComponent(token)}`);
@@ -43,7 +44,7 @@ export function useEventSource() {
       es.onerror = () => {
         es.close();
         esRef.current = null;
-        if (!disposed && localStorage.getItem('auth_token')) {
+        if (!disposed && token) {
           reconnectTimer.current = setTimeout(connect, 3000);
         }
       };
@@ -57,5 +58,5 @@ export function useEventSource() {
       esRef.current?.close();
       esRef.current = null;
     };
-  }, [queryClient]);
+  }, [queryClient, token]);
 }

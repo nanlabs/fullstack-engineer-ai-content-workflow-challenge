@@ -7,6 +7,7 @@ import { Accordion } from '../components/Accordion';
 import { ContentCard } from '../components/ContentCard';
 import { ModelComparison } from '../components/ModelComparison';
 import { MetadataPanel } from '../components/MetadataPanel';
+import { ConfirmModal } from '../components/ConfirmModal';
 import type { ContentStatus, CompareResponse } from '../lib/types';
 
 export default function ContentDetail() {
@@ -20,6 +21,8 @@ export default function ContentDetail() {
   const [generationPrompt, setGenerationPrompt] = useState('');
   const [modalModel, setModalModel] = useState<string | undefined>();
   const [modalWordCount, setModalWordCount] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteTranslationTarget, setDeleteTranslationTarget] = useState<{ id: string; language: string } | null>(null);
 
   const { data: piece, isLoading } = useQuery({
     queryKey: ['content', id],
@@ -173,11 +176,7 @@ export default function ContentDetail() {
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => {
-                if (window.confirm(`Delete "${piece.title}"? This cannot be undone.`)) {
-                  deleteMut.mutate();
-                }
-              }}
+              onClick={() => setShowDeleteConfirm(true)}
               disabled={deleteMut.isPending}
               className="text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border border-red-200 dark:border-red-800 hover:border-red-400 dark:hover:border-red-700 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
             >
@@ -388,9 +387,7 @@ export default function ContentDetail() {
                     <button
                       onClick={(e) => {
                         e.preventDefault();
-                        if (window.confirm(`Delete ${t.language} translation? This cannot be undone.`)) {
-                          deleteTranslationMut.mutate(t.id);
-                        }
+                        setDeleteTranslationTarget({ id: t.id, language: t.language });
                       }}
                       disabled={deleteTranslationMut.isPending}
                       className="text-xs font-medium text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border border-red-200 dark:border-red-800 hover:border-red-400 dark:hover:border-red-700 px-2 py-1 rounded-md transition-colors disabled:opacity-40"
@@ -457,6 +454,30 @@ export default function ContentDetail() {
 
         </div>{/* end main content column */}
       </div>{/* end two-column layout */}
+
+      {/* Delete Content Confirm */}
+      <ConfirmModal
+        open={showDeleteConfirm}
+        title="Delete Content"
+        message={`Delete "${piece.title}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        loading={deleteMut.isPending}
+        onConfirm={() => { setShowDeleteConfirm(false); deleteMut.mutate(); }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
+
+      {/* Delete Translation Confirm */}
+      <ConfirmModal
+        open={!!deleteTranslationTarget}
+        title="Delete Translation"
+        message={`Delete ${deleteTranslationTarget?.language ?? ''} translation? This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        loading={deleteTranslationMut.isPending}
+        onConfirm={() => { if (deleteTranslationTarget) deleteTranslationMut.mutate(deleteTranslationTarget.id); setDeleteTranslationTarget(null); }}
+        onCancel={() => setDeleteTranslationTarget(null)}
+      />
 
       {/* Prompt Modal */}
       {promptModal && (
