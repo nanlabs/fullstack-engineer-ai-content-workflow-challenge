@@ -18,34 +18,37 @@ export function ReviewActions({
   onChangeStatus,
 }: ReviewActionsProps) {
   return (
-    <div className="bg-white rounded-lg shadow p-5 mb-4">
-      <h2 className="font-semibold mb-3">Review Actions</h2>
+    <div className="card p-6 mb-6">
+      <h2 className="text-lg font-semibold text-zinc-900 mb-4">Review Actions</h2>
       {reviewNotes && (
-        <p className="text-sm text-gray-500 mb-3 bg-gray-50 p-2 rounded">
-          <strong>Notes:</strong> {reviewNotes}
-        </p>
+        <div className="mb-4 bg-zinc-50 border border-zinc-200 rounded-md p-3">
+          <p className="text-sm text-zinc-700">
+            <span className="font-semibold text-zinc-900 mr-2">Notes:</span>
+            {reviewNotes}
+          </p>
+        </div>
       )}
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2 flex-wrap items-center">
         {status === 'AI_SUGGESTED' && (
           <>
             <button
               onClick={() => onChangeStatus('APPROVED')}
               disabled={isPending}
-              className="bg-green-600 text-white px-3 py-1.5 rounded text-sm hover:bg-green-700 disabled:opacity-50"
+              className="btn-primary"
             >
               Approve
             </button>
             <button
               onClick={() => onChangeStatus('REVIEWED')}
               disabled={isPending}
-              className="bg-yellow-500 text-white px-3 py-1.5 rounded text-sm hover:bg-yellow-600 disabled:opacity-50"
+              className="btn-secondary"
             >
               Mark as Reviewed
             </button>
             <button
               onClick={() => onChangeStatus('REJECTED')}
               disabled={isPending}
-              className="bg-red-600 text-white px-3 py-1.5 rounded text-sm hover:bg-red-700 disabled:opacity-50"
+              className="btn-secondary text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
             >
               Reject
             </button>
@@ -56,14 +59,14 @@ export function ReviewActions({
             <button
               onClick={() => onChangeStatus('APPROVED')}
               disabled={isPending}
-              className="bg-green-600 text-white px-3 py-1.5 rounded text-sm hover:bg-green-700 disabled:opacity-50"
+              className="btn-primary"
             >
               Approve
             </button>
             <button
               onClick={() => onChangeStatus('REJECTED')}
               disabled={isPending}
-              className="bg-red-600 text-white px-3 py-1.5 rounded text-sm hover:bg-red-700 disabled:opacity-50"
+              className="btn-secondary text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
             >
               Reject
             </button>
@@ -73,20 +76,25 @@ export function ReviewActions({
           <button
             onClick={() => onChangeStatus('DRAFT')}
             disabled={isPending}
-            className="bg-gray-600 text-white px-3 py-1.5 rounded text-sm hover:bg-gray-700 disabled:opacity-50"
+            className="btn-secondary"
           >
             Reset to Draft
           </button>
         )}
         {status === 'APPROVED' && (
-          <p className="text-green-600 text-sm">✓ This content is approved.</p>
+          <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-4 h-4"><path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            This content is approved.
+          </div>
         )}
         {status === 'DRAFT' && !body && (
-          <p className="text-gray-400 text-sm">Generate a draft first to enable review actions.</p>
+          <p className="text-zinc-500 text-sm">Generate a draft first to enable review actions.</p>
         )}
       </div>
       {error && (
-        <p className="text-red-600 text-sm mt-2">{error.message}</p>
+        <div className="mt-4 p-3 bg-red-50 text-red-700 text-sm rounded-md border border-red-200">
+          {error.message}
+        </div>
       )}
     </div>
   );

@@ -42,14 +42,14 @@ export function AiToolbar({
   error,
 }: AiToolbarProps) {
   return (
-    <div className="bg-white rounded-lg shadow p-5 mb-4">
-      <h2 className="font-semibold mb-3">AI Tools</h2>
-      <div className="flex items-center gap-3 mb-3">
-        <label className="text-sm text-gray-500">Model:</label>
+    <div className="card p-6 mb-6">
+      <h2 className="text-lg font-semibold text-zinc-900 mb-4">AI Tools</h2>
+      <div className="flex items-center gap-3 mb-4">
+        <label className="text-sm font-medium text-zinc-700">Provider Model:</label>
         <select
           value={selectedModel ?? ''}
           onChange={(e) => onModelChange(e.target.value || undefined)}
-          className="border rounded px-2 py-1 text-sm"
+          className="input-field max-w-[200px]"
         >
           <option value="">Default ({providers?.default})</option>
           {providers?.available.map((p) => (
@@ -63,30 +63,30 @@ export function AiToolbar({
         <button
           onClick={onGenerate}
           disabled={isAiLoading}
-          className="bg-purple-600 text-white px-3 py-1.5 rounded text-sm hover:bg-purple-700 disabled:opacity-50"
+          className="btn-primary"
         >
           {generating ? 'Generating...' : 'Generate Draft'}
         </button>
         <button
           onClick={onExtract}
           disabled={isAiLoading || !hasBody}
-          className="bg-indigo-600 text-white px-3 py-1.5 rounded text-sm hover:bg-indigo-700 disabled:opacity-50"
+          className="btn-secondary"
         >
           {extracting ? 'Extracting...' : 'Extract Metadata'}
         </button>
         <button
           onClick={onChain}
           disabled={isAiLoading}
-          className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-1.5 rounded text-sm hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50"
+          className="btn-primary bg-purple-600 hover:bg-purple-700 border-none shadow-sm"
         >
           {chaining
             ? 'Running pipeline...'
-            : 'Full Pipeline (Generate → Translate → Extract)'}
+            : 'Full Pipeline (Gen → Trans → Extract)'}
         </button>
         <button
           onClick={onCompare}
           disabled={isAiLoading || (providers?.available.length ?? 0) < 2}
-          className="bg-amber-600 text-white px-3 py-1.5 rounded text-sm hover:bg-amber-700 disabled:opacity-50"
+          className="btn-secondary"
           title={
             (providers?.available.length ?? 0) < 2
               ? 'Need 2+ providers for comparison'
@@ -98,11 +98,11 @@ export function AiToolbar({
       </div>
 
       {availableLangs.length > 0 && (
-        <div className="flex items-center gap-2 mt-3">
+        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-zinc-200/60">
           <select
             value={translateLang}
             onChange={(e) => onTranslateLangChange(e.target.value)}
-            className="border rounded px-2 py-1 text-sm"
+            className="input-field max-w-[200px]"
           >
             <option value="">Translate to...</option>
             {availableLangs.map((l) => (
@@ -114,7 +114,7 @@ export function AiToolbar({
           <button
             onClick={onTranslate}
             disabled={isAiLoading || !translateLang || !hasBody}
-            className="bg-teal-600 text-white px-3 py-1.5 rounded text-sm hover:bg-teal-700 disabled:opacity-50"
+            className="btn-secondary"
           >
             {translating ? 'Translating...' : 'Translate'}
           </button>
@@ -122,7 +122,9 @@ export function AiToolbar({
       )}
 
       {error && (
-        <p className="text-red-600 text-sm mt-2">{error.message}</p>
+        <div className="mt-4 p-3 bg-red-50 text-red-700 text-sm rounded-md border border-red-200">
+          {error.message}
+        </div>
       )}
     </div>
   );

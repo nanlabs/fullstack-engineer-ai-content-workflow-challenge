@@ -1,11 +1,11 @@
 import { ContentStatus } from '../lib/types';
 
 const STATUS_STYLES: Record<ContentStatus, string> = {
-  DRAFT: 'bg-gray-100 text-gray-700',
-  AI_SUGGESTED: 'bg-blue-100 text-blue-700',
-  REVIEWED: 'bg-yellow-100 text-yellow-700',
-  APPROVED: 'bg-green-100 text-green-700',
-  REJECTED: 'bg-red-100 text-red-700',
+  DRAFT: 'bg-zinc-100 text-zinc-600 border-zinc-200',
+  AI_SUGGESTED: 'bg-blue-50 text-blue-600 border-blue-200',
+  REVIEWED: 'bg-amber-50 text-amber-600 border-amber-200',
+  APPROVED: 'bg-emerald-50 text-emerald-600 border-emerald-200',
+  REJECTED: 'bg-red-50 text-red-600 border-red-200',
 };
 
 const STATUS_LABELS: Record<ContentStatus, string> = {
@@ -19,7 +19,7 @@ const STATUS_LABELS: Record<ContentStatus, string> = {
 export function StatusBadge({ status }: { status: ContentStatus }) {
   return (
     <span
-      className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${STATUS_STYLES[status]}`}
+      className={`inline-block px-2.5 py-1 rounded-full text-[11px] font-medium uppercase tracking-wider border ${STATUS_STYLES[status]}`}
     >
       {STATUS_LABELS[status]}
     </span>

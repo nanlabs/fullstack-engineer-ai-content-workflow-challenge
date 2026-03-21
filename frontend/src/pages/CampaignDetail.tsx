@@ -45,20 +45,20 @@ export default function CampaignDetail() {
 
   return (
     <div className="max-w-5xl mx-auto p-6">
-      <Link to="/" className="text-blue-600 hover:underline text-sm mb-4 inline-block">
+      <Link to="/" className="text-zinc-500 hover:text-zinc-900 transition-colors text-sm mb-8 inline-flex items-center gap-2 font-medium">
         ← Back to Campaigns
       </Link>
 
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">{campaign.name}</h1>
+      <div className="mb-10">
+        <h1 className="text-3xl font-bold tracking-tight text-zinc-900">{campaign.name}</h1>
         {campaign.description && (
-          <p className="text-gray-500 mt-1">{campaign.description}</p>
+          <p className="text-zinc-500 mt-2 text-base max-w-2xl">{campaign.description}</p>
         )}
-        <div className="flex gap-1 mt-2">
+        <div className="flex gap-2 mt-4">
           {campaign.targetLanguages.map((lang) => (
             <span
               key={lang}
-              className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs"
+              className="bg-zinc-100 text-zinc-600 border border-zinc-200 px-2.5 py-1 rounded-full text-[11px] font-medium uppercase tracking-wider"
             >
               {lang}
             </span>
@@ -66,11 +66,11 @@ export default function CampaignDetail() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">Content Pieces</h2>
+      <div className="flex items-center justify-between mb-6 pb-4 border-b border-zinc-200">
+        <h2 className="text-xl font-semibold text-zinc-900">Content Pieces</h2>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700"
+          className={showForm ? 'btn-secondary' : 'btn-primary'}
         >
           {showForm ? 'Cancel' : '+ Add Content'}
         </button>
@@ -79,72 +79,82 @@ export default function CampaignDetail() {
       {showForm && (
         <form
           onSubmit={handleCreate}
-          className="mb-4 bg-white rounded-lg shadow p-4 space-y-3"
+          className="mb-8 card p-6 space-y-4 bg-zinc-50/50"
         >
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value as ContentType)}
-            className="w-full border rounded px-3 py-2"
-          >
-            {CONTENT_TYPES.map((t) => (
-              <option key={t} value={t}>
-                {t.replace('_', ' ')}
-              </option>
-            ))}
-          </select>
-          <input
-            type="text"
-            placeholder="Title / topic"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            maxLength={500}
-            className="w-full border rounded px-3 py-2"
-          />
-          <button
-            type="submit"
-            disabled={createContent.isPending}
-            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50"
-          >
-            {createContent.isPending ? 'Creating...' : 'Create'}
-          </button>
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 mb-1">Content Type</label>
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value as ContentType)}
+              className="input-field"
+            >
+              {CONTENT_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {t.replace('_', ' ')}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 mb-1">Title or Topic</label>
+            <input
+              type="text"
+              placeholder="e.g. 5 Reasons to Upgrade"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              maxLength={500}
+              className="input-field"
+            />
+          </div>
+          <div className="pt-2">
+            <button
+              type="submit"
+              disabled={createContent.isPending}
+              className="btn-primary"
+            >
+              {createContent.isPending ? 'Creating...' : 'Create Content'}
+            </button>
+          </div>
         </form>
       )}
 
       {!campaign.contentPieces?.length ? (
-        <p className="text-gray-500">No content pieces yet.</p>
+        <div className="text-center py-12 card bg-zinc-50 border-dashed">
+          <p className="text-zinc-500 text-sm">No content pieces yet. Add one to begin.</p>
+        </div>
       ) : (
-        <div className="grid gap-3">
+        <div className="grid gap-4">
           {campaign.contentPieces.map((piece) => (
             <Link
               key={piece.id}
               to={`/content/${piece.id}`}
-              className="bg-white rounded-lg shadow p-4 hover:shadow-md transition block"
+              className="card card-hoverable p-5 block group"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-medium">{piece.title}</h3>
-                  <div className="flex gap-2 mt-1 items-center">
-                    <span className="text-xs text-gray-400">
+                  <h3 className="font-semibold text-zinc-900 group-hover:text-blue-600 transition-colors text-lg">{piece.title}</h3>
+                  <div className="flex gap-2 mt-2 items-center">
+                    <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
                       {piece.type.replace('_', ' ')}
                     </span>
-                    <span className="text-xs text-gray-300">•</span>
-                    <span className="text-xs text-gray-400">{piece.language}</span>
+                    <span className="text-xs text-zinc-300">•</span>
+                    <span className="text-xs font-medium text-zinc-500 uppercase">{piece.language}</span>
                     {piece.aiModel && (
                       <>
-                        <span className="text-xs text-gray-300">•</span>
-                        <span className="text-xs text-purple-500">{piece.aiModel}</span>
+                        <span className="text-xs text-zinc-300">•</span>
+                        <span className="text-[11px] font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">{piece.aiModel}</span>
                       </>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <StatusBadge status={piece.status} />
+                <div className="flex items-center gap-4">
                   {piece.translations && piece.translations.length > 0 && (
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs font-medium text-zinc-400 bg-zinc-100 px-2 py-1 rounded-md">
                       {piece.translations.length} translations
                     </span>
                   )}
+                  <StatusBadge status={piece.status} />
                 </div>
               </div>
             </Link>
