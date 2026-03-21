@@ -75,8 +75,9 @@ export const aiApi = {
       method: 'POST',
       body: JSON.stringify({ model }),
     }),
-  compare: (id: string) =>
+  compare: (id: string, models?: string[]) =>
     request<import('./types').CompareResponse>(`/content/${id}/compare`, {
       method: 'POST',
+      body: JSON.stringify({ models }),
     }),
 };

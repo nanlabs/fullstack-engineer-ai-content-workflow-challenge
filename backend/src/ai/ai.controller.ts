@@ -16,7 +16,7 @@ import { ContentService } from '../content/content.service';
 import { AiService } from './ai.service';
 import { ContentWorkflow } from './content-workflow';
 import { ModelFactory } from './model-factory.service';
-import { AiGenerateDto, AiTranslateDto, AiChainDto } from './ai.dto';
+import { AiGenerateDto, AiTranslateDto, AiChainDto, AiCompareDto } from './ai.dto';
 
 @Controller()
 export class AiController {
@@ -32,6 +32,7 @@ export class AiController {
   @Get('ai/providers')
   getProviders() {
     return {
+      all: this.modelFactory.getAllProviders(),
       available: this.modelFactory.getAvailableProviders(),
       default: this.modelFactory.getDefaultProvider(),
     };
@@ -200,19 +201,23 @@ export class AiController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   async compare(
     @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AiCompareDto,
   ) {
     const piece = await this.contentService.findOne(id);
     const campaign = piece.campaign;
 
     let results;
     try {
-      results = await this.aiService.compare({
-        campaignName: campaign.name,
-        campaignDescription: campaign.description ?? '',
-        contentType: piece.type,
-        title: piece.title,
-        language: piece.language,
-      });
+      results = await this.aiService.compare(
+        {
+          campaignName: campaign.name,
+          campaignDescription: campaign.description ?? '',
+          contentType: piece.type,
+          title: piece.title,
+          language: piece.language,
+        },
+        dto.models,
+      );
     } catch (err) {
       throw this.wrapAiError(err);
     }

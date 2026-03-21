@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { contentApi, aiApi } from '../lib/api';
@@ -17,6 +17,7 @@ export default function ContentDetail() {
   const [selectedModel, setSelectedModel] = useState<string | undefined>();
   const [comparison, setComparison] = useState<CompareResponse | null>(null);
   const [translateLang, setTranslateLang] = useState('');
+  const [compareModels, setCompareModels] = useState<string[]>([]);
 
   const { data: piece, isLoading } = useQuery({
     queryKey: ['content', id],
@@ -28,6 +29,12 @@ export default function ContentDetail() {
     queryKey: ['providers'],
     queryFn: aiApi.providers,
   });
+
+  useEffect(() => {
+    if (providers?.all && compareModels.length === 0) {
+      setCompareModels(providers.available);
+    }
+  }, [providers?.all]);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['content', id] });
@@ -58,7 +65,7 @@ export default function ContentDetail() {
   });
 
   const compareMut = useMutation({
-    mutationFn: () => aiApi.compare(id!),
+    mutationFn: (models: string[]) => aiApi.compare(id!, models),
     onSuccess: (data: CompareResponse) => setComparison(data),
   });
 
@@ -79,6 +86,15 @@ export default function ContentDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['campaigns'] });
       navigate('/');
+    },
+  });
+
+  const applyComparisonMut = useMutation({
+    mutationFn: ({ body }: { body: string; provider: string }) =>
+      contentApi.update(id!, { body }),
+    onSuccess: () => {
+      invalidate();
+      setComparison(null);
     },
   });
 
@@ -181,17 +197,63 @@ export default function ContentDetail() {
           onGenerate={() => generateMut.mutate()}
           onExtract={() => extractMut.mutate()}
           onChain={() => chainMut.mutate()}
-          onCompare={() => compareMut.mutate()}
           onTranslate={() => translateMut.mutate()}
           generating={generateMut.isPending}
           extracting={extractMut.isPending}
           chaining={chainMut.isPending}
-          comparing={compareMut.isPending}
           translating={translateMut.isPending}
           error={aiError}
         />
-        {comparison && <ModelComparison comparison={comparison} />}
       </Accordion>
+
+      {/* Compare Models accordion */}
+      {(providers?.all.length ?? 0) >= 2 && (
+        <Accordion title="Compare Models">
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {providers!.all.map((p) => (
+                <label key={p} className="inline-flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={compareModels.includes(p)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setCompareModels((prev) => [...prev, p]);
+                      } else {
+                        setCompareModels((prev) => prev.filter((m) => m !== p));
+                      }
+                    }}
+                    disabled={!providers!.available.includes(p)}
+                    className="rounded border-zinc-300 text-zinc-800 focus:ring-zinc-500 disabled:opacity-40"
+                  />
+                  <span className={`text-sm ${providers!.available.includes(p) ? 'text-zinc-700' : 'text-zinc-400'}`}>
+                    {p}{!providers!.available.includes(p) ? ' (no key)' : ''}
+                  </span>
+                </label>
+              ))}
+            </div>
+            <button
+              onClick={() => compareMut.mutate(compareModels)}
+              disabled={isAiLoading || compareModels.length < 2}
+              className="btn-primary disabled:opacity-40"
+            >
+              {compareMut.isPending ? 'Comparing...' : `Run Comparison (${compareModels.length} models)`}
+            </button>
+            {compareMut.error && (
+              <div className="p-3 bg-red-50 text-red-700 text-sm rounded-md border border-red-200">
+                {compareMut.error.message}
+              </div>
+            )}
+            {comparison && (
+              <ModelComparison
+                comparison={comparison}
+                onSelect={(provider, body) => applyComparisonMut.mutate({ body, provider })}
+                selecting={applyComparisonMut.isPending}
+              />
+            )}
+          </div>
+        </Accordion>
+      )}
 
       {/* Metadata accordion */}
       <Accordion title="Metadata" defaultOpen={hasMetadata}>

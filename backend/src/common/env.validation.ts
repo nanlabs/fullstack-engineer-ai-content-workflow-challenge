@@ -2,10 +2,12 @@ import { plainToInstance } from 'class-transformer';
 import { IsEnum, IsOptional, IsString, validateSync } from 'class-validator';
 
 enum LlmProvider {
-  OPENAI = 'openai',
-  ANTHROPIC = 'anthropic',
-  GEMINI = 'gemini',
-  GEMINI_FLASH = 'gemini-flash',
+  GPT_5_4_MINI = 'gpt-5.4-mini',
+  GPT_5_4 = 'gpt-5.4',
+  CLAUDE_SONNET = 'claude-sonnet-4.6',
+  CLAUDE_HAIKU = 'claude-haiku-4.5',
+  GEMINI_PRO = 'gemini-pro-3.1',
+  GEMINI_FLASH = 'gemini-flash-2.5',
 }
 
 class EnvironmentVariables {
@@ -37,9 +39,11 @@ class EnvironmentVariables {
 }
 
 const PROVIDER_KEY_MAP: Record<LlmProvider, string> = {
-  [LlmProvider.OPENAI]: 'OPENAI_API_KEY',
-  [LlmProvider.ANTHROPIC]: 'ANTHROPIC_API_KEY',
-  [LlmProvider.GEMINI]: 'GOOGLE_API_KEY',
+  [LlmProvider.GPT_5_4_MINI]: 'OPENAI_API_KEY',
+  [LlmProvider.GPT_5_4]: 'OPENAI_API_KEY',
+  [LlmProvider.CLAUDE_SONNET]: 'ANTHROPIC_API_KEY',
+  [LlmProvider.CLAUDE_HAIKU]: 'ANTHROPIC_API_KEY',
+  [LlmProvider.GEMINI_PRO]: 'GOOGLE_API_KEY',
   [LlmProvider.GEMINI_FLASH]: 'GOOGLE_API_KEY',
 };
 

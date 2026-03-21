@@ -1,7 +1,7 @@
 interface AiToolbarProps {
   selectedModel: string | undefined;
   onModelChange: (model: string | undefined) => void;
-  providers: { default: string; available: string[] } | undefined;
+  providers: { all: string[]; default: string; available: string[] } | undefined;
   hasBody: boolean;
   hasMetadata: boolean;
   availableLangs: string[];
@@ -11,12 +11,10 @@ interface AiToolbarProps {
   onGenerate: () => void;
   onExtract: () => void;
   onChain: () => void;
-  onCompare: () => void;
   onTranslate: () => void;
   generating: boolean;
   extracting: boolean;
   chaining: boolean;
-  comparing: boolean;
   translating: boolean;
   error: Error | null;
 }
@@ -34,12 +32,10 @@ export function AiToolbar({
   onGenerate,
   onExtract,
   onChain,
-  onCompare,
   onTranslate,
   generating,
   extracting,
   chaining,
-  comparing,
   translating,
   error,
 }: AiToolbarProps) {
@@ -53,9 +49,9 @@ export function AiToolbar({
           className="input-field max-w-[200px]"
         >
           <option value="">Default ({providers?.default})</option>
-          {providers?.available.map((p) => (
-            <option key={p} value={p}>
-              {p}
+          {providers?.all.map((p) => (
+            <option key={p} value={p} disabled={!providers?.available.includes(p)}>
+              {p}{!providers?.available.includes(p) ? ' (no key)' : ''}
             </option>
           ))}
         </select>
@@ -88,18 +84,6 @@ export function AiToolbar({
             : hasBody && hasMetadata
               ? 'Pipeline Completed ✓'
               : 'Full Pipeline (Gen → Trans → Extract)'}
-        </button>
-        <button
-          onClick={onCompare}
-          disabled={isAiLoading || (providers?.available.length ?? 0) < 2}
-          className="btn-secondary"
-          title={
-            (providers?.available.length ?? 0) < 2
-              ? 'Need 2+ providers for comparison'
-              : undefined
-          }
-        >
-          {comparing ? 'Comparing...' : 'Compare Models'}
         </button>
       </div>
 

@@ -88,10 +88,10 @@ export class AiService {
     return this.parseJson<MetadataResult>(result);
   }
 
-  async compare(
-    input: GenerateInput,
-  ): Promise<Record<string, string>> {
-    const providers = this.modelFactory.getAvailableProviders();
+  async compare(input: GenerateInput, selectedProviders?: string[]): Promise<Record<string, string>> {
+    const providers = selectedProviders?.length
+      ? selectedProviders
+      : this.modelFactory.getAvailableProviders();
     const results = await Promise.all(
       providers.map(async (provider) => {
         const body = await this.generateDraft({ ...input, provider });

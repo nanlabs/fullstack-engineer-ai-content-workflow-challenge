@@ -12,22 +12,32 @@ interface ProviderConfig {
 }
 
 const PROVIDERS: Record<string, ProviderConfig> = {
-  openai: {
+  'gpt-5.4-mini': {
     envKey: 'OPENAI_API_KEY',
     factory: (apiKey) =>
-      new ChatOpenAI({ openAIApiKey: apiKey, modelName: 'gpt-4o-mini', temperature: 0.7, maxRetries: 2, timeout: 30000 }),
+      new ChatOpenAI({ openAIApiKey: apiKey, modelName: 'gpt-5.4-mini', temperature: 0.7, maxRetries: 2, timeout: 30000 }),
   },
-  anthropic: {
+  'gpt-5.4': {
+    envKey: 'OPENAI_API_KEY',
+    factory: (apiKey) =>
+      new ChatOpenAI({ openAIApiKey: apiKey, modelName: 'gpt-5.4', temperature: 0.7, maxRetries: 2, timeout: 30000 }),
+  },
+  'claude-sonnet-4.6': {
     envKey: 'ANTHROPIC_API_KEY',
     factory: (apiKey) =>
-      new ChatAnthropic({ anthropicApiKey: apiKey, modelName: 'claude-sonnet-4-20250514', temperature: 0.7, maxRetries: 2 }),
+      new ChatAnthropic({ anthropicApiKey: apiKey, modelName: 'claude-sonnet-4.6', temperature: 0.7, maxRetries: 2 }),
   },
-  gemini: {
+  'claude-haiku-4.5': {
+    envKey: 'ANTHROPIC_API_KEY',
+    factory: (apiKey) =>
+      new ChatAnthropic({ anthropicApiKey: apiKey, modelName: 'claude-haiku-4.5', temperature: 0.7, maxRetries: 2 }),
+  },
+  'gemini-pro-3.1': {
     envKey: 'GOOGLE_API_KEY',
     factory: (apiKey) =>
-      new ChatGoogleGenerativeAI({ apiKey, modelName: 'gemini-2.5-flash-lite', temperature: 0.7, maxRetries: 2 }),
+      new ChatGoogleGenerativeAI({ apiKey, modelName: 'gemini-pro-3.1', temperature: 0.7, maxRetries: 2 }),
   },
-  'gemini-flash': {
+  'gemini-flash-2.5': {
     envKey: 'GOOGLE_API_KEY',
     factory: (apiKey) =>
       new ChatGoogleGenerativeAI({ apiKey, modelName: 'gemini-2.5-flash', temperature: 0.7, maxRetries: 2 }),
@@ -42,7 +52,7 @@ export class ModelFactory implements OnModuleInit {
   private defaultProvider: string;
 
   constructor(private readonly config: ConfigService) {
-    this.defaultProvider = this.config.get<string>('DEFAULT_LLM_PROVIDER', 'gemini');
+    this.defaultProvider = this.config.get<string>('DEFAULT_LLM_PROVIDER', 'gpt-5.4-mini');
   }
 
   onModuleInit() {
@@ -85,5 +95,9 @@ export class ModelFactory implements OnModuleInit {
 
   getDefaultProvider(): string {
     return this.defaultProvider;
+  }
+
+  getAllProviders(): string[] {
+    return Object.keys(PROVIDERS);
   }
 }

@@ -1,4 +1,4 @@
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsOptional, IsString, IsArray, MaxLength } from 'class-validator';
 
 export class AiGenerateDto {
   @IsString()
@@ -22,4 +22,9 @@ export class AiChainDto {
   model?: string;
 }
 
-export class AiCompareDto {}
+export class AiCompareDto {
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  models?: string[];
+}

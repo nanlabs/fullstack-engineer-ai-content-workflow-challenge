@@ -76,7 +76,7 @@ describe('ContentService', () => {
       mockPrisma.contentPiece.findUnique.mockResolvedValue(piece);
 
       await expect(
-        service.updateStatus('1', { status: 'APPROVED' as any }),
+        service.updateStatus('1', { status: 'DRAFT' as any }),
       ).rejects.toThrow(BadRequestException);
     });
   });

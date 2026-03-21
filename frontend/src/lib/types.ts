@@ -37,6 +37,7 @@ export interface ContentMetadata {
 }
 
 export interface ProvidersResponse {
+  all: string[];
   available: string[];
   default: string;
 }

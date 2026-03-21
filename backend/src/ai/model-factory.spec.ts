@@ -22,7 +22,7 @@ function createConfigService(env: Record<string, string | undefined>): ConfigSer
 describe('ModelFactory', () => {
   it('registers providers that have API keys', async () => {
     const config = createConfigService({
-      DEFAULT_LLM_PROVIDER: 'openai',
+      DEFAULT_LLM_PROVIDER: 'gpt-5.4-mini',
       OPENAI_API_KEY: 'sk-test',
       GOOGLE_API_KEY: 'goog-test',
     });
@@ -30,8 +30,10 @@ describe('ModelFactory', () => {
     const factory = new ModelFactory(config);
     factory.onModuleInit();
 
-    expect(factory.getAvailableProviders()).toEqual(['openai', 'gemini']);
-    expect(factory.getDefaultProvider()).toBe('openai');
+    expect(factory.getAvailableProviders()).toEqual([
+      'gpt-5.4-mini', 'gpt-5.4', 'gemini-pro-3.1', 'gemini-flash-2.5',
+    ]);
+    expect(factory.getDefaultProvider()).toBe('gpt-5.4-mini');
   });
 
   it('throws when no providers available', () => {
@@ -45,19 +47,19 @@ describe('ModelFactory', () => {
 
   it('throws when default provider is not available', () => {
     const config = createConfigService({
-      DEFAULT_LLM_PROVIDER: 'anthropic',
+      DEFAULT_LLM_PROVIDER: 'claude-sonnet-4.6',
       OPENAI_API_KEY: 'sk-test',
     });
 
     const factory = new ModelFactory(config);
     expect(() => factory.onModuleInit()).toThrow(
-      'Default provider "anthropic" is not available',
+      'Default provider "claude-sonnet-4.6" is not available',
     );
   });
 
   it('getModel returns the requested provider', () => {
     const config = createConfigService({
-      DEFAULT_LLM_PROVIDER: 'openai',
+      DEFAULT_LLM_PROVIDER: 'gpt-5.4-mini',
       OPENAI_API_KEY: 'sk-test',
       GOOGLE_API_KEY: 'goog-test',
     });
@@ -65,13 +67,13 @@ describe('ModelFactory', () => {
     const factory = new ModelFactory(config);
     factory.onModuleInit();
 
-    const model = factory.getModel('gemini');
+    const model = factory.getModel('gemini-pro-3.1');
     expect(model).toBeDefined();
   });
 
   it('getModel without argument returns default', () => {
     const config = createConfigService({
-      DEFAULT_LLM_PROVIDER: 'gemini',
+      DEFAULT_LLM_PROVIDER: 'gemini-flash-2.5',
       GOOGLE_API_KEY: 'goog-test',
     });
 
@@ -84,26 +86,26 @@ describe('ModelFactory', () => {
 
   it('getModel throws for unavailable provider', () => {
     const config = createConfigService({
-      DEFAULT_LLM_PROVIDER: 'gemini',
+      DEFAULT_LLM_PROVIDER: 'gemini-flash-2.5',
       GOOGLE_API_KEY: 'goog-test',
     });
 
     const factory = new ModelFactory(config);
     factory.onModuleInit();
 
-    expect(() => factory.getModel('openai')).toThrow(
-      'Provider "openai" is not available',
+    expect(() => factory.getModel('gpt-5.4-mini')).toThrow(
+      'Provider "gpt-5.4-mini" is not available',
     );
   });
 
-  it('defaults to gemini when DEFAULT_LLM_PROVIDER not set', () => {
+  it('defaults to gpt-5.4-mini when DEFAULT_LLM_PROVIDER not set', () => {
     const config = createConfigService({
-      GOOGLE_API_KEY: 'goog-test',
+      OPENAI_API_KEY: 'sk-test',
     });
 
     const factory = new ModelFactory(config);
     factory.onModuleInit();
 
-    expect(factory.getDefaultProvider()).toBe('gemini');
+    expect(factory.getDefaultProvider()).toBe('gpt-5.4-mini');
   });
 });
