@@ -5,6 +5,7 @@ import { CampaignsModule } from './campaigns/campaigns.module';
 import { ContentModule } from './content/content.module';
 import { AiModule } from './ai/ai.module';
 import { EventsModule } from './gateway/events.module';
+import { CacheModule } from './cache/cache.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { EventsModule } from './gateway/events.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    CacheModule,
     PrismaModule,
     CampaignsModule,
     ContentModule,

@@ -11,6 +11,8 @@ import type {
   GenerateDraftData,
   TranslateContentData,
   CompareModelsData,
+  RunChainData,
+  ChainResult,
 } from '@/types';
 
 interface UseContentListReturn {
@@ -68,12 +70,14 @@ interface UseContentPieceReturn {
   isComparing: boolean;
   isTranslating: boolean;
   isReviewing: boolean;
+  isRunningChain: boolean;
   refresh: () => Promise<void>;
   generateDraft: (data: GenerateDraftData) => Promise<AIDraft>;
   compareModels: (data?: CompareModelsData) => Promise<{ claude: AIDraft; gpt4o: AIDraft }>;
   selectDraft: (draftId: string) => Promise<void>;
   reviewContent: (data: ReviewContentData) => Promise<void>;
   translateContent: (data: TranslateContentData) => Promise<Translation>;
+  runChain: (data: RunChainData) => Promise<ChainResult>;
 }
 
 export function useContentPiece(
@@ -87,6 +91,7 @@ export function useContentPiece(
   const [isComparing, setIsComparing] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
   const [isReviewing, setIsReviewing] = useState(false);
+  const [isRunningChain, setIsRunningChain] = useState(false);
 
   const fetchContent = useCallback(async () => {
     try {
@@ -178,6 +183,20 @@ export function useContentPiece(
     [campaignId, contentId, fetchContent],
   );
 
+  const runChainFn = useCallback(
+    async (data: RunChainData): Promise<ChainResult> => {
+      setIsRunningChain(true);
+      try {
+        const result = await api.runChain(campaignId, contentId, data);
+        await fetchContent();
+        return result;
+      } finally {
+        setIsRunningChain(false);
+      }
+    },
+    [campaignId, contentId, fetchContent],
+  );
+
   return {
     content,
     isLoading,
@@ -186,11 +205,13 @@ export function useContentPiece(
     isComparing,
     isTranslating,
     isReviewing,
+    isRunningChain,
     refresh: fetchContent,
     generateDraft,
     compareModels: compareModelsFn,
     selectDraft,
     reviewContent: reviewContentFn,
     translateContent: translateContentFn,
+    runChain: runChainFn,
   };
 }

@@ -79,6 +79,18 @@ export interface CompareModelsData {
   prompt?: string;
 }
 
+export interface RunChainData {
+  targetLanguage: string;
+  model?: AIModel;
+}
+
+export interface ChainResult {
+  draft: AIDraft;
+  translation: Translation;
+  summary: string;
+  targetLanguage: string;
+}
+
 export interface Toast {
   id: string;
   message: string;

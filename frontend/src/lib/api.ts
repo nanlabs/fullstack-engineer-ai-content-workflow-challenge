@@ -9,6 +9,8 @@ import type {
   GenerateDraftData,
   TranslateContentData,
   CompareModelsData,
+  RunChainData,
+  ChainResult,
 } from '@/types';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
@@ -178,6 +180,21 @@ export function compareModels(
     {
       method: 'POST',
       body: JSON.stringify(data ?? {}),
+    },
+  );
+}
+
+// LangChain pipeline: generate → translate → summarize in one call
+export function runChain(
+  campaignId: string,
+  contentId: string,
+  data: RunChainData,
+): Promise<ChainResult> {
+  return request<ChainResult>(
+    `/campaigns/${campaignId}/content/${contentId}/chain`,
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
     },
   );
 }

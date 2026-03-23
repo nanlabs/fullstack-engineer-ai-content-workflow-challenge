@@ -30,6 +30,7 @@ import type {
   CompareModelsData,
   ReviewContentData,
   TranslateContentData,
+  RunChainData,
   AIModel,
 } from '@/types';
 import { useState } from 'react';
@@ -61,12 +62,14 @@ export default function ContentDetailPage() {
     isComparing,
     isTranslating,
     isReviewing,
+    isRunningChain,
     refresh,
     generateDraft,
     compareModels,
     selectDraft,
     reviewContent,
     translateContent,
+    runChain,
   } = useContentPiece(campaignId, contentId);
 
   const { addToast } = useToast();
@@ -114,6 +117,18 @@ export default function ContentDetailPage() {
         err instanceof Error ? err.message : 'Failed to generate draft',
         'error',
       );
+    }
+  }
+
+  async function handleRunChain(data: RunChainData) {
+    try {
+      const result = await runChain(data);
+      addToast(
+        `Chain complete → draft generated + translated to ${result.targetLanguage}`,
+        'success',
+      );
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Chain pipeline failed', 'error');
     }
   }
 
@@ -257,8 +272,10 @@ export default function ContentDetailPage() {
           <GeneratePanel
             onGenerate={handleGenerate}
             onCompare={handleCompare}
+            onRunChain={handleRunChain}
             isGenerating={isGenerating}
             isComparing={isComparing}
+            isRunningChain={isRunningChain}
           />
 
           {/* Drafts */}

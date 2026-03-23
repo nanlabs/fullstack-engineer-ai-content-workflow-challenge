@@ -10,6 +10,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { PrismaService } from '../prisma/prisma.service';
 import { EventsGateway } from '../gateway/events.gateway';
+import { CacheService } from '../cache/cache.service';
 import { AIDraft, AIModel, ContentStatus, ContentType, Translation } from '@prisma/client';
 
 interface AiDraftResponse {
@@ -34,6 +35,7 @@ export class AiService {
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
     private readonly eventsGateway: EventsGateway,
+    private readonly cache: CacheService,
   ) {
     this.anthropic = new Anthropic({
       apiKey: this.configService.get<string>('ANTHROPIC_API_KEY'),
@@ -285,10 +287,21 @@ export class AiService {
     }
   }
 
+  private cacheKey(model: string, systemPrompt: string, userPrompt: string): string {
+    return `ai:${model}:${Buffer.from(systemPrompt + userPrompt).toString('base64').slice(0, 64)}`;
+  }
+
   /**
    * Calls the Anthropic Claude 3.5 Sonnet API and returns the parsed JSON response.
    */
   private async callClaude<T>(systemPrompt: string, userPrompt: string): Promise<T> {
+    const key = this.cacheKey('claude', systemPrompt, userPrompt);
+    const cached = await this.cache.get<T>(key);
+    if (cached) {
+      this.logger.log('Cache hit');
+      return cached;
+    }
+
     const response = await this.anthropic.messages.create({
       model: 'claude-3-5-sonnet-20241022',
       max_tokens: 1024,
@@ -301,13 +314,22 @@ export class AiService {
       throw new InternalServerErrorException('Claude returned an empty response');
     }
 
-    return this.parseJsonResponse<T>(textBlock.text, 'Claude');
+    const result = this.parseJsonResponse<T>(textBlock.text, 'Claude');
+    await this.cache.set(key, result, 3600);
+    return result;
   }
 
   /**
    * Calls the OpenAI GPT-4o API with JSON mode enabled and returns the parsed response.
    */
   private async callGpt4o<T>(systemPrompt: string, userPrompt: string): Promise<T> {
+    const key = this.cacheKey('gpt4o', systemPrompt, userPrompt);
+    const cached = await this.cache.get<T>(key);
+    if (cached) {
+      this.logger.log('Cache hit');
+      return cached;
+    }
+
     const response = await this.openai.chat.completions.create({
       model: 'gpt-4o',
       response_format: { type: 'json_object' },
@@ -323,7 +345,9 @@ export class AiService {
       throw new InternalServerErrorException('GPT-4o returned an empty response');
     }
 
-    return this.parseJsonResponse<T>(content, 'GPT-4o');
+    const result = this.parseJsonResponse<T>(content, 'GPT-4o');
+    await this.cache.set(key, result, 3600);
+    return result;
   }
 
   /**

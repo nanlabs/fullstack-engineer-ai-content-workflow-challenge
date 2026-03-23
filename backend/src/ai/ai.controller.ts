@@ -8,15 +8,20 @@ import {
   Logger,
 } from '@nestjs/common';
 import { AiService } from './ai.service';
+import { LangchainService } from './langchain.service';
 import { GenerateDraftDto } from './dto/generate-draft.dto';
 import { TranslateContentDto } from './dto/translate-content.dto';
+import { RunChainDto } from './dto/run-chain.dto';
 import { AIModel } from '@prisma/client';
 
 @Controller('campaigns/:campaignId/content/:contentId')
 export class AiController {
   private readonly logger = new Logger(AiController.name);
 
-  constructor(private readonly aiService: AiService) {}
+  constructor(
+    private readonly aiService: AiService,
+    private readonly langchainService: LangchainService,
+  ) {}
 
   @Post('generate')
   @HttpCode(HttpStatus.CREATED)
@@ -58,5 +63,16 @@ export class AiController {
   ) {
     this.logger.log(`POST /campaigns/${campaignId}/content/${contentId}/compare`);
     return this.aiService.compareModels(contentId, dto.prompt);
+  }
+
+  @Post('chain')
+  @HttpCode(HttpStatus.CREATED)
+  runChain(
+    @Param('campaignId') campaignId: string,
+    @Param('contentId') contentId: string,
+    @Body() dto: RunChainDto,
+  ) {
+    this.logger.log(`POST /campaigns/${campaignId}/content/${contentId}/chain`);
+    return this.langchainService.runChain(contentId, dto.targetLanguage, dto.model);
   }
 }
