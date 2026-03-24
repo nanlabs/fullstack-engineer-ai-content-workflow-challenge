@@ -1,129 +1,142 @@
-# 🚀 Fullstack Engineer Challenge – AI Content Workflow
+# AI Content Workflow
 
-Welcome to the **Fullstack Engineer Challenge!** 🤖📝  
-In this challenge, you'll help the fictional company **ACME GLOBAL MEDIA** build a system to manage the **content creation and review workflow** for their international campaigns — powered by **AI**.
+V1 implementation for the full-stack challenge using `Next.js + FastAPI + PostgreSQL + SSE`.
 
-## 🎯 Context
+## Stack
 
-ACME GLOBAL MEDIA produces ads, micro-sites, and marketing materials in multiple languages.  
-Traditionally, creating and translating this content is slow and error-prone. They want to experiment with **LLMs** to:
+- Frontend: `Next.js` App Router with SSR-friendly pages and client-side mutation panels
+- Backend: `FastAPI` with async SQLAlchemy and explicit SQL migrations
+- Database: `PostgreSQL`
+- Realtime: `Server-Sent Events (SSE)`
+- AI provider: `OpenAI` behind a provider abstraction
+- Tooling: `bun`, `uv`, `uvicorn`, `docker compose`
 
-- Generate initial content drafts (headlines, product descriptions, etc.).
-- Translate and localize content into multiple languages.
-- Extract structured data (keywords, tone, sentiment).
-- Keep a **review workflow** where humans can accept, edit, or reject AI suggestions.
-
-Your task is to build a simple system to:
-
-- Manage **campaigns** (each with multiple content pieces).
-- Generate **AI-powered drafts** for a content piece using OpenAI or Anthropic.
-- Provide **translation/localization** suggestions via AI.
-- Track a **review state** (Draft → Suggested by AI → Reviewed → Approved/Rejected).
-- Show updates to all users in real-time.
-
-## 📌 Requirements
-
-### ⚙️ Tech Stack
-
-> ⚡ **Must Include** - Use the following technologies, aligned with our tech stack:
-
-- **Backend:** You can use any stack you're comfortable with, but we recommend:
-  - TypeScript + NestJS (Fastify/Koa also valid)  
-  - Python + FastAPI (Flask/Django also valid)  
-  - Go + Fiber (Gin/Echo also valid)  
-- **API:** REST and/or GraphQL (justify your choice if only one)  
-- **Frontend:** React (Next.js, Remix, or Vite)  
-- **Database:** PostgreSQL (primary), MongoDB (optional if needed)  
-- **Containerization:** Docker (required)  
-- **AI Integrations:** OpenAI and/or Anthropic SDKs (required)  
-- **Bonus:** LangChain, Kafka, Redis, ArgoCD, Kubernetes  
-
-### 📦 Deliverables
-
-> 📥 **Your submission must be a Pull Request that includes:**
-
-- A **backend API** that supports:
-  - Creating a campaign and its content pieces.
-  - Generating AI drafts (titles, descriptions, translations).
-  - Updating the review state of content.
-  - Querying campaigns with their content and review states.
-- A **frontend built with React** to:
-  - Display a campaign dashboard.
-  - Trigger AI draft generation.
-  - Provide UI to review/edit/approve/reject drafts.
-  - Show updates in real-time.
-- Docker setup to run the entire app locally.
-- A `README.md` with:
-  - Setup instructions.
-  - Tech decisions and tradeoffs.
-  - If applicable, reasoning for REST, GraphQL, or both.
-- A `docs/` folder for any diagrams, workflows, or extra notes.
-
-### 📂 Suggested Folder Structure
+## Repo layout
 
 ```txt
-/
-├── .github/
-│   ├── workflows/
-│   └── PULL_REQUEST_TEMPLATE.md
-├── docs/
+.
+├── agents.md
 ├── backend/
-│   ├── src/
-│   ├── test/
-│   └── Dockerfile
-├── frontend/
-│   ├── src/
-│   ├── public/
-│   └── Dockerfile
 ├── compose.yml
-├── .env.example
-├── README.md
-├── .prettierrc.js
-├── eslint.config.mjs
-└── ...
-````
-
-## 🌟 Nice to Have
-
-> 💡 **Bonus Points For:**
-
-* Using **LangChain** to chain AI tasks (generate → translate → summarize).
-* Supporting **multi-model comparison** (OpenAI vs Anthropic).
-* Real-time features with WebSockets, GraphQL Subscriptions, or SSE.
-* Automated testing & GitHub Actions CI pipeline.
-* Unit/integration tests for API or AI-related logic.
-* Using Redis/Kafka for async event messaging.
-* Deploy manifests for Kubernetes or ArgoCD.
-
-## 🧪 Submission Guidelines
-
-1. **Fork this repository.**
-2. **Create a feature branch** for your implementation.
-3. **Commit your changes** with meaningful commit messages.
-4. **Open a Pull Request** following the provided template.
-5. **Our team will review** and provide feedback.
-
-## ✅ Evaluation Criteria
-
-> 🔍 **What we'll be looking at:**
-
-* Ability to work **across the stack** (NestJS/FastAPI/Go + PostgreSQL + React).
-* Integration of **AI features** in a clean, modular way.
-* Clear **data modeling** and workflow management.
-* **Human-in-the-loop UX** for reviewing AI content.
-* Documentation of assumptions, tradeoffs, and AI design choices.
-* Creativity in using AI to enhance the workflow.
-
-## 💬 Final Notes
-
-This challenge is designed to be **flexible**. Some tips:
-
-* If you’re stronger in backend, focus there but add a simple UI.
-* If you’re stronger in frontend, ensure your backend has clean APIs.
-* Time-box your work — we want to see **how you think and solve problems**, not perfection.
-* Surprise us with creative uses of AI! 🎉
-
-## 🏁 Good luck and have fun building!
-
-
+├── docs/
+│   └── plans/
+├── frontend/
+├── spec-v1.md
+└── README.md
 ```
+
+## Features in V1
+
+- Create campaigns
+- Create content pieces inside campaigns
+- Generate AI drafts
+- Generate translations/localizations
+- Extract metadata (`keywords`, `tone`, `sentiment`)
+- Review content with `start_review`, `accept`, `edit`, and `reject`
+- Persist canonical content separately from AI suggestions
+- Stream content updates through SSE
+
+## API surface
+
+- `POST /campaigns`
+- `GET /campaigns`
+- `GET /campaigns/:id`
+- `POST /campaigns/:id/content-pieces`
+- `GET /content-pieces/:id`
+- `PATCH /content-pieces/:id`
+- `POST /content-pieces/:id/ai/generate-draft`
+- `POST /content-pieces/:id/ai/translate`
+- `POST /content-pieces/:id/ai/extract-metadata`
+- `POST /content-pieces/:id/review`
+- `GET /events`
+
+## Workflow rules
+
+- New content pieces start in `draft`
+- Successful AI operations move the piece to `ai_suggested`
+- Manual editing through `PATCH /content-pieces/:id` moves the piece to `in_review`
+- `start_review` moves the piece to `in_review`
+- `accept` and `edit` end in `approved`
+- `reject` ends in `rejected`
+- `current_text` is canonical and is updated only by manual edit or review acceptance/editing
+- Failed AI operations are stored as failed suggestions and do not mutate canonical content
+
+## Local setup with Docker
+
+1. Copy the environment file:
+   ```bash
+   cp .env.example .env
+   ```
+2. Set `OPENAI_API_KEY` in `.env` if you want real provider calls.
+3. Start the stack:
+   ```bash
+   docker compose up --build
+   ```
+4. Open:
+   - Frontend: [http://localhost:3000](http://localhost:3000)
+   - Backend: [http://localhost:8000](http://localhost:8000)
+   - API health: [http://localhost:8000/health](http://localhost:8000/health)
+
+## Local setup without Docker
+
+### Backend
+
+```bash
+cd backend
+uv sync --dev
+DATABASE_URL=sqlite+aiosqlite:///./local.db uv run uvicorn app.main:create_app --factory --reload
+```
+
+### Frontend
+
+```bash
+cd frontend
+bun install
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000 INTERNAL_API_BASE_URL=http://localhost:8000 bun run dev
+```
+
+## Tests
+
+### Backend
+
+```bash
+cd backend
+uv sync --dev
+uv run pytest
+```
+
+### Frontend
+
+```bash
+cd frontend
+bun install
+bun run test
+```
+
+## Tech decisions and tradeoffs
+
+### REST over GraphQL
+
+REST is enough for this workflow because the domain is resource-oriented and the UI needs a small number of predictable operations. It keeps the API surface simple for a challenge submission and reduces backend/frontend coordination overhead.
+
+### SSE over WebSockets
+
+SSE covers the actual V1 need: broadcasting server-side updates when AI work completes or review state changes. It is lighter than WebSockets and keeps the transport one-directional until the product actually needs collaborative bidirectional interactions.
+
+### PostgreSQL only
+
+The domain is relational and benefits from simple joins between campaigns, content pieces, AI suggestions, and review actions. Adding another datastore in V1 would only increase operational and modeling complexity.
+
+### AI abstraction
+
+Only OpenAI is implemented in V1, but the provider boundary is explicit so Anthropic or mock providers can be added later without changing route handlers or workflow rules.
+
+### Lightweight backend structure
+
+The backend is intentionally split into API, application, domain, and infrastructure modules. That is enough separation to scale later without turning the challenge into framework-heavy boilerplate.
+
+## Notes for reviewers
+
+- `spec-v1.md` is the current scope source of truth.
+- Plans are stored under `docs/plans/`.
+- `agents.md` contains the agent collaboration rules requested for this repo.
