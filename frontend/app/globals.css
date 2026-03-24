@@ -1,0 +1,311 @@
+:root {
+  --bg: #f5efe5;
+  --panel: rgba(255, 251, 245, 0.92);
+  --panel-border: rgba(70, 49, 31, 0.14);
+  --text: #2f241d;
+  --muted: #6f6258;
+  --accent: #b95f35;
+  --accent-dark: #8a4021;
+  --danger: #9d2d2d;
+  --success: #2f7a51;
+  --shadow: 0 24px 60px rgba(73, 44, 20, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(233, 185, 138, 0.65), transparent 32%),
+    radial-gradient(circle at bottom right, rgba(127, 169, 146, 0.4), transparent 28%),
+    linear-gradient(180deg, #fbf6f0 0%, var(--bg) 100%);
+  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.shell {
+  max-width: 1260px;
+  margin: 0 auto;
+  padding: 32px 20px 72px;
+}
+
+.site-header {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 28px 32px;
+  border: 1px solid var(--panel-border);
+  border-radius: 28px;
+  background: linear-gradient(135deg, rgba(255, 250, 243, 0.95), rgba(241, 226, 211, 0.9));
+  box-shadow: var(--shadow);
+}
+
+.site-header h1,
+.hero-panel h2,
+.panel h2,
+.panel h3,
+.panel h4 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.header-copy,
+.panel-header p,
+.campaign-card p,
+.muted,
+.empty-state,
+label span,
+.metadata-grid dt,
+.section-heading span,
+.campaign-meta span {
+  color: var(--muted);
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.72rem;
+  color: var(--accent-dark);
+}
+
+.page-grid {
+  display: grid;
+  gap: 24px;
+  align-items: start;
+}
+
+.stack-layout {
+  display: grid;
+  gap: 20px;
+}
+
+@media (min-width: 960px) {
+  .page-grid {
+    grid-template-columns: 360px minmax(0, 1fr);
+  }
+}
+
+.panel {
+  border: 1px solid var(--panel-border);
+  border-radius: 24px;
+  padding: 22px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+}
+
+.panel-header,
+.review-header,
+.section-heading,
+.hero-panel,
+.campaign-card,
+.campaign-meta,
+.button-row,
+.action-grid,
+.text-blocks,
+.metadata-grid,
+.grid-two {
+  display: grid;
+  gap: 12px;
+}
+
+.form-panel label,
+.review-panel label {
+  display: grid;
+  gap: 8px;
+}
+
+input,
+select,
+textarea,
+button {
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid rgba(88, 62, 40, 0.16);
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+textarea {
+  resize: vertical;
+}
+
+button {
+  cursor: pointer;
+  background: var(--accent);
+  color: #fff8f3;
+  border: none;
+  transition: transform 120ms ease, background 120ms ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  background: var(--accent-dark);
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.68;
+  transform: none;
+}
+
+.button-danger {
+  background: var(--danger);
+}
+
+.button-row {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+.grid-two {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.campaign-list,
+.text-blocks {
+  display: grid;
+  gap: 16px;
+}
+
+.campaign-card {
+  text-decoration: none;
+  color: inherit;
+  padding: 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(88, 62, 40, 0.12);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.campaign-meta,
+.review-header,
+.section-heading,
+.hero-panel {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.hero-metrics {
+  justify-self: end;
+  align-self: end;
+  text-align: right;
+}
+
+.hero-metrics strong {
+  display: block;
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.badge {
+  display: inline-flex;
+  width: fit-content;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.badge-draft,
+.badge-in_review {
+  background: rgba(191, 133, 62, 0.14);
+  color: #7f4a18;
+}
+
+.badge-ai_suggested {
+  background: rgba(84, 119, 196, 0.14);
+  color: #2d4b91;
+}
+
+.badge-approved {
+  background: rgba(47, 122, 81, 0.14);
+  color: var(--success);
+}
+
+.badge-rejected {
+  background: rgba(157, 45, 45, 0.14);
+  color: var(--danger);
+}
+
+.text-blocks {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.text-blocks section,
+.suggestion-block {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.66);
+  border: 1px solid rgba(88, 62, 40, 0.08);
+}
+
+pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: "SFMono-Regular", Consolas, monospace;
+}
+
+.metadata-grid {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.metadata-grid dd {
+  margin: 4px 0 0;
+}
+
+.back-link {
+  width: fit-content;
+  color: var(--accent-dark);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.error-text {
+  color: var(--danger);
+  margin: 0;
+}
+
+.empty-state {
+  padding: 24px;
+  text-align: center;
+}
+
+@media (max-width: 720px) {
+  .shell {
+    padding-inline: 14px;
+  }
+
+  .site-header,
+  .panel {
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .campaign-meta,
+  .review-header,
+  .section-heading,
+  .hero-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-metrics {
+    justify-self: start;
+    text-align: left;
+  }
+}
