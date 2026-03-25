@@ -212,6 +212,21 @@ label span,
   align-items: start;
 }
 
+.dashboard-layout,
+.dashboard-grid,
+.dashboard-heading,
+.dashboard-card,
+.dashboard-card-top,
+.dashboard-card-copy,
+.dashboard-stats,
+.dashboard-progress,
+.dashboard-progress-copy,
+.dashboard-card-actions,
+.dashboard-ai-banner {
+  display: grid;
+  gap: 18px;
+}
+
 .stack-layout {
   display: grid;
   gap: 20px;
@@ -340,6 +355,125 @@ button:disabled {
 .text-blocks {
   display: grid;
   gap: 16px;
+}
+
+.dashboard-grid {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.dashboard-heading {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.dashboard-card {
+  padding: 22px;
+  border-radius: 20px;
+}
+
+.dashboard-card-top,
+.dashboard-card-actions,
+.dashboard-progress-copy {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.dashboard-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+}
+
+.dashboard-stats {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dashboard-stats div {
+  padding: 12px 14px;
+  border-radius: 14px;
+}
+
+.dashboard-stats span,
+.dashboard-progress-copy span,
+.dashboard-status {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+}
+
+.dashboard-progress-bar {
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.dashboard-progress-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.dashboard-primary-link,
+.dashboard-create-button,
+.banner-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.dashboard-ghost-button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 12px;
+}
+
+.dashboard-ai-banner {
+  grid-template-columns: minmax(0, 1.2fr) minmax(220px, 320px);
+  align-items: center;
+  padding: 28px;
+  border-radius: 22px;
+}
+
+.dashboard-ai-banner h3,
+.dashboard-empty h3 {
+  margin: 0;
+}
+
+.dashboard-ai-banner p,
+.dashboard-empty p,
+.dashboard-card-copy p {
+  margin: 0;
+}
+
+.dashboard-ai-visual {
+  display: grid;
+  justify-items: end;
+}
+
+.dashboard-ai-visual-card {
+  width: 100%;
+  max-width: 260px;
+  aspect-ratio: 1.5;
+  border-radius: 18px;
+  padding: 18px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.dashboard-ai-visual-card span {
+  border-radius: 10px;
+}
+
+.dashboard-empty {
+  padding: 36px;
+  border-radius: 20px;
 }
 
 .campaign-card-header,
