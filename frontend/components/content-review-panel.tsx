@@ -23,8 +23,10 @@ export function ContentReviewPanel({
 }) {
   const router = useRouter();
   const initialEditedText = piece.latest_reviewable_suggestion?.output_text ?? piece.current_text;
+  const [canonicalText, setCanonicalText] = useState(piece.current_text);
   const [context, setContext] = useState("");
   const [targetLanguage, setTargetLanguage] = useState(piece.target_language ?? "es");
+  const [sourceLanguage, setSourceLanguage] = useState(piece.source_language ?? "es");
   const [editedText, setEditedText] = useState(initialEditedText);
   const [comment, setComment] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
@@ -60,15 +62,18 @@ export function ContentReviewPanel({
   const latestReviewableSuggestion = piece.latest_reviewable_suggestion;
 
   useEffect(() => {
+    setCanonicalText(piece.current_text);
     setEditedText(piece.latest_reviewable_suggestion?.output_text ?? piece.current_text);
-  }, [piece.current_text, piece.id, piece.latest_reviewable_suggestion?.id, piece.latest_reviewable_suggestion?.output_text]);
+    setSourceLanguage(piece.source_language ?? "es");
+    setTargetLanguage(piece.target_language ?? "en");
+  }, [piece.current_text, piece.id, piece.latest_reviewable_suggestion?.id, piece.latest_reviewable_suggestion?.output_text, piece.source_language, piece.target_language]);
 
   return (
     <article className="panel review-panel">
       <div className="review-header">
         <div>
-          <p className="eyebrow">{piece.type}</p>
-          <h3>{piece.source_language} {piece.target_language ? `→ ${piece.target_language}` : "texto base"}</h3>
+          <p className="eyebrow">Contenido</p>
+          <h3>{piece.source_language ? `${piece.source_language}${piece.target_language ? ` → ${piece.target_language}` : ""}` : "Editor de pieza"}</h3>
         </div>
         <ReviewStateBadge state={piece.review_state} />
       </div>
@@ -86,12 +91,34 @@ export function ContentReviewPanel({
 
       <div className="text-blocks">
         <section className="content-surface">
-          <h4>Texto fuente</h4>
+          <h4>Texto base</h4>
           <p>{piece.source_text}</p>
         </section>
-        <section className="content-surface">
-          <h4>Texto canónico</h4>
-          <p>{piece.current_text}</p>
+        <section className="content-surface content-editor-surface">
+          <div className="section-heading">
+            <h4>Texto canónico</h4>
+            <span>Editá la versión sobre la que después vas a pedir draft, metadata o traducción.</span>
+          </div>
+          <textarea
+            rows={7}
+            value={canonicalText}
+            onChange={(event) => setCanonicalText(event.target.value)}
+          />
+          <button
+            type="button"
+            className="button-secondary"
+            disabled={pendingAction === "save-canonical" || canonicalText === piece.current_text}
+            onClick={() =>
+              runAction("save-canonical", () =>
+                apiRequest(`/content-pieces/${piece.id}`, {
+                  method: "PATCH",
+                  body: JSON.stringify({ current_text: canonicalText }),
+                }),
+              )
+            }
+          >
+            {pendingAction === "save-canonical" ? "Guardando..." : "Guardar canonical text"}
+          </button>
         </section>
       </div>
 
@@ -101,8 +128,12 @@ export function ContentReviewPanel({
           <input value={context} onChange={(event) => setContext(event.target.value)} />
         </label>
         <label>
-          <span>Idioma objetivo</span>
-          <input value={targetLanguage} onChange={(event) => setTargetLanguage(event.target.value)} />
+          <span>Idiomas para traducción</span>
+          <div className="translation-inline">
+            <input value={sourceLanguage} onChange={(event) => setSourceLanguage(event.target.value)} aria-label="Idioma origen" />
+            <span>→</span>
+            <input value={targetLanguage} onChange={(event) => setTargetLanguage(event.target.value)} aria-label="Idioma destino" />
+          </div>
         </label>
       </div>
 
@@ -135,7 +166,8 @@ export function ContentReviewPanel({
                   method: "POST",
                   body: JSON.stringify({
                     context: context || null,
-                    target_language: targetLanguage || null,
+                    source_language: sourceLanguage,
+                    target_language: targetLanguage,
                   }),
                 }),
               )
