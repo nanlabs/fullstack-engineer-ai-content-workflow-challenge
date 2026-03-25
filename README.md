@@ -112,6 +112,36 @@ bun run dev
 
 The frontend dev script also reads API-related environment values from the repo root `.env` file.
 
+## Demo campaign
+
+Use the seeded campaign to review the current V1 flow with realistic content instead of placeholder text.
+
+Load or recreate the demo data:
+
+```bash
+cd backend
+uv run seed-demo
+```
+
+The seed recreates the campaign by name: `ACME Media | Creator Launch Demo`.
+
+After seeding, the dataset includes content pieces across these workflow states:
+
+- `draft`
+- `ai_suggested`
+- `in_review`
+- `approved`
+- `rejected`
+
+Recommended UI checks with the seeded data:
+
+- campaign list on the dashboard
+- content list inside the seeded campaign
+- content piece editor for canonical text and AI draft review
+- translation history in the right-side panel
+- extracted metadata in the metadata panel
+- accept and reject actions on AI draft suggestions
+
 ## Full Docker mode
 
 Use this when you want the full reviewer/shared experience with both app services containerized.
