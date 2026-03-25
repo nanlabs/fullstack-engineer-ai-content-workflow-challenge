@@ -8,6 +8,14 @@ import { ContentPiece } from "@/lib/types";
 import { useContentEvents } from "@/lib/use-content-events";
 import { ReviewStateBadge } from "@/components/review-state-badge";
 
+const STATE_NOTES: Record<ContentPiece["review_state"], string> = {
+  draft: "Create the first AI proposal or edit the canonical text to begin the workflow.",
+  ai_suggested: "A text suggestion is ready. Review it before approving the canonical copy.",
+  in_review: "This piece is currently in human review.",
+  approved: "The canonical text is approved and ready to ship.",
+  rejected: "The latest reviewed proposal was rejected. Generate a new option or update the text manually.",
+};
+
 export function ContentReviewPanel({
   piece,
 }: {
@@ -21,10 +29,12 @@ export function ContentReviewPanel({
   const [comment, setComment] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lastLiveUpdate, setLastLiveUpdate] = useState<string | null>(null);
 
   const refreshForPiece = useCallback(
     (contentPieceId: string) => {
       if (contentPieceId === piece.id) {
+        setLastLiveUpdate(new Date().toLocaleTimeString());
         router.refresh();
       }
     },
@@ -62,6 +72,17 @@ export function ContentReviewPanel({
         </div>
         <ReviewStateBadge state={piece.review_state} />
       </div>
+
+      <section className="state-banner">
+        <div>
+          <strong>Workflow status</strong>
+          <p>{STATE_NOTES[piece.review_state]}</p>
+        </div>
+        <div className="realtime-note">
+          <strong>Live sync</strong>
+          <p>{lastLiveUpdate ? `Updated at ${lastLiveUpdate}` : "Listening for SSE updates"}</p>
+        </div>
+      </section>
 
       <div className="text-blocks">
         <section className="content-surface">

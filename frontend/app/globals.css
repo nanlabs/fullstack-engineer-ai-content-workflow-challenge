@@ -225,7 +225,8 @@ button:disabled {
 .queue-item,
 .queue-item-header,
 .support-grid,
-.control-group {
+.control-group,
+.state-banner {
   display: grid;
   gap: 10px;
 }
@@ -260,7 +261,8 @@ button:disabled {
 .campaign-meta,
 .review-header,
 .section-heading,
-.hero-panel {
+.hero-panel,
+.state-banner {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
 }
@@ -334,6 +336,19 @@ button:disabled {
 
 .text-blocks {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.state-banner {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(88, 62, 40, 0.08);
+}
+
+.state-banner p,
+.realtime-note p {
+  margin: 6px 0 0;
+  color: var(--muted);
 }
 
 .support-grid {
