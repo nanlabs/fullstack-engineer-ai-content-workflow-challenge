@@ -31,7 +31,7 @@ export function ContentPieceForm({ campaignId }: { campaignId: string }) {
       setSourceText("");
       router.refresh();
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Failed to create content piece");
+      setError(submitError instanceof Error ? submitError.message : "No se pudo crear la pieza");
     } finally {
       setSubmitting(false);
     }
@@ -40,12 +40,12 @@ export function ContentPieceForm({ campaignId }: { campaignId: string }) {
   return (
     <form className="panel form-panel" onSubmit={handleSubmit}>
       <div className="panel-header">
-        <h2>Add content piece</h2>
-        <p>Create one content unit at a time to keep the review flow explicit.</p>
+        <h2>Nueva pieza</h2>
+        <p>Creá una unidad editorial por vez para mantener explícito el flujo de revisión.</p>
       </div>
       <div className="grid-two">
         <label>
-          <span>Type</span>
+          <span>Tipo</span>
           <select value={type} onChange={(event) => setType(event.target.value)}>
             <option value="headline">Headline</option>
             <option value="description">Description</option>
@@ -53,16 +53,16 @@ export function ContentPieceForm({ campaignId }: { campaignId: string }) {
           </select>
         </label>
         <label>
-          <span>Source language</span>
+          <span>Idioma fuente</span>
           <input value={sourceLanguage} onChange={(event) => setSourceLanguage(event.target.value)} required />
         </label>
       </div>
       <label>
-        <span>Target language</span>
+        <span>Idioma objetivo</span>
         <input value={targetLanguage} onChange={(event) => setTargetLanguage(event.target.value)} />
       </label>
       <label>
-        <span>Source text</span>
+        <span>Texto fuente</span>
         <textarea
           rows={4}
           value={sourceText}
@@ -72,7 +72,7 @@ export function ContentPieceForm({ campaignId }: { campaignId: string }) {
       </label>
       {error ? <p className="error-text">{error}</p> : null}
       <button type="submit" disabled={submitting}>
-        {submitting ? "Saving..." : "Add content piece"}
+        {submitting ? "Guardando..." : "Agregar pieza"}
       </button>
     </form>
   );

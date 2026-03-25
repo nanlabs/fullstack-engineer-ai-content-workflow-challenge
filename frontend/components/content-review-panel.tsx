@@ -108,8 +108,8 @@ export function ContentReviewPanel({
 
       <section className="control-group">
         <div className="section-heading">
-          <h4>AI operations</h4>
-          <span>Generate text or extract signals before review.</span>
+          <h4>Operaciones AI</h4>
+          <span>Generá texto o señales editoriales antes de pasar a revisión.</span>
         </div>
         <div className="button-row">
           <button
@@ -124,7 +124,7 @@ export function ContentReviewPanel({
               )
             }
           >
-            {pendingAction === "draft" ? "Generating..." : "Generate draft"}
+            {pendingAction === "draft" ? "Generando..." : "Generar draft"}
           </button>
           <button
             type="button"
@@ -141,7 +141,7 @@ export function ContentReviewPanel({
               )
             }
           >
-            {pendingAction === "translate" ? "Translating..." : "Translate"}
+            {pendingAction === "translate" ? "Traduciendo..." : "Traducir"}
           </button>
           <button
             type="button"
@@ -152,15 +152,15 @@ export function ContentReviewPanel({
               )
             }
           >
-            {pendingAction === "metadata" ? "Extracting..." : "Extract metadata"}
+            {pendingAction === "metadata" ? "Extrayendo..." : "Extraer metadata"}
           </button>
         </div>
       </section>
 
       <section className="control-group">
         <div className="section-heading">
-          <h4>Review handoff</h4>
-          <span>Move the current piece into human review once the proposal is worth evaluating.</span>
+          <h4>Handoff editorial</h4>
+          <span>Mové la pieza a revisión humana cuando la propuesta ya merezca evaluación.</span>
         </div>
         <div className="button-row">
           <button
@@ -175,7 +175,7 @@ export function ContentReviewPanel({
               )
             }
           >
-            Start review
+            Iniciar review
           </button>
         </div>
       </section>

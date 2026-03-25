@@ -367,6 +367,11 @@ label span,
   gap: 8px;
 }
 
+.control-group {
+  padding: 16px;
+  border-radius: 18px;
+}
+
 .onboarding-notes {
   display: grid;
   gap: 12px;
@@ -762,6 +767,11 @@ pre {
 
 .metadata-grid dd {
   margin: 4px 0 0;
+}
+
+.metadata-grid div {
+  padding: 12px 14px;
+  border-radius: 14px;
 }
 
 .back-link {
