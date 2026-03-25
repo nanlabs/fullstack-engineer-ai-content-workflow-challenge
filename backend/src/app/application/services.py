@@ -315,14 +315,25 @@ class WorkflowService:
 
     def _serialize_content_piece(self, piece: ContentPiece) -> ContentPieceResponse:
         latest_suggestion_model = None
+        latest_reviewable_suggestion_model = None
         latest_review_model = None
         latest_metadata = None
 
         latest_suggestion = max(piece.ai_suggestions, key=lambda item: item.created_at, default=None)
         latest_review = max(piece.review_actions, key=lambda item: item.created_at, default=None)
+        reviewable_suggestions = [
+            item
+            for item in piece.ai_suggestions
+            if item.operation_type != OperationType.EXTRACT_METADATA.value
+            and item.status == AISuggestionStatus.SUCCESS.value
+            and item.output_text
+        ]
+        latest_reviewable_suggestion = max(reviewable_suggestions, key=lambda item: item.created_at, default=None)
 
         if latest_suggestion is not None:
             latest_suggestion_model = AISuggestionResponse.model_validate(latest_suggestion)
+        if latest_reviewable_suggestion is not None:
+            latest_reviewable_suggestion_model = AISuggestionResponse.model_validate(latest_reviewable_suggestion)
         if latest_review is not None:
             latest_review_model = ReviewActionResponse.model_validate(latest_review)
 
@@ -350,6 +361,7 @@ class WorkflowService:
             created_at=piece.created_at,
             updated_at=piece.updated_at,
             latest_suggestion=latest_suggestion_model,
+            latest_reviewable_suggestion=latest_reviewable_suggestion_model,
             latest_review_action=latest_review_model,
             latest_metadata=latest_metadata,
         )

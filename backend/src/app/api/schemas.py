@@ -112,6 +112,7 @@ class ContentPieceResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     latest_suggestion: AISuggestionResponse | None = None
+    latest_reviewable_suggestion: AISuggestionResponse | None = None
     latest_review_action: ReviewActionResponse | None = None
     latest_metadata: MetadataPayload | None = None
 
