@@ -44,3 +44,28 @@ async def test_invalid_metadata_is_saved_as_failed(session_factory, workflow_ser
     assert response.suggestion.status == AISuggestionStatus.FAILED
     assert response.content_piece.review_state == ReviewState.DRAFT
     assert response.content_piece.latest_metadata is None
+
+
+async def test_metadata_does_not_replace_latest_reviewable_suggestion(session_factory, workflow_service) -> None:
+    async with session_factory() as session:
+        campaign = await workflow_service.create_campaign(session, CampaignCreate(name="Launch"))
+        piece = await workflow_service.create_content_piece(
+            session,
+            campaign.id,
+            ContentPieceCreate(
+                type="description",
+                source_text="Spring campaign body copy",
+                source_language="en",
+            ),
+        )
+        draft_response = await workflow_service.generate_draft(
+            session,
+            piece.id,
+            GenerateDraftRequest(context="landing page"),
+        )
+        metadata_response = await workflow_service.extract_metadata(session, piece.id)
+
+    assert metadata_response.content_piece.latest_suggestion is not None
+    assert metadata_response.content_piece.latest_suggestion.operation_type.value == "extract_metadata"
+    assert metadata_response.content_piece.latest_reviewable_suggestion is not None
+    assert metadata_response.content_piece.latest_reviewable_suggestion.id == draft_response.suggestion.id

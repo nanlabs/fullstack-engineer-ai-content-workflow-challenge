@@ -45,7 +45,42 @@ async def test_campaign_ai_review_flow(api_client) -> None:
     assert campaign_detail.status_code == 200
     detail_payload = campaign_detail.json()
     assert len(detail_payload["content_pieces"]) == 1
+    assert detail_payload["workflow_counts"]["approved"] == 1
     assert detail_payload["content_pieces"][0]["latest_review_action"]["action"] == "accept"
+
+
+async def test_campaign_summary_includes_workflow_counts(api_client) -> None:
+    campaign_response = await api_client.post("/campaigns", json={"name": "Counts"})
+    campaign = campaign_response.json()
+
+    draft_piece = await api_client.post(
+        f"/campaigns/{campaign['id']}/content-pieces",
+        json={"type": "headline", "source_text": "Draft only", "source_language": "en"},
+    )
+    assert draft_piece.status_code == 201
+
+    review_piece = await api_client.post(
+        f"/campaigns/{campaign['id']}/content-pieces",
+        json={"type": "description", "source_text": "Review me", "source_language": "en"},
+    )
+    review_payload = review_piece.json()
+
+    start_review = await api_client.post(
+        f"/content-pieces/{review_payload['id']}/review",
+        json={"action": "start_review"},
+    )
+    assert start_review.status_code == 200
+
+    campaigns_response = await api_client.get("/campaigns")
+    assert campaigns_response.status_code == 200
+    counts = campaigns_response.json()[0]["workflow_counts"]
+    assert counts == {
+        "draft": 1,
+        "ai_suggested": 0,
+        "in_review": 1,
+        "approved": 0,
+        "rejected": 0,
+    }
 
 
 async def test_sse_event_bus_receives_ai_event(api_client, workflow_service) -> None:
