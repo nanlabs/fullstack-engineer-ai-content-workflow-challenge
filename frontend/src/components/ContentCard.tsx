@@ -9,6 +9,7 @@ interface ContentCardProps {
   error: Error | null;
   onApprove: () => void;
   onReject: () => void;
+  onMarkReviewed?: () => void;
   onRegenerate?: () => void;
   onReopen?: () => void;
   onSave?: (body: string, notes: string) => void;
@@ -24,6 +25,7 @@ export function ContentCard({
   error,
   onApprove,
   onReject,
+  onMarkReviewed,
   onRegenerate,
   onReopen,
   onSave,
@@ -193,6 +195,80 @@ export function ContentCard({
                 </button>
               )}
             </>
+          ) : status === 'AI_SUGGESTED' ? (
+            <>
+              <button
+                onClick={onApprove}
+                disabled={isPending}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+                  bg-emerald-600 hover:bg-emerald-700 text-white
+                  dark:bg-emerald-600 dark:hover:bg-emerald-500"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 flex-shrink-0" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 6L9 17L4 12" />
+                </svg>
+                Approve
+              </button>
+              {onMarkReviewed && (
+                <button
+                  onClick={onMarkReviewed}
+                  disabled={isPending}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+                    border border-amber-300 text-amber-600 hover:bg-amber-50
+                    dark:border-amber-600 dark:text-amber-400 dark:hover:bg-amber-900/20"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 flex-shrink-0" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  Mark as Reviewed
+                </button>
+              )}
+              <button
+                onClick={onReject}
+                disabled={isPending}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+                  border border-red-300 text-red-600 hover:bg-red-50
+                  dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 flex-shrink-0" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M18 6L6 18M6 6l12 12" />
+                </svg>
+                Reject
+              </button>
+              {onRegenerate && (
+                <button onClick={onRegenerate} disabled={isPending} className="btn-secondary">
+                  {regenerateLabel}
+                </button>
+              )}
+            </>
+          ) : status === 'REVIEWED' ? (
+            <>
+              <button
+                onClick={onApprove}
+                disabled={isPending}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+                  bg-emerald-600 hover:bg-emerald-700 text-white
+                  dark:bg-emerald-600 dark:hover:bg-emerald-500"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 flex-shrink-0" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 6L9 17L4 12" />
+                </svg>
+                Approve
+              </button>
+              <button
+                onClick={onReject}
+                disabled={isPending}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+                  border border-red-300 text-red-600 hover:bg-red-50
+                  dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 flex-shrink-0" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M18 6L6 18M6 6l12 12" />
+                </svg>
+                Reject
+              </button>
+            </>
           ) : (
             <>
               <button
@@ -207,6 +283,21 @@ export function ContentCard({
                 </svg>
                 Approve
               </button>
+              {onMarkReviewed && (
+                <button
+                  onClick={onMarkReviewed}
+                  disabled={isPending}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+                    border border-amber-300 text-amber-600 hover:bg-amber-50
+                    dark:border-amber-600 dark:text-amber-400 dark:hover:bg-amber-900/20"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 flex-shrink-0" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  Mark as Reviewed
+                </button>
+              )}
               <button
                 onClick={onReject}
                 disabled={isPending}

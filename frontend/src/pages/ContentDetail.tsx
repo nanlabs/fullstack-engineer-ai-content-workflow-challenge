@@ -314,6 +314,7 @@ export default function ContentDetail() {
           error={statusMut.error}
           onApprove={() => statusMut.mutate({ pieceId: id!, status: 'APPROVED' })}
           onReject={() => statusMut.mutate({ pieceId: id!, status: 'REJECTED' })}
+          onMarkReviewed={() => statusMut.mutate({ pieceId: id!, status: 'REVIEWED' })}
           onReopen={() => statusMut.mutate({ pieceId: id!, status: 'DRAFT' })}
           onRegenerate={() => setPromptModal({ action: 'generate' })}
           onSave={(body, notes) => updateMut.mutate({ body, notes })}
@@ -414,6 +415,7 @@ export default function ContentDetail() {
                     error={statusMut.error ?? retranslateMut.error}
                     onApprove={() => statusMut.mutate({ pieceId: t.id, status: 'APPROVED' })}
                     onReject={() => statusMut.mutate({ pieceId: t.id, status: 'REJECTED' })}
+                    onMarkReviewed={() => statusMut.mutate({ pieceId: t.id, status: 'REVIEWED' })}
                     onReopen={() => statusMut.mutate({ pieceId: t.id, status: 'DRAFT' })}
                     onRegenerate={() => retranslateMut.mutate(t.language)}
                     regenerateLabel="Re-translate"
