@@ -24,24 +24,35 @@ export default async function CampaignPage({
 
   return (
     <StitchShell activeHref="/campaigns/new" pageTitle="Campaign Manager">
-      <main className="stack-layout">
-        <Link href="/" className="back-link">
-          ← Back to dashboard
-        </Link>
-        <section className="panel hero-panel">
+      <main className="workbench-page">
+        <div className="workbench-page-top">
+          <Link href="/" className="back-link">
+            ← Volver al dashboard
+          </Link>
+          <span className="workbench-page-tag">Mesa de trabajo editorial</span>
+        </div>
+        <section className="workbench-hero">
           <div>
-            <p className="eyebrow">Campaign</p>
+            <p className="eyebrow">Campaña</p>
             <h2>{campaign.name}</h2>
-            <p>{campaign.description ?? "No description provided."}</p>
+            <p>{campaign.description ?? "Sin descripción editorial."}</p>
           </div>
-          <div className="hero-metrics">
-            <strong>{campaign.content_pieces.length}</strong>
-            <span>content pieces in workflow</span>
+          <div className="workbench-hero-metrics">
+            <div>
+              <span>Piezas</span>
+              <strong>{campaign.content_pieces.length}</strong>
+            </div>
+            <div>
+              <span>Activas</span>
+              <strong>{campaign.workflow_counts.in_review + campaign.workflow_counts.ai_suggested}</strong>
+            </div>
           </div>
         </section>
-        <CampaignWorkflowSummary counts={campaign.workflow_counts} />
+        <section className="workbench-summary-card">
+          <CampaignWorkflowSummary counts={campaign.workflow_counts} />
+        </section>
         <section className="workbench-layout">
-          <div className="stack-layout">
+          <aside className="workbench-sidebar-column">
             <ContentPieceForm campaignId={campaign.id} />
             {campaign.content_pieces.length === 0 ? null : (
               <ContentPieceQueue
@@ -50,12 +61,14 @@ export default async function CampaignPage({
                 selectedPieceId={selectedPiece?.id ?? ""}
               />
             )}
-          </div>
-          {selectedPiece ? (
-            <ContentReviewPanel piece={selectedPiece} />
-          ) : (
-            <div className="panel empty-state">No content pieces yet. Add one to start the workflow.</div>
-          )}
+          </aside>
+          <section className="workbench-main-column">
+            {selectedPiece ? (
+              <ContentReviewPanel piece={selectedPiece} />
+            ) : (
+              <div className="panel empty-state">No hay piezas todavía. Creá una pieza para empezar el flujo editorial.</div>
+            )}
+          </section>
         </section>
       </main>
     </StitchShell>

@@ -238,6 +238,63 @@ label span,
   align-items: start;
 }
 
+.workbench-page,
+.workbench-page-top,
+.workbench-hero,
+.workbench-hero-metrics {
+  display: grid;
+  gap: 18px;
+}
+
+.workbench-hero,
+.workbench-summary-card {
+  padding: 24px;
+  border-radius: 22px;
+}
+
+.workbench-page-top {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.workbench-page-tag {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.74rem;
+}
+
+.workbench-hero {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.workbench-hero-metrics {
+  grid-template-columns: repeat(2, minmax(100px, 1fr));
+}
+
+.workbench-hero-metrics div {
+  padding: 16px 18px;
+  border-radius: 16px;
+}
+
+.workbench-hero-metrics span {
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+}
+
+.workbench-hero-metrics strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 1.8rem;
+}
+
+.workbench-sidebar-column,
+.workbench-main-column {
+  display: grid;
+  gap: 18px;
+}
+
 .onboarding-layout,
 .onboarding-grid,
 .onboarding-hero {
