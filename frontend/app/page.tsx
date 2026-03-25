@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { DashboardAiBanner } from "@/components/dashboard-ai-banner";
 import { DashboardCampaignCard } from "@/components/dashboard-campaign-card";
 import { StitchShell } from "@/components/stitch-shell";
 import { fetchCampaigns } from "@/lib/api";
@@ -26,7 +25,7 @@ export default async function HomePage() {
         {campaigns.length === 0 ? (
           <section className="dashboard-empty">
             <h3>No hay campañas todavía</h3>
-            <p>Iniciá una campaña nueva para empezar a poblar el workbench editorial.</p>
+            <p>Iniciá una campaña nueva para empezar a crear piezas de contenido.</p>
           </section>
         ) : (
           <section className="dashboard-grid">
@@ -35,8 +34,6 @@ export default async function HomePage() {
             ))}
           </section>
         )}
-
-        <DashboardAiBanner />
       </main>
     </StitchShell>
   );

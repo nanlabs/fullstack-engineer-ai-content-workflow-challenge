@@ -47,7 +47,7 @@ export type ContentPiece = {
   type: string;
   source_text: string;
   current_text: string;
-  source_language: string;
+  source_language: string | null;
   target_language: string | null;
   review_state: ReviewState;
   created_at: string;

@@ -6,29 +6,27 @@ import { ReviewStateBadge } from "@/components/review-state-badge";
 export function ContentPieceQueue({
   campaignId,
   pieces,
-  selectedPieceId,
 }: {
   campaignId: string;
   pieces: ContentPiece[];
-  selectedPieceId: string;
 }) {
   return (
     <section className="panel">
       <div className="panel-header">
-        <h3>Queue editorial</h3>
-        <p>Seleccioná una pieza por vez para revisar texto, metadata y decisiones editoriales.</p>
+        <h3>Contenido de la campaña</h3>
+        <p>Entrá a una pieza para editar el canonical text, generar drafts, traducir y revisar.</p>
       </div>
       <div className="queue-list">
         {pieces.map((piece) => (
           <Link
             key={piece.id}
-            href={`/campaigns/${campaignId}?pieceId=${piece.id}`}
-            className={`queue-item${piece.id === selectedPieceId ? " queue-item-active" : ""}`}
+            href={`/campaigns/${campaignId}/content-pieces/${piece.id}`}
+            className="queue-item"
           >
             <div className="queue-item-header">
               <div>
-                <p className="eyebrow">{piece.type}</p>
-                <h4>{piece.source_language} {piece.target_language ? `→ ${piece.target_language}` : "source"}</h4>
+                <p className="eyebrow">Contenido</p>
+                <h4>{piece.current_text.slice(0, 56) || "Sin texto"}</h4>
               </div>
               <ReviewStateBadge state={piece.review_state} />
             </div>
@@ -36,6 +34,7 @@ export function ContentPieceQueue({
             <div className="queue-item-footer">
               <span>{piece.latest_reviewable_suggestion ? "Con propuesta AI" : "Sin propuesta AI"}</span>
               <span>{piece.latest_metadata ? "Metadata lista" : "Sin metadata"}</span>
+              <span>{piece.target_language ? `${piece.source_language ?? "?"} → ${piece.target_language}` : "Sin traducción"}</span>
             </div>
           </Link>
         ))}

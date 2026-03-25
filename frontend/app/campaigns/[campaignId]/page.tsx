@@ -3,7 +3,6 @@ import Link from "next/link";
 import { CampaignWorkflowSummary } from "@/components/campaign-workflow-summary";
 import { ContentPieceForm } from "@/components/content-piece-form";
 import { ContentPieceQueue } from "@/components/content-piece-queue";
-import { ContentReviewPanel } from "@/components/content-review-panel";
 import { StitchShell } from "@/components/stitch-shell";
 import { fetchCampaign } from "@/lib/api";
 
@@ -11,33 +10,28 @@ export const dynamic = "force-dynamic";
 
 export default async function CampaignPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ campaignId: string }>;
-  searchParams: Promise<{ pieceId?: string }>;
 }) {
   const { campaignId } = await params;
-  const { pieceId } = await searchParams;
   const campaign = await fetchCampaign(campaignId);
-  const selectedPiece =
-    campaign.content_pieces.find((piece) => piece.id === pieceId) ?? campaign.content_pieces[0] ?? null;
 
   return (
     <StitchShell activeHref="/campaigns/new" pageTitle="Campaign Manager">
-      <main className="workbench-page">
+      <main className="content-list-page">
         <div className="workbench-page-top">
           <Link href="/" className="back-link">
             ← Volver al dashboard
           </Link>
-          <span className="workbench-page-tag">Mesa de trabajo editorial</span>
+          <span className="workbench-page-tag">Campaign Content List</span>
         </div>
-        <section className="workbench-hero">
+        <section className="content-list-hero">
           <div>
             <p className="eyebrow">Campaña</p>
             <h2>{campaign.name}</h2>
             <p>{campaign.description ?? "Sin descripción editorial."}</p>
           </div>
-          <div className="workbench-hero-metrics">
+          <div className="content-list-hero-metrics">
             <div>
               <span>Piezas</span>
               <strong>{campaign.content_pieces.length}</strong>
@@ -48,27 +42,22 @@ export default async function CampaignPage({
             </div>
           </div>
         </section>
-        <section className="workbench-summary-card">
+        <section className="content-list-summary-card">
           <CampaignWorkflowSummary counts={campaign.workflow_counts} />
         </section>
-        <section className="workbench-layout">
-          <aside className="workbench-sidebar-column">
+        <section className="content-list-layout">
+          <div className="content-list-create-column">
             <ContentPieceForm campaignId={campaign.id} />
-            {campaign.content_pieces.length === 0 ? null : (
-              <ContentPieceQueue
-                campaignId={campaign.id}
-                pieces={campaign.content_pieces}
-                selectedPieceId={selectedPiece?.id ?? ""}
-              />
-            )}
-          </aside>
-          <section className="workbench-main-column">
-            {selectedPiece ? (
-              <ContentReviewPanel piece={selectedPiece} />
+          </div>
+          <div className="content-list-main-column">
+            {campaign.content_pieces.length > 0 ? (
+              <ContentPieceQueue campaignId={campaign.id} pieces={campaign.content_pieces} />
             ) : (
-              <div className="panel empty-state">No hay piezas todavía. Creá una pieza para empezar el flujo editorial.</div>
+              <div className="panel empty-state">
+                No hay piezas todavía. Creá una pieza simple para arrancar el flujo editorial.
+              </div>
             )}
-          </section>
+          </div>
         </section>
       </main>
     </StitchShell>

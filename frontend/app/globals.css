@@ -243,6 +243,14 @@ label span,
   align-items: start;
 }
 
+.content-list-layout,
+.content-list-page,
+.content-list-hero,
+.content-list-hero-metrics {
+  display: grid;
+  gap: 18px;
+}
+
 .workbench-page,
 .workbench-page-top,
 .workbench-hero,
@@ -252,7 +260,9 @@ label span,
 }
 
 .workbench-hero,
-.workbench-summary-card {
+.workbench-summary-card,
+.content-list-hero,
+.content-list-summary-card {
   padding: 24px;
   border-radius: 22px;
   background: var(--surface-lowest);
@@ -274,30 +284,36 @@ label span,
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
-.workbench-hero-metrics {
+.workbench-hero-metrics,
+.content-list-hero-metrics {
   grid-template-columns: repeat(2, minmax(100px, 1fr));
 }
 
-.workbench-hero-metrics div {
+.workbench-hero-metrics div,
+.content-list-hero-metrics div {
   padding: 16px 18px;
   border-radius: 16px;
 }
 
-.workbench-hero-metrics span {
+.workbench-hero-metrics span,
+.content-list-hero-metrics span {
   display: block;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: 0.72rem;
 }
 
-.workbench-hero-metrics strong {
+.workbench-hero-metrics strong,
+.content-list-hero-metrics strong {
   display: block;
   margin-top: 8px;
   font-size: 1.8rem;
 }
 
 .workbench-sidebar-column,
-.workbench-main-column {
+.workbench-main-column,
+.content-list-create-column,
+.content-list-main-column {
   display: grid;
   gap: 18px;
 }
@@ -339,6 +355,11 @@ label span,
 
   .workbench-layout {
     grid-template-columns: 360px minmax(0, 1fr);
+  }
+
+  .content-list-layout {
+    grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+    align-items: start;
   }
 
   .onboarding-grid {
@@ -675,7 +696,7 @@ button:disabled {
 
 .queue-item-footer {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 10px;
 }
 
@@ -784,6 +805,14 @@ button:disabled {
 
 .review-panel {
   gap: 20px;
+}
+
+.dashboard-card-link-label {
+  align-self: center;
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-soft);
 }
 
 .review-panel h4 {

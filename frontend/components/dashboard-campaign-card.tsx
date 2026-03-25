@@ -59,11 +59,9 @@ export function DashboardCampaignCard({ campaign }: { campaign: CampaignSummary 
       </div>
       <div className="dashboard-card-actions">
         <Link href={`/campaigns/${campaign.id}`} className="dashboard-primary-link">
-          {status.action}
+          Abrir campaña
         </Link>
-        <button type="button" className="dashboard-ghost-button" aria-label={`Opciones para ${campaign.name}`}>
-          ⚙
-        </button>
+        <span className="dashboard-card-link-label">{status.label}</span>
       </div>
     </article>
   );

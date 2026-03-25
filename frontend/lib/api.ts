@@ -1,4 +1,4 @@
-import { CampaignDetail, CampaignSummary } from "@/lib/types";
+import { CampaignDetail, CampaignSummary, ContentPiece } from "@/lib/types";
 
 function getServerApiBaseUrl(): string {
   return (
@@ -26,6 +26,16 @@ export async function fetchCampaign(campaignId: string): Promise<CampaignDetail>
   });
   if (!response.ok) {
     throw new Error("Failed to fetch campaign");
+  }
+  return response.json();
+}
+
+export async function fetchContentPiece(contentPieceId: string): Promise<ContentPiece> {
+  const response = await fetch(`${getServerApiBaseUrl()}/content-pieces/${contentPieceId}`, {
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    throw new Error("Failed to fetch content piece");
   }
   return response.json();
 }
