@@ -8,7 +8,7 @@ V1 implementation for the full-stack challenge using `Next.js + FastAPI + Postgr
 - Backend: `FastAPI` with async SQLAlchemy and explicit SQL migrations
 - Database: `PostgreSQL` only
 - Realtime: `Server-Sent Events (SSE)`
-- AI provider: `OpenAI` behind a provider abstraction
+- AI provider: `Gemini` by default, `OpenAI` selectable through env
 - Tooling: `bun`, `uv`, `uvicorn`, `docker compose`
 
 ## Repo layout
@@ -32,8 +32,9 @@ V1 implementation for the full-stack challenge using `Next.js + FastAPI + Postgr
 - Generate AI drafts
 - Generate translations/localizations
 - Extract metadata (`keywords`, `tone`, `sentiment`)
-- Review content with `start_review`, `accept`, `edit`, and `reject`
+- Review draft suggestions with `accept` and `reject` in the main editor flow
 - Persist canonical content separately from AI suggestions
+- Keep translation outputs as parallel versions without replacing canonical text
 - Stream content updates through SSE
 
 ## API surface
@@ -94,6 +95,13 @@ uv run dev
 
 The backend reads `DATABASE_URL` and the rest of its settings from the repo root `.env` file.
 
+AI provider selection:
+
+- `AI_PROVIDER=gemini` uses `GEMINI_API_KEY` and `GEMINI_MODEL`
+- `AI_PROVIDER=openai` uses `OPENAI_API_KEY` and `OPENAI_MODEL`
+
+The backend fails fast if the selected provider is missing its required API key.
+
 ### 4. Run the frontend locally
 
 ```bash
@@ -119,8 +127,8 @@ Services:
 
 ## Environment files
 
-- `.env.example`: local development values, including `localhost` Postgres DSNs
-- `.env.docker.example`: container runtime values, including `db` as the database hostname
+- `.env.example`: local development values, including `localhost` Postgres DSNs and Gemini as the default AI provider
+- `.env.docker.example`: container runtime values, including `db` as the database hostname and Gemini as the default AI provider
 
 The backend is Postgres-only. It will fail to start if `DATABASE_URL` is missing or uses a non-Postgres driver.
 
@@ -167,7 +175,7 @@ The domain is relational and benefits from simple joins between campaigns, conte
 
 ### AI abstraction
 
-Only OpenAI is implemented in V1, but the provider boundary is explicit so Anthropic or mock providers can be added later without changing route handlers or workflow rules.
+Gemini is the default provider in V1, with OpenAI available through the same provider boundary. The workflow code does not depend on a specific vendor, so provider changes stay inside infrastructure and configuration.
 
 ### Lightweight backend structure
 
