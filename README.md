@@ -178,3 +178,7 @@ The backend is intentionally split into API, application, domain, and infrastruc
 - `spec-v1.md` is the current scope source of truth.
 - Plans are stored under `docs/plans/`.
 - `agents.md` contains the agent collaboration rules requested for this repo.
+- The Stitch project `Generate content ACME Media` informed the V1 UI structure, but these screens remain backlog only:
+  - `Dashboard Global - ACME Media`
+  - `Historial de Versiones - ACME Media`
+  - `Editorial Workbench (Master View)`
