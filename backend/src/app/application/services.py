@@ -23,6 +23,7 @@ from app.api.schemas import (
     ReviewRequest,
     ReviewResponse,
     TranslateRequest,
+    WorkflowCounts,
 )
 from app.domain.enums import AISuggestionStatus, OperationType, ReviewActionType, ReviewState
 from app.domain.review import InvalidReviewTransition, ensure_transition
@@ -52,7 +53,9 @@ class WorkflowService:
         session.add(campaign)
         await session.commit()
         await session.refresh(campaign)
-        return CampaignSummary.model_validate({**campaign.__dict__, "content_piece_count": 0})
+        return CampaignSummary.model_validate(
+            {**campaign.__dict__, "content_piece_count": 0, "workflow_counts": self._workflow_counts([])}
+        )
 
     async def list_campaigns(self, session: AsyncSession) -> list[CampaignSummary]:
         result = await session.execute(
@@ -60,7 +63,13 @@ class WorkflowService:
         )
         campaigns = result.scalars().all()
         return [
-            CampaignSummary.model_validate({**campaign.__dict__, "content_piece_count": len(campaign.content_pieces)})
+            CampaignSummary.model_validate(
+                {
+                    **campaign.__dict__,
+                    "content_piece_count": len(campaign.content_pieces),
+                    "workflow_counts": self._workflow_counts(campaign.content_pieces),
+                }
+            )
             for campaign in campaigns
         ]
 
@@ -83,6 +92,7 @@ class WorkflowService:
             description=campaign.description,
             created_at=campaign.created_at,
             updated_at=campaign.updated_at,
+            workflow_counts=self._workflow_counts(campaign.content_pieces),
             content_pieces=content_pieces,
         )
 
@@ -386,3 +396,9 @@ class WorkflowService:
             }
         )
         await self._publish_content_piece_event(piece, "content_piece.updated")
+
+    def _workflow_counts(self, pieces: list[ContentPiece]) -> WorkflowCounts:
+        counts = WorkflowCounts()
+        for piece in pieces:
+            setattr(counts, piece.review_state, getattr(counts, piece.review_state) + 1)
+        return counts

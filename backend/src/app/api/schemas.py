@@ -51,6 +51,14 @@ class ReviewRequest(BaseModel):
     ai_suggestion_id: str | None = None
 
 
+class WorkflowCounts(BaseModel):
+    draft: int = 0
+    ai_suggested: int = 0
+    in_review: int = 0
+    approved: int = 0
+    rejected: int = 0
+
+
 class CampaignSummary(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -60,6 +68,7 @@ class CampaignSummary(BaseModel):
     created_at: datetime
     updated_at: datetime
     content_piece_count: int
+    workflow_counts: WorkflowCounts
 
 
 class AISuggestionResponse(BaseModel):
@@ -115,6 +124,7 @@ class CampaignDetailResponse(BaseModel):
     description: str | None
     created_at: datetime
     updated_at: datetime
+    workflow_counts: WorkflowCounts
     content_pieces: list[ContentPieceResponse]
 
 
