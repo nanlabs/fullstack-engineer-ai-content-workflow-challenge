@@ -15,8 +15,8 @@ export function ContentPieceQueue({
   return (
     <section className="panel">
       <div className="panel-header">
-        <h3>Content queue</h3>
-        <p>Select one content piece at a time to review the latest AI output and final editorial text.</p>
+        <h3>Queue editorial</h3>
+        <p>Seleccioná una pieza por vez para revisar texto, metadata y decisiones editoriales.</p>
       </div>
       <div className="queue-list">
         {pieces.map((piece) => (
@@ -32,7 +32,11 @@ export function ContentPieceQueue({
               </div>
               <ReviewStateBadge state={piece.review_state} />
             </div>
-            <p>{piece.current_text}</p>
+            <p className="queue-item-copy">{piece.current_text}</p>
+            <div className="queue-item-footer">
+              <span>{piece.latest_reviewable_suggestion ? "Con propuesta AI" : "Sin propuesta AI"}</span>
+              <span>{piece.latest_metadata ? "Metadata lista" : "Sin metadata"}</span>
+            </div>
           </Link>
         ))}
       </div>
