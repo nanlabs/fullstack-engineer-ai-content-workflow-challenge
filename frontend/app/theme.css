@@ -1,0 +1,33 @@
+:root {
+  --app-bg: #f7f9fb;
+  --surface: #f7f9fb;
+  --surface-low: #f0f4f7;
+  --surface-lowest: #ffffff;
+  --surface-high: #e1e9ee;
+  --surface-highest: #d9e4ea;
+  --text-primary: #2a3439;
+  --text-muted: #566166;
+  --text-soft: #717c82;
+  --primary: #5f5e5e;
+  --primary-strong: #535252;
+  --secondary: #4a4bd7;
+  --secondary-soft: #e1e0ff;
+  --success: #006d4a;
+  --success-soft: #69f6b8;
+  --danger: #9f403d;
+  --danger-soft: #fe8983;
+  --outline: rgba(113, 124, 130, 0.18);
+  --outline-strong: rgba(113, 124, 130, 0.32);
+  --shadow: 0 12px 32px -4px rgba(42, 52, 57, 0.08);
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+
+  --bg: var(--app-bg);
+  --panel: var(--surface-lowest);
+  --panel-border: var(--outline);
+  --text: var(--text-primary);
+  --muted: var(--text-muted);
+  --accent: var(--primary);
+  --accent-dark: var(--primary-strong);
+}

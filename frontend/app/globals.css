@@ -1,16 +1,3 @@
-:root {
-  --bg: #f5efe5;
-  --panel: rgba(255, 251, 245, 0.92);
-  --panel-border: rgba(70, 49, 31, 0.14);
-  --text: #2f241d;
-  --muted: #6f6258;
-  --accent: #b95f35;
-  --accent-dark: #8a4021;
-  --danger: #9d2d2d;
-  --success: #2f7a51;
-  --shadow: 0 24px 60px rgba(73, 44, 20, 0.12);
-}
-
 * {
   box-sizing: border-box;
 }
@@ -23,11 +10,8 @@ body {
   margin: 0;
   min-height: 100vh;
   color: var(--text);
-  background:
-    radial-gradient(circle at top left, rgba(233, 185, 138, 0.65), transparent 32%),
-    radial-gradient(circle at bottom right, rgba(127, 169, 146, 0.4), transparent 28%),
-    linear-gradient(180deg, #fbf6f0 0%, var(--bg) 100%);
-  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+  background: var(--bg);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 a {
@@ -50,6 +34,7 @@ textarea {
 .stitch-shell {
   display: grid;
   min-height: 100vh;
+  background: var(--surface);
 }
 
 .stitch-sidebar {
@@ -57,6 +42,7 @@ textarea {
   align-content: start;
   gap: 28px;
   padding: 28px 22px;
+  background: var(--surface-low);
 }
 
 .stitch-brand h1,
@@ -67,6 +53,7 @@ textarea {
 
 .stitch-brand h1 {
   font-size: 1.4rem;
+  font-weight: 700;
 }
 
 .stitch-brand p,
@@ -94,6 +81,13 @@ textarea {
   padding: 14px 16px;
   border-radius: 16px;
   text-decoration: none;
+  color: var(--text-muted);
+}
+
+.stitch-nav-item-active {
+  background: var(--surface-lowest);
+  color: var(--secondary);
+  box-shadow: inset 3px 0 0 var(--secondary);
 }
 
 .stitch-nav-item svg,
@@ -112,6 +106,8 @@ textarea {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   padding: 24px 28px;
+  background: var(--surface-lowest);
+  border-bottom: 1px solid var(--outline);
 }
 
 .stitch-topbar-actions {
@@ -124,6 +120,8 @@ textarea {
   align-items: center;
   padding: 10px 12px;
   border-radius: 14px;
+  background: var(--surface-low);
+  color: var(--text-soft);
 }
 
 .stitch-search input {
@@ -143,6 +141,9 @@ textarea {
   height: 42px;
   padding: 0;
   border-radius: 999px;
+  background: var(--surface-lowest);
+  color: var(--text-muted);
+  border: 1px solid transparent;
 }
 
 .stitch-content {
@@ -155,6 +156,8 @@ textarea {
   margin-top: auto;
   padding: 16px;
   border-radius: 18px;
+  background: var(--surface-lowest);
+  box-shadow: var(--shadow);
 }
 
 .stitch-avatar {
@@ -164,6 +167,8 @@ textarea {
   height: 44px;
   border-radius: 14px;
   font-weight: 700;
+  color: var(--surface-lowest);
+  background: linear-gradient(180deg, var(--secondary), #6366f1);
 }
 
 .site-header {
@@ -183,7 +188,7 @@ textarea {
 .panel h3,
 .panel h4 {
   margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .header-copy,
@@ -201,9 +206,9 @@ label span,
 .eyebrow {
   margin: 0 0 6px;
   text-transform: uppercase;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.08em;
   font-size: 0.72rem;
-  color: var(--accent-dark);
+  color: var(--text-soft);
 }
 
 .page-grid {
@@ -250,6 +255,8 @@ label span,
 .workbench-summary-card {
   padding: 24px;
   border-radius: 22px;
+  background: var(--surface-lowest);
+  box-shadow: var(--shadow);
 }
 
 .workbench-page-top {
@@ -310,6 +317,8 @@ label span,
 .onboarding-hero {
   padding: 24px;
   border-radius: 22px;
+  background: var(--surface-lowest);
+  box-shadow: var(--shadow);
 }
 
 .onboarding-copy-card ol {
@@ -343,7 +352,6 @@ label span,
   padding: 22px;
   background: var(--panel);
   box-shadow: var(--shadow);
-  backdrop-filter: blur(12px);
 }
 
 .panel-header,
@@ -385,11 +393,6 @@ label span,
   border: 1px solid rgba(88, 62, 40, 0.08);
 }
 
-.onboarding-notes strong,
-.workflow-summary-item strong {
-  font-family: Georgia, "Times New Roman", serif;
-}
-
 .onboarding-notes p {
   margin: 6px 0 0;
   color: var(--muted);
@@ -401,9 +404,9 @@ textarea,
 button {
   width: 100%;
   border-radius: 16px;
-  border: 1px solid rgba(88, 62, 40, 0.16);
+  border: 1px solid var(--outline);
   padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.88);
+  background: var(--surface-lowest);
 }
 
 textarea {
@@ -413,7 +416,7 @@ textarea {
 button {
   cursor: pointer;
   background: var(--accent);
-  color: #fff8f3;
+  color: var(--surface-lowest);
   border: none;
   transition: transform 120ms ease, background 120ms ease;
 }
@@ -434,19 +437,19 @@ button:disabled {
 }
 
 .button-secondary {
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--surface-highest);
   color: var(--text);
-  border: 1px solid rgba(88, 62, 40, 0.14);
+  border: 1px solid transparent;
 }
 
 .button-secondary:hover {
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--surface-high);
 }
 
 .button-ghost-danger {
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--surface-lowest);
   color: var(--danger);
-  border: 1px solid rgba(157, 45, 45, 0.18);
+  border: 1px solid rgba(159, 64, 61, 0.18);
 }
 
 .button-ghost-danger:hover {
@@ -479,6 +482,8 @@ button:disabled {
 .dashboard-card {
   padding: 22px;
   border-radius: 20px;
+  background: var(--surface-lowest);
+  box-shadow: var(--shadow);
 }
 
 .dashboard-card-top,
@@ -492,6 +497,7 @@ button:disabled {
   width: 48px;
   height: 48px;
   border-radius: 12px;
+  background: var(--secondary-soft);
 }
 
 .dashboard-stats {
@@ -501,6 +507,7 @@ button:disabled {
 .dashboard-stats div {
   padding: 12px 14px;
   border-radius: 14px;
+  background: var(--surface-low);
 }
 
 .dashboard-stats span,
@@ -511,16 +518,39 @@ button:disabled {
   font-size: 0.72rem;
 }
 
+.dashboard-status {
+  padding: 7px 10px;
+  border-radius: 10px;
+}
+
+.dashboard-status-active {
+  background: rgba(105, 246, 184, 0.22);
+  color: var(--success);
+}
+
+.dashboard-status-planning,
+.dashboard-status-draft {
+  background: var(--secondary-soft);
+  color: var(--secondary);
+}
+
+.dashboard-status-approved {
+  background: rgba(105, 246, 184, 0.22);
+  color: var(--success);
+}
+
 .dashboard-progress-bar {
   height: 6px;
   border-radius: 999px;
   overflow: hidden;
+  background: var(--surface-highest);
 }
 
 .dashboard-progress-bar span {
   display: block;
   height: 100%;
   border-radius: inherit;
+  background: var(--success);
 }
 
 .dashboard-primary-link,
@@ -534,6 +564,8 @@ button:disabled {
   border-radius: 12px;
   text-decoration: none;
   font-weight: 700;
+  color: var(--surface-lowest);
+  background: linear-gradient(180deg, var(--primary), var(--primary-strong));
 }
 
 .dashboard-ghost-button {
@@ -541,6 +573,8 @@ button:disabled {
   height: 44px;
   padding: 0;
   border-radius: 12px;
+  background: var(--surface-low);
+  color: var(--text-muted);
 }
 
 .dashboard-ai-banner {
@@ -548,6 +582,9 @@ button:disabled {
   align-items: center;
   padding: 28px;
   border-radius: 22px;
+  color: var(--surface-lowest);
+  background: linear-gradient(120deg, #5448df 0%, #4a4bd7 65%, #6f5eff 100%);
+  box-shadow: var(--shadow);
 }
 
 .dashboard-ai-banner h3,
@@ -575,15 +612,19 @@ button:disabled {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
+  background: rgba(16, 23, 40, 0.92);
 }
 
 .dashboard-ai-visual-card span {
   border-radius: 10px;
+  background: rgba(111, 147, 255, 0.18);
 }
 
 .dashboard-empty {
   padding: 36px;
   border-radius: 20px;
+  background: var(--surface-lowest);
+  box-shadow: var(--shadow);
 }
 
 .campaign-card-header,
@@ -616,13 +657,12 @@ button:disabled {
   color: inherit;
   padding: 16px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(88, 62, 40, 0.08);
+  background: var(--surface-lowest);
+  border: 1px solid transparent;
 }
 
 .queue-item-active {
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: inset 0 0 0 1px rgba(88, 62, 40, 0.12);
+  box-shadow: inset 0 0 0 1px var(--secondary);
 }
 
 .queue-item p {
@@ -645,6 +685,8 @@ button:disabled {
   font-size: 0.76rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  background: var(--surface-low);
+  color: var(--text-soft);
 }
 
 .campaign-meta,
@@ -675,7 +717,7 @@ button:disabled {
 .workflow-summary-item {
   padding: 12px 14px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.74);
+  background: var(--surface-low);
 }
 
 .workflow-summary-item span {
@@ -704,22 +746,22 @@ button:disabled {
 
 .badge-draft,
 .badge-in_review {
-  background: rgba(191, 133, 62, 0.14);
-  color: #7f4a18;
+  background: #e5e2e1;
+  color: #525151;
 }
 
 .badge-ai_suggested {
-  background: rgba(84, 119, 196, 0.14);
-  color: #2d4b91;
+  background: var(--secondary-soft);
+  color: var(--secondary);
 }
 
 .badge-approved {
-  background: rgba(47, 122, 81, 0.14);
+  background: rgba(105, 246, 184, 0.22);
   color: var(--success);
 }
 
 .badge-rejected {
-  background: rgba(157, 45, 45, 0.14);
+  background: rgba(254, 137, 131, 0.16);
   color: var(--danger);
 }
 
@@ -730,8 +772,8 @@ button:disabled {
 .state-banner {
   padding: 16px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.74);
-  border: 1px solid rgba(88, 62, 40, 0.08);
+  background: var(--surface-low);
+  border: 1px solid transparent;
 }
 
 .state-banner p,
@@ -770,8 +812,8 @@ button:disabled {
 .suggestion-block {
   padding: 16px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.66);
-  border: 1px solid rgba(88, 62, 40, 0.08);
+  background: var(--surface-lowest);
+  border: 1px solid var(--outline);
 }
 
 pre {
@@ -792,11 +834,12 @@ pre {
 .metadata-grid div {
   padding: 12px 14px;
   border-radius: 14px;
+  background: var(--surface-low);
 }
 
 .back-link {
   width: fit-content;
-  color: var(--accent-dark);
+  color: var(--text-muted);
   text-decoration: none;
   font-weight: 700;
 }
