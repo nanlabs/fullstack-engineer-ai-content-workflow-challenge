@@ -18,20 +18,15 @@ const STATE_NOTES: Record<ContentPiece["review_state"], string> = {
 
 export function ContentReviewPanel({ piece }: { piece: ContentPiece }) {
   const router = useRouter();
-  const initialEditedText = piece.latest_reviewable_suggestion?.output_text ?? piece.current_text;
   const [canonicalText, setCanonicalText] = useState(piece.current_text);
   const [context, setContext] = useState("");
   const [targetLanguage, setTargetLanguage] = useState(piece.target_language ?? "en");
   const [sourceLanguage, setSourceLanguage] = useState(piece.source_language ?? "es");
   const [isTranslateModalOpen, setIsTranslateModalOpen] = useState(false);
-  const [isEditPanelOpen, setIsEditPanelOpen] = useState(false);
-  const [editedText, setEditedText] = useState(initialEditedText);
-  const [comment, setComment] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lastLiveUpdate, setLastLiveUpdate] = useState<string | null>(null);
 
-  const latestSuggestion = piece.latest_suggestion;
   const latestReviewableSuggestion = piece.latest_reviewable_suggestion;
   const title = useMemo(() => {
     const trimmed = piece.current_text.trim();
@@ -65,14 +60,11 @@ export function ContentReviewPanel({ piece }: { piece: ContentPiece }) {
 
   useEffect(() => {
     setCanonicalText(piece.current_text);
-    setEditedText(piece.latest_reviewable_suggestion?.output_text ?? piece.current_text);
     setSourceLanguage(piece.source_language ?? "es");
     setTargetLanguage(piece.target_language ?? "en");
   }, [
     piece.current_text,
     piece.id,
-    piece.latest_reviewable_suggestion?.id,
-    piece.latest_reviewable_suggestion?.output_text,
     piece.source_language,
     piece.target_language,
   ]);
@@ -152,26 +144,23 @@ export function ContentReviewPanel({ piece }: { piece: ContentPiece }) {
             </button>
             <button
               type="button"
-              className="editor-primary-button"
-              disabled={pendingAction === "refine"}
-              onClick={() =>
-                runAction("refine", () =>
-                  apiRequest(`/content-pieces/${piece.id}/ai/generate-draft`, {
-                    method: "POST",
-                    body: JSON.stringify({ context: context || "Refine the canonical text with a stronger hook." }),
-                  }),
-                )
-              }
-            >
-              {pendingAction === "refine" ? "Refining..." : "Refine with AI"}
-            </button>
-            <button
-              type="button"
               className="editor-ghost-button"
               disabled={pendingAction === "translate"}
               onClick={() => setIsTranslateModalOpen(true)}
             >
               Translate/Localize
+            </button>
+            <button
+              type="button"
+              className="editor-primary-button"
+              disabled={pendingAction === "metadata"}
+              onClick={() =>
+                runAction("metadata", () =>
+                  apiRequest(`/content-pieces/${piece.id}/ai/extract-metadata`, { method: "POST" }),
+                )
+              }
+            >
+              {pendingAction === "metadata" ? "Extracting..." : "Extract Metadata"}
             </button>
           </div>
 
@@ -183,13 +172,10 @@ export function ContentReviewPanel({ piece }: { piece: ContentPiece }) {
                   {latestReviewableSuggestion ? "Optimized for engagement" : "No AI suggestion yet"}
                 </span>
               </div>
-              <button type="button" className="editor-close-button" onClick={() => setIsEditPanelOpen(false)}>
-                ×
-              </button>
             </div>
             <p className="editor-suggestion-copy">
               {latestReviewableSuggestion?.output_text ??
-                "Generate a first draft or refine the canonical text to bring an AI proposal into this workspace."}
+                "Generate a first draft from the current canonical text to bring an AI proposal into this workspace."}
             </p>
             <div className="editor-suggestion-actions">
               <button
@@ -202,7 +188,6 @@ export function ContentReviewPanel({ piece }: { piece: ContentPiece }) {
                       method: "POST",
                       body: JSON.stringify({
                         action: "accept",
-                        comment: comment || null,
                         ai_suggestion_id: latestReviewableSuggestion?.id ?? null,
                       }),
                     }),
@@ -210,13 +195,6 @@ export function ContentReviewPanel({ piece }: { piece: ContentPiece }) {
                 }
               >
                 Accept
-              </button>
-              <button
-                type="button"
-                className="editor-muted-button"
-                onClick={() => setIsEditPanelOpen((current) => !current)}
-              >
-                Edit
               </button>
               <button
                 type="button"
@@ -228,7 +206,6 @@ export function ContentReviewPanel({ piece }: { piece: ContentPiece }) {
                       method: "POST",
                       body: JSON.stringify({
                         action: "reject",
-                        comment: comment || null,
                         ai_suggestion_id: latestReviewableSuggestion?.id ?? null,
                       }),
                     }),
@@ -239,56 +216,6 @@ export function ContentReviewPanel({ piece }: { piece: ContentPiece }) {
               </button>
             </div>
           </section>
-
-          {isEditPanelOpen ? (
-            <section className="editor-review-panel">
-              <label>
-                <span>Editorial Comment</span>
-                <input value={comment} onChange={(event) => setComment(event.target.value)} />
-              </label>
-              <label>
-                <span>Edited Suggestion</span>
-                <textarea rows={5} value={editedText} onChange={(event) => setEditedText(event.target.value)} />
-              </label>
-              <div className="editor-inline-actions">
-                <button
-                  type="button"
-                  className="editor-secondary-button"
-                  disabled={pendingAction === "review"}
-                  onClick={() =>
-                    runAction("review", () =>
-                      apiRequest(`/content-pieces/${piece.id}/review`, {
-                        method: "POST",
-                        body: JSON.stringify({ action: "start_review", comment: comment || null }),
-                      }),
-                    )
-                  }
-                >
-                  Start Review
-                </button>
-                <button
-                  type="button"
-                  className="editor-primary-button"
-                  disabled={pendingAction === "edit"}
-                  onClick={() =>
-                    runAction("edit", () =>
-                      apiRequest(`/content-pieces/${piece.id}/review`, {
-                        method: "POST",
-                        body: JSON.stringify({
-                          action: "edit",
-                          comment: comment || null,
-                          edited_text: editedText,
-                          ai_suggestion_id: latestReviewableSuggestion?.id ?? null,
-                        }),
-                      }),
-                    )
-                  }
-                >
-                  Approve Edit
-                </button>
-              </div>
-            </section>
-          ) : null}
         </section>
         {error ? <p className="error-text">{error}</p> : null}
       </div>
@@ -297,18 +224,7 @@ export function ContentReviewPanel({ piece }: { piece: ContentPiece }) {
         <section className="editor-metadata-panel">
           <header className="editor-side-header">
             <h3>Extracted Metadata</h3>
-            <button
-              type="button"
-              className="content-list-icon-button"
-              disabled={pendingAction === "metadata"}
-              onClick={() =>
-                runAction("metadata", () =>
-                  apiRequest(`/content-pieces/${piece.id}/ai/extract-metadata`, { method: "POST" }),
-                )
-              }
-            >
-              i
-            </button>
+            <span className="editor-soft-chip">{piece.latest_metadata ? "Ready" : "Pending"}</span>
           </header>
           <div className="editor-side-section">
             <label>Tone Profile</label>
@@ -342,6 +258,29 @@ export function ContentReviewPanel({ piece }: { piece: ContentPiece }) {
               </div>
               <strong>{readabilityScore}/100</strong>
             </div>
+          </div>
+        </section>
+
+        <section className="editor-preview-card">
+          <label>Translation Versions</label>
+          <div className="editor-translation-history">
+            {piece.translation_versions.length > 0 ? (
+              piece.translation_versions.map((translation) => (
+                <article key={translation.id} className="editor-translation-item">
+                  <div className="editor-translation-meta">
+                    <strong>
+                      {translation.source_language ?? "?"} → {translation.target_language ?? "?"}
+                    </strong>
+                    <span>{new Date(translation.created_at).toLocaleString()}</span>
+                  </div>
+                  <p>{translation.output_text ?? "No translated output returned."}</p>
+                </article>
+              ))
+            ) : (
+              <p className="editor-preview-caption">
+                No translations yet. Use Translate/Localize to generate localized versions from the canonical text.
+              </p>
+            )}
           </div>
         </section>
 

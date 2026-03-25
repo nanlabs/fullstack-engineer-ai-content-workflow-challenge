@@ -1012,6 +1012,43 @@ label span,
   gap: 12px;
 }
 
+.editor-translation-history,
+.editor-translation-item {
+  display: grid;
+  gap: 10px;
+}
+
+.editor-translation-item {
+  padding: 14px;
+  border-radius: 10px;
+  background: var(--surface-low);
+  border: 1px solid rgba(169, 180, 185, 0.16);
+}
+
+.editor-translation-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.editor-translation-meta strong {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.editor-translation-meta span {
+  font-size: 0.74rem;
+  color: var(--text-soft);
+}
+
+.editor-translation-item p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--text-default);
+}
+
 .editor-preview-visual {
   min-height: 220px;
   border-radius: 8px;
