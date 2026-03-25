@@ -224,7 +224,8 @@ button:disabled {
 .queue-list,
 .queue-item,
 .queue-item-header,
-.support-grid {
+.support-grid,
+.control-group {
   display: grid;
   gap: 10px;
 }

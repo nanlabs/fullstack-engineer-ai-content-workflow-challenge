@@ -80,64 +80,79 @@ export function ContentReviewPanel({
         </label>
       </div>
 
-      <div className="button-row">
-        <button
-          type="button"
-          disabled={pendingAction === "draft"}
-          onClick={() =>
-            runAction("draft", () =>
-              apiRequest(`/content-pieces/${piece.id}/ai/generate-draft`, {
-                method: "POST",
-                body: JSON.stringify({ context: context || null }),
-              }),
-            )
-          }
-        >
-          {pendingAction === "draft" ? "Generating..." : "Generate draft"}
-        </button>
-        <button
-          type="button"
-          disabled={pendingAction === "translate"}
-          onClick={() =>
-            runAction("translate", () =>
-              apiRequest(`/content-pieces/${piece.id}/ai/translate`, {
-                method: "POST",
-                body: JSON.stringify({
-                  context: context || null,
-                  target_language: targetLanguage || null,
+      <section className="control-group">
+        <div className="section-heading">
+          <h4>AI operations</h4>
+          <span>Generate text or extract signals before review.</span>
+        </div>
+        <div className="button-row">
+          <button
+            type="button"
+            disabled={pendingAction === "draft"}
+            onClick={() =>
+              runAction("draft", () =>
+                apiRequest(`/content-pieces/${piece.id}/ai/generate-draft`, {
+                  method: "POST",
+                  body: JSON.stringify({ context: context || null }),
                 }),
-              }),
-            )
-          }
-        >
-          {pendingAction === "translate" ? "Translating..." : "Translate"}
-        </button>
-        <button
-          type="button"
-          disabled={pendingAction === "metadata"}
-          onClick={() =>
-            runAction("metadata", () =>
-              apiRequest(`/content-pieces/${piece.id}/ai/extract-metadata`, { method: "POST" }),
-            )
-          }
-        >
-          {pendingAction === "metadata" ? "Extracting..." : "Extract metadata"}
-        </button>
-        <button
-          type="button"
-          disabled={pendingAction === "review"}
-          onClick={() =>
-            runAction("review", () =>
-              apiRequest(`/content-pieces/${piece.id}/review`, {
-                method: "POST",
-                body: JSON.stringify({ action: "start_review", comment: comment || null }),
-              }),
-            )
-          }
-        >
-          Start review
-        </button>
-      </div>
+              )
+            }
+          >
+            {pendingAction === "draft" ? "Generating..." : "Generate draft"}
+          </button>
+          <button
+            type="button"
+            disabled={pendingAction === "translate"}
+            onClick={() =>
+              runAction("translate", () =>
+                apiRequest(`/content-pieces/${piece.id}/ai/translate`, {
+                  method: "POST",
+                  body: JSON.stringify({
+                    context: context || null,
+                    target_language: targetLanguage || null,
+                  }),
+                }),
+              )
+            }
+          >
+            {pendingAction === "translate" ? "Translating..." : "Translate"}
+          </button>
+          <button
+            type="button"
+            disabled={pendingAction === "metadata"}
+            onClick={() =>
+              runAction("metadata", () =>
+                apiRequest(`/content-pieces/${piece.id}/ai/extract-metadata`, { method: "POST" }),
+              )
+            }
+          >
+            {pendingAction === "metadata" ? "Extracting..." : "Extract metadata"}
+          </button>
+        </div>
+      </section>
+
+      <section className="control-group">
+        <div className="section-heading">
+          <h4>Review handoff</h4>
+          <span>Move the current piece into human review once the proposal is worth evaluating.</span>
+        </div>
+        <div className="button-row">
+          <button
+            type="button"
+            disabled={pendingAction === "review"}
+            onClick={() =>
+              runAction("review", () =>
+                apiRequest(`/content-pieces/${piece.id}/review`, {
+                  method: "POST",
+                  body: JSON.stringify({ action: "start_review", comment: comment || null }),
+                }),
+              )
+            }
+          >
+            Start review
+          </button>
+        </div>
+      </section>
 
       <div className="support-grid">
         <section className="suggestion-block">
