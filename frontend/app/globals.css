@@ -130,6 +130,29 @@ label span,
   gap: 8px;
 }
 
+.onboarding-notes {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.onboarding-notes div {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.66);
+  border: 1px solid rgba(88, 62, 40, 0.08);
+}
+
+.onboarding-notes strong,
+.workflow-summary-item strong {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.onboarding-notes p {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
 input,
 select,
 textarea,

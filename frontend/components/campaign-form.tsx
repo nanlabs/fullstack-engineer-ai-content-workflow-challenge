@@ -34,24 +34,40 @@ export function CampaignForm() {
   return (
     <form className="panel form-panel" onSubmit={handleSubmit}>
       <div className="panel-header">
-        <h2>Create campaign</h2>
-        <p>Start a campaign and add content pieces for AI-assisted review.</p>
+        <p className="eyebrow">Campaign Genesis</p>
+        <h2>Create the next editorial brief</h2>
+        <p>Start with the campaign frame. The workbench will handle pieces, AI suggestions, and review after this step.</p>
+      </div>
+      <div className="onboarding-notes">
+        <div>
+          <strong>1. Name the campaign</strong>
+          <p>Use the commercial or editorial theme the team will recognize immediately.</p>
+        </div>
+        <div>
+          <strong>2. Add the brief</strong>
+          <p>Capture the goal, tone, or launch context before the first content piece is created.</p>
+        </div>
+        <div>
+          <strong>3. Build the queue</strong>
+          <p>Once saved, add headlines, descriptions, and CTAs into the campaign workbench.</p>
+        </div>
       </div>
       <label>
-        <span>Name</span>
+        <span>Campaign name</span>
         <input value={name} onChange={(event) => setName(event.target.value)} required />
       </label>
       <label>
-        <span>Description</span>
+        <span>Campaign brief</span>
         <textarea
           rows={3}
           value={description}
           onChange={(event) => setDescription(event.target.value)}
+          placeholder="Spring launch, editorial landing page, Spanish localization for paid media..."
         />
       </label>
       {error ? <p className="error-text">{error}</p> : null}
       <button type="submit" disabled={submitting}>
-        {submitting ? "Creating..." : "Create campaign"}
+        {submitting ? "Creating..." : "Create campaign brief"}
       </button>
     </form>
   );
