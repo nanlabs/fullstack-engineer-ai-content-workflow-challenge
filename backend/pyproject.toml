@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
 [project]
 name = "ai-content-workflow-backend"
 version = "0.1.0"
@@ -15,12 +19,20 @@ dependencies = [
   "uvicorn[standard]>=0.35.0"
 ]
 
+[project.scripts]
+dev = "app.dev:main"
+
 [dependency-groups]
 dev = [
-  "aiosqlite>=0.21.0",
   "pytest>=8.4.1",
   "pytest-asyncio>=1.1.0"
 ]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/app"]
+
+[tool.uv]
+package = true
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
