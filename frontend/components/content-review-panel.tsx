@@ -242,6 +242,7 @@ export function ContentReviewPanel({
       <div className="button-row">
         <button
           type="button"
+          className="button-secondary"
           disabled={!latestReviewableSuggestion || pendingAction === "accept"}
           onClick={() =>
             runAction("accept", () =>
@@ -260,6 +261,7 @@ export function ContentReviewPanel({
         </button>
         <button
           type="button"
+          className="button-primary"
           disabled={pendingAction === "edit"}
           onClick={() =>
             runAction("edit", () =>
@@ -279,7 +281,7 @@ export function ContentReviewPanel({
         </button>
         <button
           type="button"
-          className="button-danger"
+          className="button-ghost-danger"
           disabled={pendingAction === "reject"}
           onClick={() =>
             runAction("reject", () =>

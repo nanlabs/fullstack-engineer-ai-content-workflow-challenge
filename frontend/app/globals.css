@@ -429,8 +429,28 @@ button:disabled {
   transform: none;
 }
 
-.button-danger {
-  background: var(--danger);
+.button-primary {
+  background: var(--accent);
+}
+
+.button-secondary {
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--text);
+  border: 1px solid rgba(88, 62, 40, 0.14);
+}
+
+.button-secondary:hover {
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.button-ghost-danger {
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--danger);
+  border: 1px solid rgba(157, 45, 45, 0.18);
+}
+
+.button-ghost-danger:hover {
+  background: rgba(157, 45, 45, 0.08);
 }
 
 .button-row {
