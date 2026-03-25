@@ -31,6 +31,7 @@ DEMO_DESCRIPTION = (
 class DemoPiece:
     source_text: str
     context: str
+    generate_draft: bool = True
     source_language: str | None = None
     target_language: str | None = None
     review_action: ReviewActionType | None = None
@@ -78,6 +79,7 @@ DEMO_PIECES = [
     DemoPiece(
         source_text="Launch the creator sprint with a homepage line that feels urgent, precise, and easy to localize.",
         context="homepage hero",
+        generate_draft=False,
     ),
     DemoPiece(
         source_text="Invite the regional audience to reserve the creator toolkit before the Monday launch window opens.",
@@ -131,11 +133,13 @@ async def seed_demo_campaign() -> tuple[str, str]:
                     campaign.id,
                     ContentPieceCreate(source_text=demo_piece.source_text),
                 )
-                draft = await workflow_service.generate_draft(
-                    session,
-                    piece.id,
-                    GenerateDraftRequest(context=demo_piece.context),
-                )
+                draft = None
+                if demo_piece.generate_draft:
+                    draft = await workflow_service.generate_draft(
+                        session,
+                        piece.id,
+                        GenerateDraftRequest(context=demo_piece.context),
+                    )
 
                 if demo_piece.source_language and demo_piece.target_language:
                     await workflow_service.translate(
@@ -157,7 +161,11 @@ async def seed_demo_campaign() -> tuple[str, str]:
                         piece.id,
                         ReviewRequest(
                             action=demo_piece.review_action,
-                            ai_suggestion_id=draft.suggestion.id if demo_piece.review_action != ReviewActionType.START_REVIEW else None,
+                            ai_suggestion_id=(
+                                draft.suggestion.id
+                                if draft is not None and demo_piece.review_action != ReviewActionType.START_REVIEW
+                                else None
+                            ),
                             comment="Demo seed action",
                         ),
                     )
