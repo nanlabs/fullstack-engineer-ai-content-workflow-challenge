@@ -133,3 +133,28 @@ async def test_translation_requires_languages_at_action_time(api_client) -> None
     payload = translated.json()
     assert payload["content_piece"]["source_language"] == "es"
     assert payload["content_piece"]["target_language"] == "en"
+
+
+async def test_generate_draft_uses_current_canonical_text(api_client) -> None:
+    campaign_response = await api_client.post("/campaigns", json={"name": "Canonical draft"})
+    campaign = campaign_response.json()
+    piece_response = await api_client.post(
+        f"/campaigns/{campaign['id']}/content-pieces",
+        json={"source_text": "Original base copy"},
+    )
+    piece = piece_response.json()
+
+    patched = await api_client.patch(
+        f"/content-pieces/{piece['id']}",
+        json={"current_text": "Refined canonical copy"},
+    )
+    assert patched.status_code == 200
+
+    draft_response = await api_client.post(
+        f"/content-pieces/{piece['id']}/ai/generate-draft",
+        json={"context": "hero"},
+    )
+    assert draft_response.status_code == 200
+    payload = draft_response.json()
+    assert payload["suggestion"]["input_text"] == "Refined canonical copy"
+    assert payload["suggestion"]["output_text"] == "Draft for content: Refined canonical copy"

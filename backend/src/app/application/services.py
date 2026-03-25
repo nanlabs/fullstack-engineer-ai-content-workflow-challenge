@@ -154,7 +154,7 @@ class WorkflowService:
         generated = await self._safe_ai_call(
             operation=OperationType.GENERATE_DRAFT,
             invoke=lambda: self.ai_provider.generate_draft(
-                source_text=piece.source_text,
+                source_text=piece.current_text,
                 content_type=piece.type,
                 context=payload.context,
             ),
@@ -280,7 +280,7 @@ class WorkflowService:
             provider=self.ai_provider.provider_name,
             model=self.ai_provider.model_name,
             operation_type=operation_type.value,
-            input_text=piece.current_text if operation_type != OperationType.GENERATE_DRAFT else piece.source_text,
+            input_text=piece.current_text,
             output_text=output_text,
             structured_output_json=structured_output,
             status=status.value,
