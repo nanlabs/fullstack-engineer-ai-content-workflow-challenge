@@ -1,6 +1,8 @@
 import Link from "next/link";
 
+import { CampaignWorkflowSummary } from "@/components/campaign-workflow-summary";
 import { ContentPieceForm } from "@/components/content-piece-form";
+import { ContentPieceQueue } from "@/components/content-piece-queue";
 import { ContentReviewPanel } from "@/components/content-review-panel";
 import { fetchCampaign } from "@/lib/api";
 
@@ -8,11 +10,16 @@ export const dynamic = "force-dynamic";
 
 export default async function CampaignPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ campaignId: string }>;
+  searchParams: Promise<{ pieceId?: string }>;
 }) {
   const { campaignId } = await params;
+  const { pieceId } = await searchParams;
   const campaign = await fetchCampaign(campaignId);
+  const selectedPiece =
+    campaign.content_pieces.find((piece) => piece.id === pieceId) ?? campaign.content_pieces[0] ?? null;
 
   return (
     <main className="stack-layout">
@@ -30,12 +37,22 @@ export default async function CampaignPage({
           <span>content pieces in workflow</span>
         </div>
       </section>
-      <ContentPieceForm campaignId={campaign.id} />
-      <section className="stack-layout">
-        {campaign.content_pieces.length === 0 ? (
-          <div className="panel empty-state">No content pieces yet. Add one to start the workflow.</div>
+      <CampaignWorkflowSummary counts={campaign.workflow_counts} />
+      <section className="workbench-layout">
+        <div className="stack-layout">
+          <ContentPieceForm campaignId={campaign.id} />
+          {campaign.content_pieces.length === 0 ? null : (
+            <ContentPieceQueue
+              campaignId={campaign.id}
+              pieces={campaign.content_pieces}
+              selectedPieceId={selectedPiece?.id ?? ""}
+            />
+          )}
+        </div>
+        {selectedPiece ? (
+          <ContentReviewPanel piece={selectedPiece} />
         ) : (
-          campaign.content_pieces.map((piece) => <ContentReviewPanel key={piece.id} piece={piece} />)
+          <div className="panel empty-state">No content pieces yet. Add one to start the workflow.</div>
         )}
       </section>
     </main>
