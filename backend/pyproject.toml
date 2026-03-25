@@ -21,6 +21,7 @@ dependencies = [
 
 [project.scripts]
 dev = "app.dev:main"
+seed-demo = "app.seed_demo:main"
 
 [dependency-groups]
 dev = [
