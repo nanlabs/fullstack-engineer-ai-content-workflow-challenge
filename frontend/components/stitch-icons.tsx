@@ -63,3 +63,23 @@ export function UserIcon() {
     </IconFrame>
   );
 }
+
+export function HelpIcon() {
+  return (
+    <IconFrame>
+      <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M7.8 7.8a2.4 2.4 0 1 1 3.4 2.2c-.8.4-1.2.9-1.2 1.8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="10" cy="14.6" r="0.9" fill="currentColor" />
+    </IconFrame>
+  );
+}
+
+export function ArchiveIcon() {
+  return (
+    <IconFrame>
+      <rect x="3" y="5" width="14" height="3.4" rx="1.1" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M5.2 8.5h9.6v7.2a1.3 1.3 0 0 1-1.3 1.3H6.5a1.3 1.3 0 0 1-1.3-1.3V8.5Z" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M8 12h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </IconFrame>
+  );
+}

@@ -1,6 +1,3 @@
-import Link from "next/link";
-
-import { CampaignWorkflowSummary } from "@/components/campaign-workflow-summary";
 import { ContentPieceForm } from "@/components/content-piece-form";
 import { ContentPieceQueue } from "@/components/content-piece-queue";
 import { StitchShell } from "@/components/stitch-shell";
@@ -15,47 +12,62 @@ export default async function CampaignPage({
 }) {
   const { campaignId } = await params;
   const campaign = await fetchCampaign(campaignId);
+  const approvedCount = campaign.workflow_counts.approved;
+  const pendingCount = campaign.workflow_counts.ai_suggested + campaign.workflow_counts.in_review;
+  const progress = campaign.content_pieces.length === 0 ? 0 : Math.round((approvedCount / campaign.content_pieces.length) * 100);
 
   return (
-    <StitchShell activeHref="/campaigns/new" pageTitle="Campaign Manager">
-      <main className="content-list-page">
-        <div className="workbench-page-top">
-          <Link href="/" className="back-link">
-            ← Volver al dashboard
-          </Link>
-          <span className="workbench-page-tag">Campaign Content List</span>
-        </div>
-        <section className="content-list-hero">
+    <StitchShell activeHref="/" pageTitle="Campaign Editor" pageSubtitle={campaign.name}>
+      <main className="campaign-content-list-screen">
+        <section className="campaign-content-header">
           <div>
-            <p className="eyebrow">Campaña</p>
+            <div className="campaign-content-status">
+              <span>Active Project</span>
+            </div>
             <h2>{campaign.name}</h2>
-            <p>{campaign.description ?? "Sin descripción editorial."}</p>
+            <p>
+              {campaign.description ??
+                "Comprehensive creative oversight for this campaign. Manage content pieces, drafts, translations, and approvals from one workbench."}
+            </p>
           </div>
-          <div className="content-list-hero-metrics">
-            <div>
-              <span>Piezas</span>
-              <strong>{campaign.content_pieces.length}</strong>
-            </div>
-            <div>
-              <span>Activas</span>
-              <strong>{campaign.workflow_counts.in_review + campaign.workflow_counts.ai_suggested}</strong>
-            </div>
-          </div>
+          <ContentPieceForm campaignId={campaign.id} />
         </section>
-        <section className="content-list-summary-card">
-          <CampaignWorkflowSummary counts={campaign.workflow_counts} />
-        </section>
-        <section className="content-list-layout">
-          <div className="content-list-create-column">
-            <ContentPieceForm campaignId={campaign.id} />
+        <section className="campaign-content-grid">
+          <div className="campaign-stat-card">
+            <p className="campaign-panel-label">Project Health</p>
+            <div className="campaign-stat-stack">
+              <div className="campaign-stat-row">
+                <span>Total Pieces</span>
+                <strong>{campaign.content_pieces.length}</strong>
+              </div>
+              <div className="campaign-progress-bar">
+                <span style={{ width: `${progress}%` }} />
+              </div>
+              <p>{approvedCount} items approved, {pendingCount} pending review.</p>
+            </div>
           </div>
-          <div className="content-list-main-column">
+          <div className="campaign-ai-card">
+            <div className="campaign-ai-card-copy">
+              <p className="campaign-panel-label campaign-panel-label-secondary">AI Workspace Suggestion</p>
+              <h3>Tone Consistency Check</h3>
+              <p>
+                Your active pieces are ready for refinement. Open a content piece to improve the canonical text,
+                generate a first draft, or localize it on demand.
+              </p>
+            </div>
+          </div>
+          <div className="campaign-content-main">
             {campaign.content_pieces.length > 0 ? (
               <ContentPieceQueue campaignId={campaign.id} pieces={campaign.content_pieces} />
             ) : (
-              <div className="panel empty-state">
-                No hay piezas todavía. Creá una pieza simple para arrancar el flujo editorial.
-              </div>
+              <section className="content-list-card">
+                <div className="content-list-card-header">
+                  <h3>Content Pieces</h3>
+                </div>
+                <div className="campaign-empty-list">
+                  <p>No content pieces yet. Add one to start the editorial flow.</p>
+                </div>
+              </section>
             )}
           </div>
         </section>
