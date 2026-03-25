@@ -1,5 +1,7 @@
 export type ReviewState = "draft" | "ai_suggested" | "in_review" | "approved" | "rejected";
 
+export type WorkflowCounts = Record<ReviewState, number>;
+
 export type CampaignSummary = {
   id: string;
   name: string;
@@ -7,6 +9,7 @@ export type CampaignSummary = {
   created_at: string;
   updated_at: string;
   content_piece_count: number;
+  workflow_counts: WorkflowCounts;
 };
 
 export type AISuggestion = {
@@ -60,5 +63,6 @@ export type CampaignDetail = {
   description: string | null;
   created_at: string;
   updated_at: string;
+  workflow_counts: WorkflowCounts;
   content_pieces: ContentPiece[];
 };

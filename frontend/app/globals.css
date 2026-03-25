@@ -182,6 +182,12 @@ button:disabled {
   gap: 16px;
 }
 
+.campaign-card-header,
+.workflow-summary {
+  display: grid;
+  gap: 10px;
+}
+
 .campaign-card {
   text-decoration: none;
   color: inherit;
@@ -209,6 +215,30 @@ button:disabled {
   display: block;
   font-size: 2.5rem;
   line-height: 1;
+}
+
+.workflow-summary {
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+}
+
+.workflow-summary-item {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.workflow-summary-item span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.workflow-summary-item strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.35rem;
 }
 
 .badge {
