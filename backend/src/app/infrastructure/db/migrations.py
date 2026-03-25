@@ -3,14 +3,10 @@ from pathlib import Path
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from app.infrastructure.db.models import Base
-
 
 async def run_migrations(engine: AsyncEngine) -> None:
-    if engine.dialect.name == "sqlite":
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        return
+    if engine.dialect.name != "postgresql":
+        raise ValueError("Only PostgreSQL is supported for runtime migrations.")
 
     migrations_dir = Path(__file__).resolve().parents[4] / "migrations"
 
