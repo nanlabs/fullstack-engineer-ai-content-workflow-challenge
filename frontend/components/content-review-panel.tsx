@@ -27,6 +27,7 @@ export function ContentReviewPanel({
   const [context, setContext] = useState("");
   const [targetLanguage, setTargetLanguage] = useState(piece.target_language ?? "es");
   const [sourceLanguage, setSourceLanguage] = useState(piece.source_language ?? "es");
+  const [isTranslateModalOpen, setIsTranslateModalOpen] = useState(false);
   const [editedText, setEditedText] = useState(initialEditedText);
   const [comment, setComment] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
@@ -127,14 +128,6 @@ export function ContentReviewPanel({
           <span>Contexto AI</span>
           <input value={context} onChange={(event) => setContext(event.target.value)} />
         </label>
-        <label>
-          <span>Idiomas para traducción</span>
-          <div className="translation-inline">
-            <input value={sourceLanguage} onChange={(event) => setSourceLanguage(event.target.value)} aria-label="Idioma origen" />
-            <span>→</span>
-            <input value={targetLanguage} onChange={(event) => setTargetLanguage(event.target.value)} aria-label="Idioma destino" />
-          </div>
-        </label>
       </div>
 
       <section className="control-group">
@@ -160,20 +153,9 @@ export function ContentReviewPanel({
           <button
             type="button"
             disabled={pendingAction === "translate"}
-            onClick={() =>
-              runAction("translate", () =>
-                apiRequest(`/content-pieces/${piece.id}/ai/translate`, {
-                  method: "POST",
-                  body: JSON.stringify({
-                    context: context || null,
-                    source_language: sourceLanguage,
-                    target_language: targetLanguage,
-                  }),
-                }),
-              )
-            }
+            onClick={() => setIsTranslateModalOpen(true)}
           >
-            {pendingAction === "translate" ? "Traduciendo..." : "Traducir"}
+            Traducir
           </button>
           <button
             type="button"
@@ -339,6 +321,63 @@ export function ContentReviewPanel({
         </p>
       ) : null}
       {error ? <p className="error-text">{error}</p> : null}
+
+      {isTranslateModalOpen ? (
+        <div className="modal-backdrop" role="presentation">
+          <div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="translate-modal-title">
+            <div className="modal-header">
+              <div>
+                <p className="eyebrow">Traducción</p>
+                <h4 id="translate-modal-title">Traducir este contenido</h4>
+              </div>
+              <button type="button" className="stitch-icon-button" onClick={() => setIsTranslateModalOpen(false)}>
+                ×
+              </button>
+            </div>
+            <p className="muted">
+              Vas a traducir el canonical text actual de esta pieza. Si querés otra base, primero editá y guardá el texto canónico.
+            </p>
+            <section className="content-surface">
+              <h4>Texto actual</h4>
+              <p>{piece.current_text}</p>
+            </section>
+            <div className="action-grid">
+              <label>
+                <span>Idioma origen</span>
+                <input value={sourceLanguage} onChange={(event) => setSourceLanguage(event.target.value)} />
+              </label>
+              <label>
+                <span>Idioma destino</span>
+                <input value={targetLanguage} onChange={(event) => setTargetLanguage(event.target.value)} />
+              </label>
+            </div>
+            <div className="button-row">
+              <button type="button" className="button-secondary" onClick={() => setIsTranslateModalOpen(false)}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={pendingAction === "translate"}
+                onClick={() =>
+                  runAction("translate", async () => {
+                    await apiRequest(`/content-pieces/${piece.id}/ai/translate`, {
+                      method: "POST",
+                      body: JSON.stringify({
+                        context: context || null,
+                        source_language: sourceLanguage,
+                        target_language: targetLanguage,
+                      }),
+                    });
+                    setIsTranslateModalOpen(false);
+                  })
+                }
+              >
+                {pendingAction === "translate" ? "Traduciendo..." : "Confirmar traducción"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </article>
   );
 }

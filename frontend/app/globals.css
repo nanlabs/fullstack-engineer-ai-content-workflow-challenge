@@ -883,6 +883,36 @@ button:disabled {
   align-items: center;
 }
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(42, 52, 57, 0.32);
+  backdrop-filter: blur(8px);
+}
+
+.modal-card,
+.modal-header {
+  display: grid;
+  gap: 16px;
+}
+
+.modal-card {
+  width: min(640px, 100%);
+  padding: 24px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 12px 32px -4px rgba(42, 52, 57, 0.08);
+}
+
+.modal-header {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
 pre {
   margin: 0;
   white-space: pre-wrap;
