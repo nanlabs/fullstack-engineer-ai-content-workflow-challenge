@@ -1,4 +1,4 @@
-from app.api.schemas import CampaignCreate, ContentPieceCreate, GenerateDraftRequest
+from app.api.schemas import CampaignCreate, ContentPieceCreate, GenerateDraftRequest, TranslateRequest
 from app.domain.enums import AISuggestionStatus, ReviewState
 
 
@@ -63,3 +63,29 @@ async def test_metadata_does_not_replace_latest_reviewable_suggestion(session_fa
     assert metadata_response.content_piece.latest_suggestion.operation_type.value == "extract_metadata"
     assert metadata_response.content_piece.latest_reviewable_suggestion is not None
     assert metadata_response.content_piece.latest_reviewable_suggestion.id == draft_response.suggestion.id
+
+
+async def test_translation_versions_only_include_translate_suggestions(session_factory, workflow_service) -> None:
+    async with session_factory() as session:
+        campaign = await workflow_service.create_campaign(session, CampaignCreate(name="Launch"))
+        piece = await workflow_service.create_content_piece(
+            session,
+            campaign.id,
+            ContentPieceCreate(
+                source_text="Hola equipo",
+            ),
+        )
+        await workflow_service.generate_draft(
+            session,
+            piece.id,
+            GenerateDraftRequest(context="homepage"),
+        )
+        translated = await workflow_service.translate(
+            session,
+            piece.id,
+            TranslateRequest(source_language="es", target_language="en", context="homepage"),
+        )
+        metadata_response = await workflow_service.extract_metadata(session, piece.id)
+
+    assert len(metadata_response.content_piece.translation_versions) == 1
+    assert metadata_response.content_piece.translation_versions[0].id == translated.suggestion.id

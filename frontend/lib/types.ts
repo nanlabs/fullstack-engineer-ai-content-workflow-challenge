@@ -20,7 +20,18 @@ export type AISuggestion = {
   operation_type: "generate_draft" | "translate" | "extract_metadata";
   input_text: string;
   output_text: string | null;
+  source_language: string | null;
+  target_language: string | null;
   structured_output_json: Record<string, unknown> | null;
+  status: "success" | "failed";
+  created_at: string;
+};
+
+export type TranslationVersion = {
+  id: string;
+  output_text: string | null;
+  source_language: string | null;
+  target_language: string | null;
   status: "success" | "failed";
   created_at: string;
 };
@@ -56,6 +67,7 @@ export type ContentPiece = {
   latest_reviewable_suggestion: AISuggestion | null;
   latest_review_action: ReviewAction | null;
   latest_metadata: MetadataPayload | null;
+  translation_versions: TranslationVersion[];
 };
 
 export type CampaignDetail = {

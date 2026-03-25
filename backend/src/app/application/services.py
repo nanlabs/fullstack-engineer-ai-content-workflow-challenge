@@ -22,6 +22,7 @@ from app.api.schemas import (
     ReviewActionResponse,
     ReviewRequest,
     ReviewResponse,
+    TranslationVersionResponse,
     TranslateRequest,
     WorkflowCounts,
 )
@@ -183,7 +184,12 @@ class WorkflowService:
         piece.source_language = payload.source_language
         piece.target_language = payload.target_language
         suggestion, piece = await self._persist_suggestion(
-            session, piece, generated, OperationType.TRANSLATE
+            session,
+            piece,
+            generated,
+            OperationType.TRANSLATE,
+            source_language=payload.source_language,
+            target_language=payload.target_language,
         )
         return AIActionResponse(
             suggestion=AISuggestionResponse.model_validate(suggestion),
@@ -272,6 +278,8 @@ class WorkflowService:
         piece: ContentPiece,
         generated_result: tuple[GeneratedPayload | None, AISuggestionStatus, str | None, dict | None],
         operation_type: OperationType,
+        source_language: str | None = None,
+        target_language: str | None = None,
     ) -> tuple[AISuggestion, ContentPiece]:
         _, status, output_text, structured_output = generated_result
         suggestion = AISuggestion(
@@ -282,6 +290,8 @@ class WorkflowService:
             operation_type=operation_type.value,
             input_text=piece.current_text,
             output_text=output_text,
+            source_language=source_language,
+            target_language=target_language,
             structured_output_json=structured_output,
             status=status.value,
             created_at=datetime.now(UTC),
@@ -316,6 +326,7 @@ class WorkflowService:
         latest_reviewable_suggestion_model = None
         latest_review_model = None
         latest_metadata = None
+        translation_versions: list[TranslationVersionResponse] = []
 
         latest_suggestion = max(piece.ai_suggestions, key=lambda item: item.created_at, default=None)
         latest_review = max(piece.review_actions, key=lambda item: item.created_at, default=None)
@@ -347,6 +358,19 @@ class WorkflowService:
                 max(metadata_suggestions, key=lambda item: item.created_at).structured_output_json
             )
 
+        translation_suggestions = sorted(
+            [
+                item
+                for item in piece.ai_suggestions
+                if item.operation_type == OperationType.TRANSLATE.value and item.output_text
+            ],
+            key=lambda item: item.created_at,
+            reverse=True,
+        )
+        translation_versions = [
+            TranslationVersionResponse.model_validate(item) for item in translation_suggestions
+        ]
+
         return ContentPieceResponse(
             id=piece.id,
             campaign_id=piece.campaign_id,
@@ -362,6 +386,7 @@ class WorkflowService:
             latest_reviewable_suggestion=latest_reviewable_suggestion_model,
             latest_review_action=latest_review_model,
             latest_metadata=latest_metadata,
+            translation_versions=translation_versions,
         )
 
     async def _publish_content_piece_event(self, piece: ContentPiece, event_type: str) -> None:

@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS ai_suggestions (
     operation_type TEXT NOT NULL,
     input_text TEXT NOT NULL,
     output_text TEXT,
+    source_language TEXT,
+    target_language TEXT,
     structured_output_json JSON,
     status TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL

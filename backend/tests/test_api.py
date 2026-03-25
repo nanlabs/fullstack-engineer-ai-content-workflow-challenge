@@ -133,6 +133,12 @@ async def test_translation_requires_languages_at_action_time(api_client) -> None
     payload = translated.json()
     assert payload["content_piece"]["source_language"] == "es"
     assert payload["content_piece"]["target_language"] == "en"
+    assert payload["suggestion"]["source_language"] == "es"
+    assert payload["suggestion"]["target_language"] == "en"
+    assert len(payload["content_piece"]["translation_versions"]) == 1
+    assert payload["content_piece"]["translation_versions"][0]["source_language"] == "es"
+    assert payload["content_piece"]["translation_versions"][0]["target_language"] == "en"
+    assert payload["content_piece"]["current_text"] == "Hola mundo"
 
 
 async def test_generate_draft_uses_current_canonical_text(api_client) -> None:

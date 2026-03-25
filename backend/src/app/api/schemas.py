@@ -79,7 +79,20 @@ class AISuggestionResponse(BaseModel):
     operation_type: OperationType
     input_text: str
     output_text: str | None
+    source_language: str | None = None
+    target_language: str | None = None
     structured_output_json: dict[str, Any] | None
+    status: AISuggestionStatus
+    created_at: datetime
+
+
+class TranslationVersionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    output_text: str | None
+    source_language: str | None
+    target_language: str | None
     status: AISuggestionStatus
     created_at: datetime
 
@@ -113,6 +126,7 @@ class ContentPieceResponse(BaseModel):
     latest_reviewable_suggestion: AISuggestionResponse | None = None
     latest_review_action: ReviewActionResponse | None = None
     latest_metadata: MetadataPayload | None = None
+    translation_versions: list[TranslationVersionResponse] = Field(default_factory=list)
 
 
 class CampaignDetailResponse(BaseModel):
