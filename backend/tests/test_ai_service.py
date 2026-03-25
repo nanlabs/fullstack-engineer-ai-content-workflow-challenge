@@ -9,9 +9,7 @@ async def test_generate_draft_updates_state_and_persists_suggestion(session_fact
             session,
             campaign.id,
             ContentPieceCreate(
-                type="headline",
                 source_text="New season drop",
-                source_language="en",
             ),
         )
         response = await workflow_service.generate_draft(
@@ -23,7 +21,7 @@ async def test_generate_draft_updates_state_and_persists_suggestion(session_fact
     assert response.suggestion.status == AISuggestionStatus.SUCCESS
     assert response.content_piece.review_state == ReviewState.AI_SUGGESTED
     assert response.content_piece.latest_suggestion is not None
-    assert response.content_piece.latest_suggestion.output_text == "Draft for headline: New season drop"
+    assert response.content_piece.latest_suggestion.output_text == "Draft for content: New season drop"
 
 
 async def test_invalid_metadata_is_saved_as_failed(session_factory, workflow_service, fake_ai_provider) -> None:
@@ -34,9 +32,7 @@ async def test_invalid_metadata_is_saved_as_failed(session_factory, workflow_ser
             session,
             campaign.id,
             ContentPieceCreate(
-                type="description",
                 source_text="Soft cotton jacket",
-                source_language="en",
             ),
         )
         response = await workflow_service.extract_metadata(session, piece.id)
@@ -53,9 +49,7 @@ async def test_metadata_does_not_replace_latest_reviewable_suggestion(session_fa
             session,
             campaign.id,
             ContentPieceCreate(
-                type="description",
                 source_text="Spring campaign body copy",
-                source_language="en",
             ),
         )
         draft_response = await workflow_service.generate_draft(

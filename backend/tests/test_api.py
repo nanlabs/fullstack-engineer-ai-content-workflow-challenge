@@ -9,15 +9,13 @@ async def test_campaign_ai_review_flow(api_client) -> None:
     piece_response = await api_client.post(
         f"/campaigns/{campaign['id']}/content-pieces",
         json={
-            "type": "headline",
             "source_text": "Spring arrivals are here",
-            "source_language": "en",
-            "target_language": "es",
         },
     )
     assert piece_response.status_code == 201
     piece = piece_response.json()
     assert piece["review_state"] == "draft"
+    assert piece["source_language"] is None
 
     draft_response = await api_client.post(
         f"/content-pieces/{piece['id']}/ai/generate-draft",
@@ -55,13 +53,13 @@ async def test_campaign_summary_includes_workflow_counts(api_client) -> None:
 
     draft_piece = await api_client.post(
         f"/campaigns/{campaign['id']}/content-pieces",
-        json={"type": "headline", "source_text": "Draft only", "source_language": "en"},
+        json={"source_text": "Draft only"},
     )
     assert draft_piece.status_code == 201
 
     review_piece = await api_client.post(
         f"/campaigns/{campaign['id']}/content-pieces",
-        json={"type": "description", "source_text": "Review me", "source_language": "en"},
+        json={"source_text": "Review me"},
     )
     review_payload = review_piece.json()
 
@@ -89,9 +87,7 @@ async def test_sse_event_bus_receives_ai_event(api_client, workflow_service) -> 
     piece_response = await api_client.post(
         f"/campaigns/{campaign['id']}/content-pieces",
         json={
-            "type": "headline",
             "source_text": "Realtime story",
-            "source_language": "en",
         },
     )
     piece = piece_response.json()
@@ -108,3 +104,32 @@ async def test_sse_event_bus_receives_ai_event(api_client, workflow_service) -> 
 
     assert event["type"] == "ai_suggestion.created"
     assert event["content_piece_id"] == piece["id"]
+
+
+async def test_translation_requires_languages_at_action_time(api_client) -> None:
+    campaign_response = await api_client.post("/campaigns", json={"name": "Translate later"})
+    campaign = campaign_response.json()
+    piece_response = await api_client.post(
+        f"/campaigns/{campaign['id']}/content-pieces",
+        json={"source_text": "Hola mundo"},
+    )
+    piece = piece_response.json()
+
+    missing_languages = await api_client.post(
+        f"/content-pieces/{piece['id']}/ai/translate",
+        json={"context": "landing page"},
+    )
+    assert missing_languages.status_code == 422
+
+    translated = await api_client.post(
+        f"/content-pieces/{piece['id']}/ai/translate",
+        json={
+            "source_language": "es",
+            "target_language": "en",
+            "context": "homepage hero",
+        },
+    )
+    assert translated.status_code == 200
+    payload = translated.json()
+    assert payload["content_piece"]["source_language"] == "es"
+    assert payload["content_piece"]["target_language"] == "en"

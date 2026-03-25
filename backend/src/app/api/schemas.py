@@ -20,11 +20,8 @@ class CampaignCreate(BaseModel):
 
 
 class ContentPieceCreate(BaseModel):
-    type: str
     source_text: str
     current_text: str | None = None
-    source_language: str
-    target_language: str | None = None
 
 
 class ContentPieceUpdate(BaseModel):
@@ -40,8 +37,9 @@ class GenerateDraftRequest(BaseModel):
 
 
 class TranslateRequest(BaseModel):
+    source_language: str
+    target_language: str
     context: str | None = None
-    target_language: str | None = None
 
 
 class ReviewRequest(BaseModel):
@@ -106,7 +104,7 @@ class ContentPieceResponse(BaseModel):
     type: str
     source_text: str
     current_text: str
-    source_language: str
+    source_language: str | None
     target_language: str | None
     review_state: ReviewState
     created_at: datetime

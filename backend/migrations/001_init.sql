@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS content_pieces (
     type TEXT NOT NULL,
     source_text TEXT NOT NULL,
     current_text TEXT NOT NULL,
-    source_language TEXT NOT NULL,
+    source_language TEXT,
     target_language TEXT,
     review_state TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,

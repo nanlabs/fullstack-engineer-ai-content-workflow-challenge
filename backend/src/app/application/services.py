@@ -107,11 +107,11 @@ class WorkflowService:
         piece = ContentPiece(
             id=str(uuid4()),
             campaign_id=campaign_id,
-            type=payload.type,
+            type="content",
             source_text=payload.source_text,
             current_text=payload.current_text or payload.source_text,
-            source_language=payload.source_language,
-            target_language=payload.target_language,
+            source_language=None,
+            target_language=None,
             review_state=ReviewState.DRAFT.value,
             created_at=now,
             updated_at=now,
@@ -171,19 +171,17 @@ class WorkflowService:
         self, session: AsyncSession, content_piece_id: str, payload: TranslateRequest
     ) -> AIActionResponse:
         piece = await self._load_content_piece(session, content_piece_id)
-        target_language = payload.target_language or piece.target_language
-        if not target_language:
-            raise ValueError("target_language is required for translation")
         generated = await self._safe_ai_call(
             operation=OperationType.TRANSLATE,
             invoke=lambda: self.ai_provider.translate(
                 source_text=piece.current_text,
-                source_language=piece.source_language,
-                target_language=target_language,
+                source_language=payload.source_language,
+                target_language=payload.target_language,
                 context=payload.context,
             ),
         )
-        piece.target_language = target_language
+        piece.source_language = payload.source_language
+        piece.target_language = payload.target_language
         suggestion, piece = await self._persist_suggestion(
             session, piece, generated, OperationType.TRANSLATE
         )
