@@ -223,7 +223,8 @@ button:disabled {
 
 .queue-list,
 .queue-item,
-.queue-item-header {
+.queue-item-header,
+.support-grid {
   display: grid;
   gap: 10px;
 }
@@ -334,7 +335,11 @@ button:disabled {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
-.text-blocks section,
+.support-grid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.content-surface,
 .suggestion-block {
   padding: 16px;
   border-radius: 18px;

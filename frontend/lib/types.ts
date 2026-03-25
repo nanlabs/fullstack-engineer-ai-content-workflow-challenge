@@ -53,6 +53,7 @@ export type ContentPiece = {
   created_at: string;
   updated_at: string;
   latest_suggestion: AISuggestion | null;
+  latest_reviewable_suggestion: AISuggestion | null;
   latest_review_action: ReviewAction | null;
   latest_metadata: MetadataPayload | null;
 };

@@ -46,6 +46,7 @@ export function ContentReviewPanel({
   }
 
   const latestSuggestion = piece.latest_suggestion;
+  const latestReviewableSuggestion = piece.latest_reviewable_suggestion;
 
   return (
     <article className="panel review-panel">
@@ -58,11 +59,11 @@ export function ContentReviewPanel({
       </div>
 
       <div className="text-blocks">
-        <section>
+        <section className="content-surface">
           <h4>Source text</h4>
           <p>{piece.source_text}</p>
         </section>
-        <section>
+        <section className="content-surface">
           <h4>Canonical text</h4>
           <p>{piece.current_text}</p>
         </section>
@@ -138,45 +139,51 @@ export function ContentReviewPanel({
         </button>
       </div>
 
-      <section className="suggestion-block">
-        <div className="section-heading">
-          <h4>Latest AI suggestion</h4>
-          <span>{latestSuggestion ? latestSuggestion.operation_type : "No suggestion yet"}</span>
-        </div>
-        {latestSuggestion ? (
-          <>
-            <p className="suggestion-status">Status: {latestSuggestion.status}</p>
-            <pre>{latestSuggestion.output_text ?? "No output returned"}</pre>
-          </>
-        ) : (
-          <p className="muted">Run an AI operation to generate a suggestion or metadata.</p>
-        )}
-      </section>
+      <div className="support-grid">
+        <section className="suggestion-block">
+          <div className="section-heading">
+            <h4>Latest reviewable suggestion</h4>
+            <span>
+              {latestReviewableSuggestion ? latestReviewableSuggestion.operation_type : "No reviewable suggestion"}
+            </span>
+          </div>
+          {latestReviewableSuggestion ? (
+            <>
+              <p className="suggestion-status">Status: {latestReviewableSuggestion.status}</p>
+              <pre>{latestReviewableSuggestion.output_text ?? "No output returned"}</pre>
+            </>
+          ) : (
+            <p className="muted">Generate a draft or translation before asking a reviewer to approve text.</p>
+          )}
+        </section>
 
-      <section className="suggestion-block">
-        <div className="section-heading">
-          <h4>Metadata</h4>
-          <span>Structured extraction</span>
-        </div>
-        {piece.latest_metadata ? (
-          <dl className="metadata-grid">
-            <div>
-              <dt>Keywords</dt>
-              <dd>{piece.latest_metadata.keywords.join(", ")}</dd>
-            </div>
-            <div>
-              <dt>Tone</dt>
-              <dd>{piece.latest_metadata.tone}</dd>
-            </div>
-            <div>
-              <dt>Sentiment</dt>
-              <dd>{piece.latest_metadata.sentiment}</dd>
-            </div>
-          </dl>
-        ) : (
-          <p className="muted">No metadata extracted yet.</p>
-        )}
-      </section>
+        <section className="suggestion-block">
+          <div className="section-heading">
+            <h4>Metadata</h4>
+            <span>
+              {latestSuggestion?.operation_type === "extract_metadata" ? "Latest AI activity" : "Structured extraction"}
+            </span>
+          </div>
+          {piece.latest_metadata ? (
+            <dl className="metadata-grid">
+              <div>
+                <dt>Keywords</dt>
+                <dd>{piece.latest_metadata.keywords.join(", ")}</dd>
+              </div>
+              <div>
+                <dt>Tone</dt>
+                <dd>{piece.latest_metadata.tone}</dd>
+              </div>
+              <div>
+                <dt>Sentiment</dt>
+                <dd>{piece.latest_metadata.sentiment}</dd>
+              </div>
+            </dl>
+          ) : (
+            <p className="muted">No metadata extracted yet.</p>
+          )}
+        </section>
+      </div>
 
       <label>
         <span>Review comment</span>
