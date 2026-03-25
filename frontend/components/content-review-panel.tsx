@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { apiRequest } from "@/lib/api";
@@ -14,9 +14,10 @@ export function ContentReviewPanel({
   piece: ContentPiece;
 }) {
   const router = useRouter();
+  const initialEditedText = piece.latest_reviewable_suggestion?.output_text ?? piece.current_text;
   const [context, setContext] = useState("");
   const [targetLanguage, setTargetLanguage] = useState(piece.target_language ?? "es");
-  const [editedText, setEditedText] = useState(piece.current_text);
+  const [editedText, setEditedText] = useState(initialEditedText);
   const [comment, setComment] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +48,10 @@ export function ContentReviewPanel({
 
   const latestSuggestion = piece.latest_suggestion;
   const latestReviewableSuggestion = piece.latest_reviewable_suggestion;
+
+  useEffect(() => {
+    setEditedText(piece.latest_reviewable_suggestion?.output_text ?? piece.current_text);
+  }, [piece.current_text, piece.id, piece.latest_reviewable_suggestion?.id, piece.latest_reviewable_suggestion?.output_text]);
 
   return (
     <article className="panel review-panel">
@@ -216,7 +221,7 @@ export function ContentReviewPanel({
       <div className="button-row">
         <button
           type="button"
-          disabled={!latestSuggestion || pendingAction === "accept"}
+          disabled={!latestReviewableSuggestion || pendingAction === "accept"}
           onClick={() =>
             runAction("accept", () =>
               apiRequest(`/content-pieces/${piece.id}/review`, {
@@ -224,7 +229,7 @@ export function ContentReviewPanel({
                 body: JSON.stringify({
                   action: "accept",
                   comment: comment || null,
-                  ai_suggestion_id: latestSuggestion?.id ?? null,
+                  ai_suggestion_id: latestReviewableSuggestion?.id ?? null,
                 }),
               }),
             )
@@ -243,7 +248,7 @@ export function ContentReviewPanel({
                   action: "edit",
                   comment: comment || null,
                   edited_text: editedText,
-                  ai_suggestion_id: latestSuggestion?.id ?? null,
+                  ai_suggestion_id: latestReviewableSuggestion?.id ?? null,
                 }),
               }),
             )
@@ -262,7 +267,7 @@ export function ContentReviewPanel({
                 body: JSON.stringify({
                   action: "reject",
                   comment: comment || null,
-                  ai_suggestion_id: latestSuggestion?.id ?? null,
+                  ai_suggestion_id: latestReviewableSuggestion?.id ?? null,
                 }),
               }),
             )
