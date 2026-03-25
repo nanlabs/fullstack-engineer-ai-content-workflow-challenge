@@ -6,7 +6,7 @@ V1 implementation for the full-stack challenge using `Next.js + FastAPI + Postgr
 
 - Frontend: `Next.js` App Router with SSR-friendly pages and client-side mutation panels
 - Backend: `FastAPI` with async SQLAlchemy and explicit SQL migrations
-- Database: `PostgreSQL`
+- Database: `PostgreSQL` only
 - Realtime: `Server-Sent Events (SSE)`
 - AI provider: `OpenAI` behind a provider abstraction
 - Tooling: `bun`, `uv`, `uvicorn`, `docker compose`
@@ -61,49 +61,87 @@ V1 implementation for the full-stack challenge using `Next.js + FastAPI + Postgr
 - `current_text` is canonical and is updated only by manual edit or review acceptance/editing
 - Failed AI operations are stored as failed suggestions and do not mutate canonical content
 
-## Local setup with Docker
+## Development workflow
 
-1. Copy the environment file:
-   ```bash
-   cp .env.example .env
-   ```
-2. Set `OPENAI_API_KEY` in `.env` if you want real provider calls.
-3. Start the stack:
-   ```bash
-   docker compose up --build
-   ```
-4. Open:
-   - Frontend: [http://localhost:3000](http://localhost:3000)
-   - Backend: [http://localhost:8000](http://localhost:8000)
-   - API health: [http://localhost:8000/health](http://localhost:8000/health)
+The default development loop is:
 
-## Local setup without Docker
+1. Copy the local env template to `.env`
+2. Start PostgreSQL in Docker
+3. Run the backend locally with `uv run dev`
+4. Run the frontend locally with `bun run dev`
 
-### Backend
+Code changes do not require rebuilding the app containers when the backend and frontend are running from your terminal. Rebuilds are only needed when you run the app services inside Docker.
+
+### 1. Create your local env file
+
+```bash
+cp .env.example .env
+```
+
+### 2. Start only PostgreSQL
+
+```bash
+docker compose up -d db
+```
+
+### 3. Run the backend locally
 
 ```bash
 cd backend
 uv sync --dev
-DATABASE_URL=sqlite+aiosqlite:///./local.db uv run uvicorn app.main:create_app --factory --reload
+uv run dev
 ```
 
-### Frontend
+The backend reads `DATABASE_URL` and the rest of its settings from the repo root `.env` file.
+
+### 4. Run the frontend locally
 
 ```bash
 cd frontend
 bun install
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000 INTERNAL_API_BASE_URL=http://localhost:8000 bun run dev
+bun run dev
 ```
+
+The frontend dev script also reads API-related environment values from the repo root `.env` file.
+
+## Full Docker mode
+
+Use this when you want the full reviewer/shared experience with both app services containerized.
+
+```bash
+docker compose --env-file .env.docker.example up --build
+```
+
+Services:
+- Frontend: [http://localhost:3000](http://localhost:3000)
+- Backend: [http://localhost:8000](http://localhost:8000)
+- API health: [http://localhost:8000/health](http://localhost:8000/health)
+
+## Environment files
+
+- `.env.example`: local development values, including `localhost` Postgres DSNs
+- `.env.docker.example`: container runtime values, including `db` as the database hostname
+
+The backend is Postgres-only. It will fail to start if `DATABASE_URL` is missing or uses a non-Postgres driver.
 
 ## Tests
 
 ### Backend
 
-```bash
-cd backend
-uv sync --dev
-uv run pytest
-```
+Backend tests run against PostgreSQL only.
+
+1. Start the database container:
+   ```bash
+   docker compose up -d db
+   ```
+2. Run tests:
+   ```bash
+   cd backend
+   uv sync --dev
+   uv run pytest
+   ```
+
+If you want a non-default test database name, set `TEST_DATABASE_URL` in `.env` before running the suite.
 
 ### Frontend
 
@@ -125,7 +163,7 @@ SSE covers the actual V1 need: broadcasting server-side updates when AI work com
 
 ### PostgreSQL only
 
-The domain is relational and benefits from simple joins between campaigns, content pieces, AI suggestions, and review actions. Adding another datastore in V1 would only increase operational and modeling complexity.
+The domain is relational and benefits from simple joins between campaigns, content pieces, AI suggestions, and review actions. SQLite was removed entirely from runtime and test execution so development matches the real data path.
 
 ### AI abstraction
 
