@@ -1,5 +1,7 @@
 # ACME Content Workflow — AI-Powered Content Management
 
+Loom Overview: https://www.loom.com/share/f048ce37745c4f1eb7ecee16e597d2cb
+
 Fullstack implementation of the **ACME Global Media AI Content Workflow** challenge. A system for managing marketing campaign content creation, AI-powered draft generation, multi-language translation, and human-in-the-loop review — all powered by LLM integration through a provider-agnostic architecture.
 
 > See [CHALLENGE_BRIEF.md](CHALLENGE_BRIEF.md) for the original challenge requirements.
