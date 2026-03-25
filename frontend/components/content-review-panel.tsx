@@ -9,11 +9,11 @@ import { useContentEvents } from "@/lib/use-content-events";
 import { ReviewStateBadge } from "@/components/review-state-badge";
 
 const STATE_NOTES: Record<ContentPiece["review_state"], string> = {
-  draft: "Create the first AI proposal or edit the canonical text to begin the workflow.",
-  ai_suggested: "A text suggestion is ready. Review it before approving the canonical copy.",
-  in_review: "This piece is currently in human review.",
-  approved: "The canonical text is approved and ready to ship.",
-  rejected: "The latest reviewed proposal was rejected. Generate a new option or update the text manually.",
+  draft: "Generá la primera propuesta AI o ajustá el texto canónico para iniciar el flujo.",
+  ai_suggested: "Hay una propuesta textual lista para revisar antes de aprobar la versión final.",
+  in_review: "Esta pieza está en revisión humana.",
+  approved: "El texto canónico ya fue aprobado y está listo para salir.",
+  rejected: "La propuesta revisada fue rechazada. Generá una nueva opción o editá manualmente.",
 };
 
 export function ContentReviewPanel({
@@ -68,40 +68,40 @@ export function ContentReviewPanel({
       <div className="review-header">
         <div>
           <p className="eyebrow">{piece.type}</p>
-          <h3>{piece.source_language} {piece.target_language ? `→ ${piece.target_language}` : "source"}</h3>
+          <h3>{piece.source_language} {piece.target_language ? `→ ${piece.target_language}` : "texto base"}</h3>
         </div>
         <ReviewStateBadge state={piece.review_state} />
       </div>
 
       <section className="state-banner">
         <div>
-          <strong>Workflow status</strong>
+          <strong>Estado del flujo</strong>
           <p>{STATE_NOTES[piece.review_state]}</p>
         </div>
         <div className="realtime-note">
-          <strong>Live sync</strong>
-          <p>{lastLiveUpdate ? `Updated at ${lastLiveUpdate}` : "Listening for SSE updates"}</p>
+          <strong>Realtime</strong>
+          <p>{lastLiveUpdate ? `Actualizado a las ${lastLiveUpdate}` : "Escuchando eventos SSE"}</p>
         </div>
       </section>
 
       <div className="text-blocks">
         <section className="content-surface">
-          <h4>Source text</h4>
+          <h4>Texto fuente</h4>
           <p>{piece.source_text}</p>
         </section>
         <section className="content-surface">
-          <h4>Canonical text</h4>
+          <h4>Texto canónico</h4>
           <p>{piece.current_text}</p>
         </section>
       </div>
 
       <div className="action-grid">
         <label>
-          <span>AI context</span>
+          <span>Contexto AI</span>
           <input value={context} onChange={(event) => setContext(event.target.value)} />
         </label>
         <label>
-          <span>Target language</span>
+          <span>Idioma objetivo</span>
           <input value={targetLanguage} onChange={(event) => setTargetLanguage(event.target.value)} />
         </label>
       </div>
@@ -183,9 +183,9 @@ export function ContentReviewPanel({
       <div className="support-grid">
         <section className="suggestion-block">
           <div className="section-heading">
-            <h4>Latest reviewable suggestion</h4>
+            <h4>Última sugerencia reviewable</h4>
             <span>
-              {latestReviewableSuggestion ? latestReviewableSuggestion.operation_type : "No reviewable suggestion"}
+              {latestReviewableSuggestion ? latestReviewableSuggestion.operation_type : "Sin sugerencia reviewable"}
             </span>
           </div>
           {latestReviewableSuggestion ? (
@@ -194,7 +194,7 @@ export function ContentReviewPanel({
               <pre>{latestReviewableSuggestion.output_text ?? "No output returned"}</pre>
             </>
           ) : (
-            <p className="muted">Generate a draft or translation before asking a reviewer to approve text.</p>
+            <p className="muted">Generá un draft o una traducción antes de pedir una aprobación editorial.</p>
           )}
         </section>
 
@@ -202,7 +202,7 @@ export function ContentReviewPanel({
           <div className="section-heading">
             <h4>Metadata</h4>
             <span>
-              {latestSuggestion?.operation_type === "extract_metadata" ? "Latest AI activity" : "Structured extraction"}
+              {latestSuggestion?.operation_type === "extract_metadata" ? "Última actividad AI" : "Extracción estructurada"}
             </span>
           </div>
           {piece.latest_metadata ? (
@@ -221,17 +221,17 @@ export function ContentReviewPanel({
               </div>
             </dl>
           ) : (
-            <p className="muted">No metadata extracted yet.</p>
+            <p className="muted">Todavía no hay metadata extraída.</p>
           )}
         </section>
       </div>
 
       <label>
-        <span>Review comment</span>
+        <span>Comentario editorial</span>
         <input value={comment} onChange={(event) => setComment(event.target.value)} />
       </label>
       <label>
-        <span>Edited text</span>
+        <span>Texto editado</span>
         <textarea
           rows={4}
           value={editedText}
@@ -256,7 +256,7 @@ export function ContentReviewPanel({
             )
           }
         >
-          Accept latest suggestion
+          Aprobar sugerencia
         </button>
         <button
           type="button"
@@ -275,7 +275,7 @@ export function ContentReviewPanel({
             )
           }
         >
-          Approve edited text
+          Aprobar edición
         </button>
         <button
           type="button"
@@ -294,13 +294,13 @@ export function ContentReviewPanel({
             )
           }
         >
-          Reject
+          Rechazar
         </button>
       </div>
 
       {piece.latest_review_action ? (
         <p className="muted">
-          Last review action: {piece.latest_review_action.action}
+          Última acción: {piece.latest_review_action.action}
           {piece.latest_review_action.comment ? ` · ${piece.latest_review_action.comment}` : ""}
         </p>
       ) : null}

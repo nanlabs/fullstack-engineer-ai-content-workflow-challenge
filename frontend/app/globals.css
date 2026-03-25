@@ -715,6 +715,28 @@ button:disabled {
   color: var(--muted);
 }
 
+.review-panel {
+  gap: 20px;
+}
+
+.review-panel h4 {
+  margin: 0 0 10px;
+}
+
+.content-surface,
+.suggestion-block {
+  min-height: 180px;
+}
+
+.content-surface p,
+.suggestion-block p {
+  line-height: 1.6;
+}
+
+.suggestion-status {
+  margin: 0 0 12px;
+}
+
 .support-grid {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
