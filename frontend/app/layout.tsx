@@ -11,20 +11,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="en">
-      <body>
-        <div className="shell">
-          <header className="site-header">
-            <div>
-              <p className="eyebrow">ACME Global Media</p>
-              <h1>AI Content Workflow</h1>
-            </div>
-            <p className="header-copy">
-              Minimal V1 foundation for campaign content, AI suggestions, review states, and realtime updates.
-            </p>
-          </header>
-          {children}
-        </div>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

@@ -30,6 +30,10 @@ body {
   font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
 }
 
+a {
+  color: inherit;
+}
+
 button,
 input,
 select,
@@ -41,6 +45,125 @@ textarea {
   max-width: 1260px;
   margin: 0 auto;
   padding: 32px 20px 72px;
+}
+
+.stitch-shell {
+  display: grid;
+  min-height: 100vh;
+}
+
+.stitch-sidebar {
+  display: grid;
+  align-content: start;
+  gap: 28px;
+  padding: 28px 22px;
+}
+
+.stitch-brand h1,
+.stitch-brand p,
+.stitch-profile p {
+  margin: 0;
+}
+
+.stitch-brand h1 {
+  font-size: 1.4rem;
+}
+
+.stitch-brand p,
+.stitch-profile p {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+}
+
+.stitch-nav,
+.stitch-nav-item,
+.stitch-topbar,
+.stitch-topbar-actions,
+.stitch-search,
+.stitch-content,
+.stitch-profile {
+  display: grid;
+  gap: 12px;
+}
+
+.stitch-nav-item {
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 16px;
+  text-decoration: none;
+}
+
+.stitch-nav-item svg,
+.stitch-search svg,
+.stitch-icon-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.stitch-main {
+  display: grid;
+  align-content: start;
+}
+
+.stitch-topbar {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  padding: 24px 28px;
+}
+
+.stitch-topbar-actions {
+  grid-auto-flow: column;
+  align-items: center;
+}
+
+.stitch-search {
+  grid-template-columns: 18px minmax(220px, 1fr);
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 14px;
+}
+
+.stitch-search input {
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+.stitch-search input:focus {
+  outline: none;
+}
+
+.stitch-icon-button {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border-radius: 999px;
+}
+
+.stitch-content {
+  padding: 30px 28px 36px;
+}
+
+.stitch-profile {
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  margin-top: auto;
+  padding: 16px;
+  border-radius: 18px;
+}
+
+.stitch-avatar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  font-weight: 700;
 }
 
 .site-header {
@@ -101,6 +224,10 @@ label span,
 }
 
 @media (min-width: 960px) {
+  .stitch-shell {
+    grid-template-columns: 250px minmax(0, 1fr);
+  }
+
   .page-grid {
     grid-template-columns: 360px minmax(0, 1fr);
   }
@@ -396,8 +523,22 @@ pre {
 }
 
 @media (max-width: 720px) {
+  .stitch-shell {
+    grid-template-columns: 1fr;
+  }
+
   .shell {
     padding-inline: 14px;
+  }
+
+  .stitch-sidebar {
+    gap: 18px;
+    padding: 18px 14px;
+  }
+
+  .stitch-topbar,
+  .stitch-content {
+    padding-inline: 16px;
   }
 
   .site-header,
