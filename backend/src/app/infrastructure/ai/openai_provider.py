@@ -4,6 +4,7 @@ from openai import AsyncOpenAI
 
 from app.infrastructure.ai.base import AIProvider, GeneratedPayload
 from app.infrastructure.ai.metadata_parser import parse_metadata_output
+from app.infrastructure.ai.translation_parser import parse_translation_output
 
 
 class OpenAIProvider(AIProvider):
@@ -25,6 +26,7 @@ class OpenAIProvider(AIProvider):
     ) -> GeneratedPayload:
         prompt = (
             "Create a concise marketing draft.\n"
+            "Return the draft as plain text only.\n"
             f"Content type: {content_type}\n"
             f"Source text: {source_text}\n"
             f"Extra context: {context or 'none'}"
@@ -41,12 +43,16 @@ class OpenAIProvider(AIProvider):
     ) -> GeneratedPayload:
         prompt = (
             "Translate and localize the content while keeping the intent intact.\n"
+            "Return only the translated content as plain text.\n"
+            "Preserve markdown, headings, lists, spacing, and the original content structure.\n"
+            "Do not wrap the result in JSON, quotes, or code fences.\n"
             f"From: {source_language}\n"
             f"To: {target_language}\n"
             f"Source text: {source_text}\n"
             f"Extra context: {context or 'none'}"
         )
-        return GeneratedPayload(output_text=await self._text_completion(prompt))
+        output_text = await self._text_completion(prompt)
+        return GeneratedPayload(output_text=parse_translation_output(output_text))
 
     async def extract_metadata(self, *, source_text: str, content_type: str) -> GeneratedPayload:
         prompt = (

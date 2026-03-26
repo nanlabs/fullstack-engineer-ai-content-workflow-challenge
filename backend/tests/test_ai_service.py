@@ -212,6 +212,64 @@ async def test_translation_versions_only_include_translate_suggestions(session_f
     assert metadata_response.content_piece.translation_versions[0].id == translated.suggestion.id
 
 
+async def test_translation_output_is_normalized_from_json_wrapper(session_factory, workflow_service, fake_ai_provider) -> None:
+    async def wrapped_translation(
+        *,
+        source_text: str,
+        source_language: str,
+        target_language: str,
+        context: str | None,
+    ) -> GeneratedPayload:
+        return GeneratedPayload(
+            output_text='{"translation":"## Titulo\\n- punto uno\\n- punto dos"}',
+        )
+
+    fake_ai_provider.translate = wrapped_translation
+
+    async with session_factory() as session:
+        campaign = await workflow_service.create_campaign(session, CampaignCreate(name="Translate"))
+        piece = await workflow_service.create_content_piece(
+            session,
+            campaign.id,
+            ContentPieceCreate(source_text="## Title\n- bullet one\n- bullet two"),
+        )
+        translated = await workflow_service.translate(
+            session,
+            piece.id,
+            TranslateRequest(source_language="en", target_language="es", context="homepage"),
+        )
+
+    assert translated.suggestion.output_text == "## Titulo\n- punto uno\n- punto dos"
+    assert translated.content_piece.translation_versions[0].output_text == "## Titulo\n- punto uno\n- punto dos"
+    assert translated.content_piece.current_text == "## Title\n- bullet one\n- bullet two"
+
+
+async def test_translate_does_not_replace_latest_reviewable_suggestion(session_factory, workflow_service) -> None:
+    async with session_factory() as session:
+        campaign = await workflow_service.create_campaign(session, CampaignCreate(name="Translate"))
+        piece = await workflow_service.create_content_piece(
+            session,
+            campaign.id,
+            ContentPieceCreate(source_text="Launch line"),
+        )
+        draft_response = await workflow_service.generate_draft(
+            session,
+            piece.id,
+            GenerateDraftRequest(context="hero"),
+        )
+        translated = await workflow_service.translate(
+            session,
+            piece.id,
+            TranslateRequest(source_language="en", target_language="es", context="regional"),
+        )
+
+    assert translated.content_piece.latest_suggestion is not None
+    assert translated.content_piece.latest_suggestion.operation_type.value == "translate"
+    assert translated.content_piece.latest_reviewable_suggestion is not None
+    assert translated.content_piece.latest_reviewable_suggestion.id == draft_response.suggestion.id
+    assert translated.content_piece.review_state == ReviewState.AI_SUGGESTED
+
+
 async def test_ai_call_history_is_chronological_and_uses_canonical_input(session_factory, workflow_service) -> None:
     async with session_factory() as session:
         campaign = await workflow_service.create_campaign(session, CampaignCreate(name="Launch"))

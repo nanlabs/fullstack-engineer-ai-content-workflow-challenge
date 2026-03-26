@@ -30,6 +30,7 @@ from app.domain.enums import AISuggestionStatus, OperationType, ReviewActionType
 from app.domain.review import InvalidReviewTransition, ensure_transition
 from app.infrastructure.ai.base import AIProvider, GeneratedPayload
 from app.infrastructure.ai.metadata_parser import parse_metadata_output
+from app.infrastructure.ai.translation_parser import parse_translation_output
 from app.infrastructure.db.models import AISuggestion, Campaign, ContentPiece, ReviewAction
 from app.infrastructure.events.bus import EventBus
 
@@ -270,6 +271,8 @@ class WorkflowService:
                     structured_output = parse_metadata_output(generated.output_text)
                 if structured_output is not None:
                     structured_output = MetadataPayload.model_validate(structured_output).model_dump()
+            if operation == OperationType.TRANSLATE and generated.output_text:
+                generated.output_text = parse_translation_output(generated.output_text)
             return generated, AISuggestionStatus.SUCCESS, generated.output_text, structured_output
         except (ValidationError, ValueError) as exc:
             return None, AISuggestionStatus.FAILED, str(exc), None
@@ -301,7 +304,7 @@ class WorkflowService:
             created_at=datetime.now(UTC),
         )
         session.add(suggestion)
-        if status == AISuggestionStatus.SUCCESS:
+        if status == AISuggestionStatus.SUCCESS and operation_type == OperationType.GENERATE_DRAFT:
             piece.review_state = ReviewState.AI_SUGGESTED.value
             piece.updated_at = datetime.now(UTC)
         await session.commit()
@@ -339,16 +342,16 @@ class WorkflowService:
         reviewable_suggestions = [
             item
             for item in piece.ai_suggestions
-            if item.operation_type != OperationType.EXTRACT_METADATA.value
+            if item.operation_type == OperationType.GENERATE_DRAFT.value
             and item.status == AISuggestionStatus.SUCCESS.value
             and item.output_text
         ]
         latest_reviewable_suggestion = max(reviewable_suggestions, key=lambda item: item.created_at, default=None)
 
         if latest_suggestion is not None:
-            latest_suggestion_model = AISuggestionResponse.model_validate(latest_suggestion)
+            latest_suggestion_model = self._serialize_suggestion(latest_suggestion)
         if latest_reviewable_suggestion is not None:
-            latest_reviewable_suggestion_model = AISuggestionResponse.model_validate(latest_reviewable_suggestion)
+            latest_reviewable_suggestion_model = self._serialize_suggestion(latest_reviewable_suggestion)
         if latest_review is not None:
             latest_review_model = ReviewActionResponse.model_validate(latest_review)
 
@@ -359,7 +362,7 @@ class WorkflowService:
         ]
         if metadata_suggestions:
             latest_metadata_attempt = max(metadata_suggestions, key=lambda item: item.created_at)
-            latest_metadata_attempt_model = AISuggestionResponse.model_validate(latest_metadata_attempt)
+            latest_metadata_attempt_model = self._serialize_suggestion(latest_metadata_attempt)
             if (
                 latest_metadata_attempt.status == AISuggestionStatus.SUCCESS.value
                 and latest_metadata_attempt.structured_output_json
@@ -376,10 +379,16 @@ class WorkflowService:
             reverse=True,
         )
         translation_versions = [
-            TranslationVersionResponse.model_validate(item) for item in translation_suggestions
+            TranslationVersionResponse.model_validate(
+                {
+                    **item.__dict__,
+                    "output_text": self._normalize_suggestion_output(item),
+                }
+            )
+            for item in translation_suggestions
         ]
         ai_call_history = [
-            AISuggestionResponse.model_validate(item)
+            self._serialize_suggestion(item)
             for item in sorted(piece.ai_suggestions, key=lambda item: item.created_at)
         ]
 
@@ -402,6 +411,21 @@ class WorkflowService:
             translation_versions=translation_versions,
             ai_call_history=ai_call_history,
         )
+
+    def _serialize_suggestion(self, suggestion: AISuggestion) -> AISuggestionResponse:
+        return AISuggestionResponse.model_validate(
+            {
+                **suggestion.__dict__,
+                "output_text": self._normalize_suggestion_output(suggestion),
+            }
+        )
+
+    def _normalize_suggestion_output(self, suggestion: AISuggestion) -> str | None:
+        if not suggestion.output_text:
+            return suggestion.output_text
+        if suggestion.operation_type == OperationType.TRANSLATE.value:
+            return parse_translation_output(suggestion.output_text)
+        return suggestion.output_text
 
     async def _publish_content_piece_event(self, piece: ContentPiece, event_type: str) -> None:
         await self.event_bus.publish(

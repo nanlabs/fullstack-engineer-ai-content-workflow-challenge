@@ -1,3 +1,6 @@
+from app.infrastructure.ai.base import GeneratedPayload
+
+
 async def test_campaign_ai_review_flow(api_client) -> None:
     campaign_response = await api_client.post(
         "/campaigns",
@@ -141,6 +144,37 @@ async def test_translation_requires_languages_at_action_time(api_client) -> None
     assert len(payload["content_piece"]["ai_call_history"]) == 1
     assert payload["content_piece"]["ai_call_history"][0]["operation_type"] == "translate"
     assert payload["content_piece"]["current_text"] == "Hola mundo"
+    assert payload["content_piece"]["review_state"] == "draft"
+
+
+async def test_translation_response_is_plain_text_and_not_reviewable(api_client, fake_ai_provider) -> None:
+    async def wrapped_translation(*, source_text: str, source_language: str, target_language: str, context: str | None):
+        return GeneratedPayload(output_text='{"translation":"## Hola\\n- punto uno\\n- punto dos"}')
+
+    fake_ai_provider.translate = wrapped_translation
+
+    campaign_response = await api_client.post("/campaigns", json={"name": "Translate formatting"})
+    campaign = campaign_response.json()
+    piece_response = await api_client.post(
+        f"/campaigns/{campaign['id']}/content-pieces",
+        json={"source_text": "## Hello\n- point one\n- point two"},
+    )
+    piece = piece_response.json()
+
+    translated = await api_client.post(
+        f"/content-pieces/{piece['id']}/ai/translate",
+        json={
+            "source_language": "en",
+            "target_language": "es",
+            "context": "homepage hero",
+        },
+    )
+
+    assert translated.status_code == 200
+    payload = translated.json()
+    assert payload["suggestion"]["output_text"] == "## Hola\n- punto uno\n- punto dos"
+    assert payload["content_piece"]["translation_versions"][0]["output_text"] == "## Hola\n- punto uno\n- punto dos"
+    assert payload["content_piece"]["latest_reviewable_suggestion"] is None
 
 
 async def test_generate_draft_uses_current_canonical_text(api_client) -> None:
