@@ -1,0 +1,339 @@
+import { useState, useCallback } from 'react';
+import type { ContentStatus } from '../lib/types';
+
+interface ContentCardProps {
+  body: string;
+  status: ContentStatus;
+  reviewNotes: string | null;
+  isPending: boolean;
+  error: Error | null;
+  onApprove: () => void;
+  onReject: () => void;
+  onMarkReviewed?: () => void;
+  onRegenerate?: () => void;
+  onReopen?: () => void;
+  onSave?: (body: string, notes: string) => void;
+  regenerateLabel?: string;
+  isGenerating?: boolean;
+}
+
+export function ContentCard({
+  body,
+  status,
+  reviewNotes,
+  isPending,
+  error,
+  onApprove,
+  onReject,
+  onMarkReviewed,
+  onRegenerate,
+  onReopen,
+  onSave,
+  regenerateLabel = 'Regenerate',
+  isGenerating = false,
+}: ContentCardProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editBody, setEditBody] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(() => {
+    if (!body) return;
+    navigator.clipboard.writeText(body).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [body]);
+
+  const startEdit = () => {
+    setEditBody(body);
+    setEditNotes(reviewNotes ?? '');
+    setIsEditing(true);
+  };
+
+  if (isEditing && onSave) {
+    return (
+      <div className="space-y-4">
+        <textarea
+          value={editBody}
+          onChange={(e) => setEditBody(e.target.value)}
+          className="input-field min-h-[200px] font-mono whitespace-pre-wrap leading-relaxed"
+          maxLength={10000}
+        />
+        <textarea
+          value={editNotes}
+          onChange={(e) => setEditNotes(e.target.value)}
+          placeholder="Review notes (optional)"
+          className="input-field"
+          rows={2}
+          maxLength={5000}
+        />
+        <div className="flex gap-2 pt-2">
+          <button
+            onClick={() => {
+              onSave(editBody, editNotes);
+              setIsEditing(false);
+            }}
+            className="btn-primary"
+          >
+            Save Changes
+          </button>
+          <button onClick={() => setIsEditing(false)} className="btn-secondary">
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isGenerating && !body) {
+    return (
+      <div className="animate-pulse space-y-2 py-2">
+        <div className="h-3.5 bg-zinc-200 dark:bg-zinc-700 rounded w-full" />
+        <div className="h-3.5 bg-zinc-200 dark:bg-zinc-700 rounded w-11/12" />
+        <div className="h-3.5 bg-zinc-200 dark:bg-zinc-700 rounded w-4/5" />
+        <div className="h-3.5 bg-zinc-200 dark:bg-zinc-700 rounded w-full" />
+        <div className="h-3.5 bg-zinc-200 dark:bg-zinc-700 rounded w-3/4" />
+        <div className="h-3.5 bg-zinc-200 dark:bg-zinc-700 rounded w-5/6" />
+        <div className="h-3.5 bg-zinc-200 dark:bg-zinc-700 rounded w-2/3" />
+        <div className="flex items-center gap-2 mt-3 text-xs text-zinc-400">
+          <svg className="animate-spin h-3.5 w-3.5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          Generating content…
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* Body */}
+      {body ? (
+        <div className="relative group/body">
+          {isGenerating && (
+            <div className="absolute inset-0 bg-white/70 dark:bg-zinc-900/70 rounded flex items-center justify-center z-10 gap-2">
+              <svg className="animate-spin h-4 w-4 text-zinc-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              <span className="text-sm text-zinc-500">Regenerating…</span>
+            </div>
+          )}
+          <button
+            onClick={handleCopy}
+            title="Copy to clipboard"
+            className="absolute top-0 right-0 p-1.5 rounded-md text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 opacity-0 group-hover/body:opacity-100 focus:opacity-100 transition-all z-20"
+          >
+            {copied ? (
+              <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 text-emerald-500" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M20 6L9 17L4 12" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth={2}>
+                <rect x="9" y="9" width="13" height="13" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+              </svg>
+            )}
+          </button>
+          <p className={`whitespace-pre-wrap text-zinc-800 dark:text-zinc-200 leading-relaxed text-[15px] pr-8 ${isGenerating ? 'opacity-30' : ''}`}>{body}</p>
+        </div>
+      ) : (
+        <div className="bg-zinc-50 dark:bg-zinc-800/50 border border-dashed border-zinc-200 dark:border-zinc-700 rounded-md p-8 text-center">
+          <p className="text-zinc-500 text-sm">
+            No content yet. Generate a draft using AI Tools below.
+          </p>
+        </div>
+      )}
+
+      {/* Review notes */}
+      {reviewNotes && (
+        <div className="mt-4 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md p-3">
+          <p className="text-sm text-zinc-700 dark:text-zinc-300">
+            <span className="font-semibold text-zinc-900 dark:text-zinc-100 mr-2">Notes:</span>
+            {reviewNotes}
+          </p>
+        </div>
+      )}
+
+      {/* Actions */}
+      {body && (
+        <div className="mt-5 flex items-center gap-2 flex-wrap">
+          {status === 'APPROVED' ? (
+            <>
+              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm font-medium bg-emerald-50 dark:bg-emerald-900/30 px-3 py-1.5 rounded-full border border-emerald-100 dark:border-emerald-800">
+                <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4">
+                  <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Approved
+              </div>
+              {onReopen && (
+                <button
+                  onClick={onReopen}
+                  disabled={isPending}
+                  className="btn-secondary text-zinc-500 hover:text-zinc-800"
+                >
+                  Reopen
+                </button>
+              )}
+            </>
+          ) : status === 'REJECTED' ? (
+            <>
+              {onRegenerate && (
+                <button onClick={onRegenerate} disabled={isPending} className="btn-secondary">
+                  {regenerateLabel}
+                </button>
+              )}
+              {onReopen && (
+                <button
+                  onClick={onReopen}
+                  disabled={isPending}
+                  className="btn-secondary text-zinc-500 hover:text-zinc-800"
+                >
+                  Reopen
+                </button>
+              )}
+            </>
+          ) : status === 'AI_SUGGESTED' ? (
+            <>
+              <button
+                onClick={onApprove}
+                disabled={isPending}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+                  bg-emerald-600 hover:bg-emerald-700 text-white
+                  dark:bg-emerald-600 dark:hover:bg-emerald-500"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 flex-shrink-0" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 6L9 17L4 12" />
+                </svg>
+                Approve
+              </button>
+              {onMarkReviewed && (
+                <button
+                  onClick={onMarkReviewed}
+                  disabled={isPending}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+                    border border-amber-300 text-amber-600 hover:bg-amber-50
+                    dark:border-amber-600 dark:text-amber-400 dark:hover:bg-amber-900/20"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 flex-shrink-0" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  Mark as Reviewed
+                </button>
+              )}
+              <button
+                onClick={onReject}
+                disabled={isPending}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+                  border border-red-300 text-red-600 hover:bg-red-50
+                  dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 flex-shrink-0" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M18 6L6 18M6 6l12 12" />
+                </svg>
+                Reject
+              </button>
+              {onRegenerate && (
+                <button onClick={onRegenerate} disabled={isPending} className="btn-secondary">
+                  {regenerateLabel}
+                </button>
+              )}
+            </>
+          ) : status === 'REVIEWED' ? (
+            <>
+              <button
+                onClick={onApprove}
+                disabled={isPending}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+                  bg-emerald-600 hover:bg-emerald-700 text-white
+                  dark:bg-emerald-600 dark:hover:bg-emerald-500"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 flex-shrink-0" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 6L9 17L4 12" />
+                </svg>
+                Approve
+              </button>
+              <button
+                onClick={onReject}
+                disabled={isPending}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+                  border border-red-300 text-red-600 hover:bg-red-50
+                  dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 flex-shrink-0" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M18 6L6 18M6 6l12 12" />
+                </svg>
+                Reject
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={onApprove}
+                disabled={isPending}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+                  bg-emerald-600 hover:bg-emerald-700 text-white
+                  dark:bg-emerald-600 dark:hover:bg-emerald-500"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 flex-shrink-0" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 6L9 17L4 12" />
+                </svg>
+                Approve
+              </button>
+              {onMarkReviewed && (
+                <button
+                  onClick={onMarkReviewed}
+                  disabled={isPending}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+                    border border-amber-300 text-amber-600 hover:bg-amber-50
+                    dark:border-amber-600 dark:text-amber-400 dark:hover:bg-amber-900/20"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 flex-shrink-0" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  Mark as Reviewed
+                </button>
+              )}
+              <button
+                onClick={onReject}
+                disabled={isPending}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+                  border border-red-300 text-red-600 hover:bg-red-50
+                  dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 flex-shrink-0" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M18 6L6 18M6 6l12 12" />
+                </svg>
+                Reject
+              </button>
+              {onRegenerate && (
+                <button onClick={onRegenerate} disabled={isPending} className="btn-secondary">
+                  {regenerateLabel}
+                </button>
+              )}
+            </>
+          )}
+
+          {onSave && (
+            <button
+              onClick={startEdit}
+              className="text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 underline-offset-4 hover:underline transition-colors ml-auto"
+            >
+              Edit
+            </button>
+          )}
+        </div>
+      )}
+
+      {error && (
+        <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-sm rounded-md border border-red-200 dark:border-red-800">
+          {error.message}
+        </div>
+      )}
+    </div>
+  );
+}

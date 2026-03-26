@@ -1,0 +1,79 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { PrismaService } from '../common/prisma.service';
+import {
+  CreateContentPieceDto,
+  UpdateContentPieceDto,
+  UpdateStatusDto,
+} from './content.dto';
+import { validateStatusTransition } from './status-machine';
+
+@Injectable()
+export class ContentService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly events: EventEmitter2,
+  ) {}
+
+  async create(campaignId: string, dto: CreateContentPieceDto, userId: string) {
+    // Verify campaign ownership
+    const campaign = await this.prisma.campaign.findUnique({
+      where: { id: campaignId },
+    });
+    if (!campaign || campaign.userId !== userId) {
+      throw new NotFoundException(`Campaign ${campaignId} not found`);
+    }
+
+    const piece = await this.prisma.contentPiece.create({
+      data: {
+        campaignId,
+        title: dto.title,
+        body: dto.body ?? '',
+        language: dto.language ?? 'en',
+      },
+    });
+    this.events.emit('content.created', { ...piece, userId });
+    return piece;
+  }
+
+  async findOne(id: string, userId: string) {
+    const piece = await this.prisma.contentPiece.findUnique({
+      where: { id },
+      include: { translations: true, campaign: true },
+    });
+    if (!piece || piece.campaign.userId !== userId) {
+      throw new NotFoundException(`Content piece ${id} not found`);
+    }
+    return piece;
+  }
+
+  async update(id: string, dto: UpdateContentPieceDto, userId: string) {
+    const piece = await this.findOne(id, userId);
+    const updated = await this.prisma.contentPiece.update({
+      where: { id },
+      data: dto,
+    });
+    this.events.emit('content.updated', { ...updated, userId });
+    return updated;
+  }
+
+  async updateStatus(id: string, dto: UpdateStatusDto, userId: string) {
+    const piece = await this.findOne(id, userId);
+    validateStatusTransition(piece.status, dto.status);
+
+    const updated = await this.prisma.contentPiece.update({
+      where: { id },
+      data: {
+        status: dto.status,
+        reviewNotes: dto.reviewNotes ?? piece.reviewNotes,
+      },
+    });
+    this.events.emit('content.statusChanged', { ...updated, userId });
+    return updated;
+  }
+
+  async remove(id: string, userId: string) {
+    await this.findOne(id, userId);
+    return this.prisma.contentPiece.delete({ where: { id } });
+  }
+}

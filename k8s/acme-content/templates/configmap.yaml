@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-backend-config
+  labels:
+    {{- include "acme.labels" . | nindent 4 }}
+data:
+  PORT: {{ .Values.backend.port | quote }}
+  JWT_EXPIRATION: {{ .Values.backend.jwtExpiration | quote }}
+  DEFAULT_LLM_PROVIDER: {{ .Values.backend.defaultLlmProvider | quote }}
+  DATABASE_URL: "postgresql://{{ .Values.postgres.user }}:{{ .Values.postgres.password }}@{{ .Release.Name }}-postgres:5432/{{ .Values.postgres.database }}"
+  FRONTEND_URL: "http://{{ .Release.Name }}-frontend:{{ .Values.frontend.port }}"

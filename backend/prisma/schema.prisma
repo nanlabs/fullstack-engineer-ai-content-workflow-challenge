@@ -1,0 +1,68 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ContentStatus {
+  DRAFT
+  AI_SUGGESTED
+  REVIEWED
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id        String     @id @default(uuid())
+  email     String     @unique
+  password  String
+  name      String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  campaigns Campaign[]
+
+  @@map("users")
+}
+
+model Campaign {
+  id              String         @id @default(uuid())
+  name            String
+  description     String?
+  targetLanguages String[]
+  userId          String
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contentPieces ContentPiece[]
+
+  @@index([userId])
+  @@map("campaigns")
+}
+
+model ContentPiece {
+  id           String        @id @default(uuid())
+  campaignId   String
+  title        String
+  body         String        @default("")
+  language     String        @default("en")
+  status       ContentStatus @default(DRAFT)
+  aiModel      String?
+  parentId     String?
+  metadata     Json?
+  reviewNotes  String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  campaign     Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  parent       ContentPiece? @relation("Translations", fields: [parentId], references: [id], onDelete: SetNull)
+  translations ContentPiece[] @relation("Translations")
+
+  @@index([campaignId])
+  @@index([parentId])
+  @@map("content_pieces")
+}

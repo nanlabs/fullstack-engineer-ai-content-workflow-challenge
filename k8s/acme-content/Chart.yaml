@@ -1,0 +1,11 @@
+apiVersion: v2
+name: acme-content
+description: Helm chart for ACME Global Media AI Content Workflow
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - acme
+  - content
+  - ai
+  - workflow

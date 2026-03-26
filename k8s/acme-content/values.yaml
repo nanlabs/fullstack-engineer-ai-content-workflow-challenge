@@ -1,0 +1,68 @@
+# ACME Content Workflow — Helm Values
+# Override these for your environment
+
+# -- Container image settings
+image:
+  backend:
+    repository: acme-content/backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  frontend:
+    repository: acme-content/frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+
+# -- Replica counts
+replicaCount:
+  backend: 2
+  frontend: 2
+
+# -- PostgreSQL
+postgres:
+  image: postgres:16-alpine
+  storage: 5Gi
+  storageClass: ""
+  user: acme
+  password: acme_pass
+  database: acme_content
+
+# -- Backend environment
+backend:
+  port: 3000
+  jwtSecret: change-me-to-a-random-secret-at-least-32-chars
+  jwtExpiration: "24h"
+  defaultLlmProvider: gpt-5.4-mini
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# -- Frontend (nginx)
+frontend:
+  port: 80
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+# -- API keys (provide via --set or sealed-secrets in production)
+apiKeys:
+  openai: ""
+  anthropic: ""
+  google: ""
+
+# -- Ingress
+ingress:
+  enabled: false
+  className: nginx
+  host: acme-content.local
+  tls: []
+  #  - secretName: acme-content-tls
+  #    hosts:
+  #      - acme-content.local
