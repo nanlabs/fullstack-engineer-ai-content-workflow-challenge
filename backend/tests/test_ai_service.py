@@ -1,5 +1,6 @@
 from app.api.schemas import CampaignCreate, ContentPieceCreate, ContentPieceUpdate, GenerateDraftRequest, TranslateRequest
 from app.domain.enums import AISuggestionStatus, ReviewState
+from app.infrastructure.ai.base import GeneratedPayload
 
 
 async def test_generate_draft_updates_state_and_persists_suggestion(session_factory, workflow_service) -> None:
@@ -39,6 +40,60 @@ async def test_invalid_metadata_is_saved_as_failed(session_factory, workflow_ser
 
     assert response.suggestion.status == AISuggestionStatus.FAILED
     assert response.content_piece.review_state == ReviewState.DRAFT
+    assert response.content_piece.latest_metadata is None
+
+
+async def test_expanded_metadata_payload_is_returned(session_factory, workflow_service) -> None:
+    async with session_factory() as session:
+        campaign = await workflow_service.create_campaign(session, CampaignCreate(name="Launch"))
+        piece = await workflow_service.create_content_piece(
+            session,
+            campaign.id,
+            ContentPieceCreate(
+                source_text="Soft launch campaign for growth marketers with a focused landing page CTA.",
+            ),
+        )
+        response = await workflow_service.extract_metadata(session, piece.id)
+
+    assert response.suggestion.status == AISuggestionStatus.SUCCESS
+    assert response.content_piece.latest_metadata is not None
+    assert response.content_piece.latest_metadata.audience == "growth marketers"
+    assert response.content_piece.latest_metadata.goal == "drive launch awareness"
+    assert response.content_piece.latest_metadata.campaign_theme == "spring launch"
+    assert response.content_piece.latest_metadata.channel_fit == "landing page"
+    assert response.content_piece.latest_metadata.cta_strength == "medium"
+
+
+async def test_invalid_cta_strength_is_saved_as_failed(session_factory, workflow_service, fake_ai_provider) -> None:
+    async def invalid_metadata(*, source_text: str, content_type: str) -> GeneratedPayload:
+        return GeneratedPayload(
+            output_text="invalid-json-shape",
+            structured_output={
+                "keywords": ["launch"],
+                "tone": "confident",
+                "sentiment": "positive",
+                "audience": "growth marketers",
+                "goal": "increase signups",
+                "campaign_theme": "launch momentum",
+                "channel_fit": "landing page",
+                "cta_strength": "extreme",
+            },
+        )
+
+    fake_ai_provider.extract_metadata = invalid_metadata
+
+    async with session_factory() as session:
+        campaign = await workflow_service.create_campaign(session, CampaignCreate(name="Launch"))
+        piece = await workflow_service.create_content_piece(
+            session,
+            campaign.id,
+            ContentPieceCreate(
+                source_text="Urgent landing page copy for launch signups.",
+            ),
+        )
+        response = await workflow_service.extract_metadata(session, piece.id)
+
+    assert response.suggestion.status == AISuggestionStatus.FAILED
     assert response.content_piece.latest_metadata is None
 
 
