@@ -71,6 +71,7 @@ export type ContentPiece = {
   latest_suggestion: AISuggestion | null;
   latest_reviewable_suggestion: AISuggestion | null;
   latest_review_action: ReviewAction | null;
+  latest_metadata_attempt: AISuggestion | null;
   latest_metadata: MetadataPayload | null;
   translation_versions: TranslationVersion[];
   ai_call_history: AISuggestion[];

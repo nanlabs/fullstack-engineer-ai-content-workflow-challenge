@@ -78,6 +78,8 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
 
   const keywords = piece.latest_metadata?.keywords ?? [];
   const metadata = piece.latest_metadata;
+  const latestMetadataAttempt = piece.latest_metadata_attempt;
+  const metadataFailed = latestMetadataAttempt?.status === "failed";
 
   return (
     <article className="editor-workspace">
@@ -244,7 +246,9 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
               <h3>Extracted Metadata</h3>
               <p>Reflects the latest saved canonical text.</p>
             </div>
-            <span className="editor-soft-chip">{metadata ? "Ready" : "Pending"}</span>
+            <span className="editor-soft-chip">
+              {metadata ? "Ready" : metadataFailed ? "Failed" : "Pending"}
+            </span>
           </header>
           {metadata ? (
             <>
@@ -293,6 +297,24 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
                 </div>
               </div>
             </>
+          ) : metadataFailed ? (
+            <div className="editor-side-section editor-metadata-failure">
+              <label>Metadata Status</label>
+              <div className="editor-chip-row">
+                <span className="editor-failure-chip">Failed</span>
+              </div>
+              <p>Metadata extraction failed for the latest saved canonical text.</p>
+              <pre>{latestMetadataAttempt?.output_text ?? "Unknown metadata extraction error."}</pre>
+              {labMode ? (
+                <button
+                  type="button"
+                  className="editor-secondary-button editor-lab-button"
+                  onClick={() => setIsLabModalOpen(true)}
+                >
+                  View failed call in Lab Mode
+                </button>
+              ) : null}
+            </div>
           ) : (
             <div className="editor-side-section">
               <label>Metadata Status</label>

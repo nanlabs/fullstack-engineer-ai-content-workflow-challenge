@@ -993,6 +993,32 @@ label span,
   line-height: 1.45;
 }
 
+.editor-metadata-failure {
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(159, 64, 61, 0.04);
+  border: 1px solid rgba(159, 64, 61, 0.12);
+}
+
+.editor-metadata-failure pre {
+  min-height: 80px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--surface-lowest);
+  border: 1px solid rgba(169, 180, 185, 0.18);
+}
+
+.editor-failure-chip {
+  display: inline-flex;
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba(159, 64, 61, 0.08);
+  color: var(--danger);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
 .editor-metadata-grid {
   display: grid;
   gap: 14px;
