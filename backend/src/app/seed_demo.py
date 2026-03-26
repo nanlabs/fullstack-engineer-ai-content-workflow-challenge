@@ -71,6 +71,11 @@ class DemoSeedProvider:
                 "keywords": keywords,
                 "tone": "confident",
                 "sentiment": "positive",
+                "audience": "editorial leads",
+                "goal": "support campaign review",
+                "campaign_theme": "creator launch",
+                "channel_fit": "campaign editor",
+                "cta_strength": "medium",
             },
         )
 

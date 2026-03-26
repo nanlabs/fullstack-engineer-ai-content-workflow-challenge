@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
+from typing import Literal
 
 from app.domain.enums import AISuggestionStatus, OperationType, ReviewActionType, ReviewState
 
@@ -12,6 +13,11 @@ class MetadataPayload(BaseModel):
     keywords: list[str] = Field(default_factory=list)
     tone: str
     sentiment: str
+    audience: str
+    goal: str
+    campaign_theme: str
+    channel_fit: str
+    cta_strength: Literal["low", "medium", "high"]
 
 
 class CampaignCreate(BaseModel):

@@ -72,8 +72,11 @@ class GeminiProvider(AIProvider):
 
     async def extract_metadata(self, *, source_text: str, content_type: str) -> GeneratedPayload:
         prompt = (
-            "Extract JSON metadata for the content with keys keywords, tone, sentiment.\n"
+            "Analyze the canonical marketing/editorial copy and extract JSON metadata.\n"
             "Return valid JSON only.\n"
+            "Use these keys exactly: keywords, tone, sentiment, audience, goal, campaign_theme, channel_fit, cta_strength.\n"
+            "Keep keywords short and useful. Infer audience, goal, theme, and channel fit from the text itself.\n"
+            "Set cta_strength to one of: low, medium, high.\n"
             f"Content type: {content_type}\n"
             f"Source text: {source_text}"
         )

@@ -45,11 +45,20 @@ class FakeAIProvider:
         if self.fail_metadata:
             return GeneratedPayload(output_text="not-json", structured_output={"tone": "warm"})
         return GeneratedPayload(
-            output_text='{"keywords": ["launch", "spring"], "tone": "optimistic", "sentiment": "positive"}',
+            output_text=(
+                '{"keywords": ["launch", "spring"], "tone": "optimistic", "sentiment": "positive", '
+                '"audience": "growth marketers", "goal": "drive launch awareness", '
+                '"campaign_theme": "spring launch", "channel_fit": "landing page", "cta_strength": "medium"}'
+            ),
             structured_output={
                 "keywords": ["launch", "spring"],
                 "tone": "optimistic",
                 "sentiment": "positive",
+                "audience": "growth marketers",
+                "goal": "drive launch awareness",
+                "campaign_theme": "spring launch",
+                "channel_fit": "landing page",
+                "cta_strength": "medium",
             },
         )
 
