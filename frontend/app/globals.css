@@ -981,6 +981,24 @@ label span,
   border-bottom: 1px solid rgba(169, 180, 185, 0.28);
 }
 
+.editor-metadata-heading {
+  display: grid;
+  gap: 6px;
+}
+
+.editor-metadata-heading p,
+.editor-side-section p {
+  margin: 0;
+  color: var(--text-soft);
+  line-height: 1.45;
+}
+
+.editor-metadata-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .editor-soft-chip,
 .editor-keyword-chip {
   display: inline-flex;

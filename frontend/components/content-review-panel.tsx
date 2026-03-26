@@ -77,7 +77,7 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
   ]);
 
   const keywords = piece.latest_metadata?.keywords ?? [];
-  const readabilityScore = piece.latest_metadata ? (piece.latest_metadata.sentiment === "positive" ? 85 : 62) : 0;
+  const metadata = piece.latest_metadata;
 
   return (
     <article className="editor-workspace">
@@ -240,42 +240,67 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
       <aside className="editor-side-panel">
         <section className="editor-metadata-panel">
           <header className="editor-side-header">
-            <h3>Extracted Metadata</h3>
-            <span className="editor-soft-chip">{piece.latest_metadata ? "Ready" : "Pending"}</span>
+            <div className="editor-metadata-heading">
+              <h3>Extracted Metadata</h3>
+              <p>Reflects the latest saved canonical text.</p>
+            </div>
+            <span className="editor-soft-chip">{metadata ? "Ready" : "Pending"}</span>
           </header>
-          <div className="editor-side-section">
-            <label>Tone Profile</label>
-            <div className="editor-chip-row">
-              {piece.latest_metadata ? (
-                <span className="editor-soft-chip">{piece.latest_metadata.tone}</span>
-              ) : (
-                <span className="editor-soft-chip">Awaiting extraction</span>
-              )}
-            </div>
-          </div>
-          <div className="editor-side-section">
-            <label>Target Keywords</label>
-            <div className="editor-chip-row">
-              {keywords.length > 0 ? (
-                keywords.map((keyword) => (
-                  <span key={keyword} className="editor-keyword-chip">
-                    {keyword}
-                  </span>
-                ))
-              ) : (
-                <span className="editor-soft-chip">No keywords yet</span>
-              )}
-            </div>
-          </div>
-          <div className="editor-side-section">
-            <label>Readability Index</label>
-            <div className="editor-readability-row">
-              <div className="editor-readability-bar">
-                <span style={{ width: `${readabilityScore}%` }} />
+          {metadata ? (
+            <>
+              <div className="editor-metadata-grid">
+                <div className="editor-side-section">
+                  <label>Tone</label>
+                  <span className="editor-soft-chip">{metadata.tone}</span>
+                </div>
+                <div className="editor-side-section">
+                  <label>Sentiment</label>
+                  <span className="editor-soft-chip">{metadata.sentiment}</span>
+                </div>
+                <div className="editor-side-section">
+                  <label>Audience</label>
+                  <p>{metadata.audience}</p>
+                </div>
+                <div className="editor-side-section">
+                  <label>Goal</label>
+                  <p>{metadata.goal}</p>
+                </div>
+                <div className="editor-side-section">
+                  <label>Campaign Theme</label>
+                  <p>{metadata.campaign_theme}</p>
+                </div>
+                <div className="editor-side-section">
+                  <label>Channel Fit</label>
+                  <p>{metadata.channel_fit}</p>
+                </div>
+                <div className="editor-side-section">
+                  <label>CTA Strength</label>
+                  <span className="editor-keyword-chip">{metadata.cta_strength}</span>
+                </div>
               </div>
-              <strong>{readabilityScore}/100</strong>
+              <div className="editor-side-section">
+                <label>Keywords</label>
+                <div className="editor-chip-row">
+                  {keywords.length > 0 ? (
+                    keywords.map((keyword) => (
+                      <span key={keyword} className="editor-keyword-chip">
+                        {keyword}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="editor-soft-chip">No keywords returned</span>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="editor-side-section">
+              <label>Metadata Status</label>
+              <div className="editor-chip-row">
+                <span className="editor-soft-chip">Awaiting extraction from canonical text</span>
+              </div>
             </div>
-          </div>
+          )}
         </section>
 
         <section className="editor-preview-card">

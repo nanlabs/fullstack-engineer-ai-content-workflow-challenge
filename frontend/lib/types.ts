@@ -50,6 +50,11 @@ export type MetadataPayload = {
   keywords: string[];
   tone: string;
   sentiment: string;
+  audience: string;
+  goal: string;
+  campaign_theme: string;
+  channel_fit: string;
+  cta_strength: "low" | "medium" | "high";
 };
 
 export type ContentPiece = {
