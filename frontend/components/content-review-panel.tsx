@@ -254,8 +254,7 @@ export function ContentReviewPanel({
             ) : null}
           </div>
 
-          <label className="editor-context-input">
-            <span>Context</span>
+          <label className="editor-context-input" aria-label="Generation context">
             <input
               value={context}
               onChange={(event) => setContext(event.target.value)}
