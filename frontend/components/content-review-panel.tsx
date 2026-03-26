@@ -227,15 +227,6 @@ export function ContentReviewPanel({
             ) : null}
           </div>
 
-          <label className="editor-context-input">
-            <span>Context</span>
-            <input
-              value={context}
-              onChange={(event) => setContext(event.target.value)}
-              placeholder="Optional generation context"
-            />
-          </label>
-
           <div className="editor-ai-actions">
             <button
               type="button"
@@ -291,7 +282,9 @@ export function ContentReviewPanel({
                         {new Date(draft.created_at).toLocaleString()}
                       </span>
                     </div>
-                    <p className="editor-suggestion-copy">{draft.output_text}</p>
+                    <p className="editor-suggestion-copy">
+                      {draft.output_text}
+                    </p>
                     <div className="editor-suggestion-footer">
                       <span className="editor-suggestion-note">
                         {draft.provider} · {draft.model}
@@ -611,22 +604,30 @@ export function ContentReviewPanel({
               </button>
               <button
                 type="button"
-                disabled={pendingAction === `reject-regenerate-${draftToReject.id}`}
+                disabled={
+                  pendingAction === `reject-regenerate-${draftToReject.id}`
+                }
                 onClick={() =>
-                  runAction(`reject-regenerate-${draftToReject.id}`, async () => {
-                    await apiRequest(`/content-pieces/${piece.id}/review`, {
-                      method: "POST",
-                      body: JSON.stringify({
-                        action: "reject",
-                        ai_suggestion_id: draftToReject.id,
-                      }),
-                    });
-                    await apiRequest(`/content-pieces/${piece.id}/ai/generate-draft`, {
-                      method: "POST",
-                      body: JSON.stringify({ context: context || null }),
-                    });
-                    setDraftToReject(null);
-                  })
+                  runAction(
+                    `reject-regenerate-${draftToReject.id}`,
+                    async () => {
+                      await apiRequest(`/content-pieces/${piece.id}/review`, {
+                        method: "POST",
+                        body: JSON.stringify({
+                          action: "reject",
+                          ai_suggestion_id: draftToReject.id,
+                        }),
+                      });
+                      await apiRequest(
+                        `/content-pieces/${piece.id}/ai/generate-draft`,
+                        {
+                          method: "POST",
+                          body: JSON.stringify({ context: context || null }),
+                        },
+                      );
+                      setDraftToReject(null);
+                    },
+                  )
                 }
               >
                 Reject and generate another
