@@ -15,7 +15,8 @@ function getClientApiBaseUrl(): string {
 export async function fetchCampaigns(): Promise<CampaignSummary[]> {
   const response = await fetch(`${getServerApiBaseUrl()}/campaigns`, { cache: "no-store" });
   if (!response.ok) {
-    throw new Error("Failed to fetch campaigns");
+    const message = await response.text();
+    throw new Error(message || "Failed to fetch campaigns");
   }
   return response.json();
 }
@@ -25,7 +26,8 @@ export async function fetchCampaign(campaignId: string): Promise<CampaignDetail>
     cache: "no-store",
   });
   if (!response.ok) {
-    throw new Error("Failed to fetch campaign");
+    const message = await response.text();
+    throw new Error(message || "Failed to fetch campaign");
   }
   return response.json();
 }
@@ -35,7 +37,8 @@ export async function fetchContentPiece(contentPieceId: string): Promise<Content
     cache: "no-store",
   });
   if (!response.ok) {
-    throw new Error("Failed to fetch content piece");
+    const message = await response.text();
+    throw new Error(message || "Failed to fetch content piece");
   }
   return response.json();
 }
