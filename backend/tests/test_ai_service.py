@@ -1,4 +1,4 @@
-from app.api.schemas import CampaignCreate, ContentPieceCreate, ContentPieceUpdate, GenerateDraftRequest, TranslateRequest
+from app.api.schemas import CampaignCreate, ContentPieceCreate, ContentPieceUpdate, GenerateDraftRequest, ReviewRequest, TranslateRequest
 from app.domain.enums import AISuggestionStatus, ReviewState
 from app.infrastructure.ai.base import GeneratedPayload
 
@@ -20,9 +20,11 @@ async def test_generate_draft_updates_state_and_persists_suggestion(session_fact
         )
 
     assert response.suggestion.status == AISuggestionStatus.SUCCESS
-    assert response.content_piece.review_state == ReviewState.AI_SUGGESTED
+    assert response.content_piece.review_state == ReviewState.DRAFT
     assert response.content_piece.latest_suggestion is not None
     assert response.content_piece.latest_suggestion.output_text == "Draft for content: New season drop"
+    assert len(response.content_piece.draft_history) == 1
+    assert response.content_piece.draft_history[0].decision_status.value == "pending"
 
 
 async def test_invalid_metadata_is_saved_as_failed(session_factory, workflow_service, fake_ai_provider) -> None:
@@ -267,7 +269,65 @@ async def test_translate_does_not_replace_latest_reviewable_suggestion(session_f
     assert translated.content_piece.latest_suggestion.operation_type.value == "translate"
     assert translated.content_piece.latest_reviewable_suggestion is not None
     assert translated.content_piece.latest_reviewable_suggestion.id == draft_response.suggestion.id
-    assert translated.content_piece.review_state == ReviewState.AI_SUGGESTED
+    assert translated.content_piece.review_state == ReviewState.DRAFT
+
+
+async def test_accept_applies_canonical_without_changing_manual_state(session_factory, workflow_service) -> None:
+    async with session_factory() as session:
+        campaign = await workflow_service.create_campaign(session, CampaignCreate(name="Review"))
+        piece = await workflow_service.create_content_piece(
+            session,
+            campaign.id,
+            ContentPieceCreate(source_text="Base line"),
+        )
+        piece = await workflow_service.update_content_piece(
+            session,
+            piece.id,
+            ContentPieceUpdate(review_state=ReviewState.APPROVED),
+        )
+        draft = await workflow_service.generate_draft(
+            session,
+            piece.id,
+            GenerateDraftRequest(context="hero"),
+        )
+        reviewed = await workflow_service.review(
+            session,
+            piece.id,
+            ReviewRequest(action="accept", ai_suggestion_id=draft.suggestion.id),
+        )
+
+    assert reviewed.content_piece.current_text == draft.suggestion.output_text
+    assert reviewed.content_piece.review_state == ReviewState.APPROVED
+    assert reviewed.content_piece.draft_history[0].decision_status.value == "accepted"
+
+
+async def test_reject_keeps_manual_status_and_marks_draft_history(session_factory, workflow_service) -> None:
+    async with session_factory() as session:
+        campaign = await workflow_service.create_campaign(session, CampaignCreate(name="Review"))
+        piece = await workflow_service.create_content_piece(
+            session,
+            campaign.id,
+            ContentPieceCreate(source_text="Base line"),
+        )
+        piece = await workflow_service.update_content_piece(
+            session,
+            piece.id,
+            ContentPieceUpdate(review_state=ReviewState.APPROVED),
+        )
+        draft = await workflow_service.generate_draft(
+            session,
+            piece.id,
+            GenerateDraftRequest(context="hero"),
+        )
+        reviewed = await workflow_service.review(
+            session,
+            piece.id,
+            ReviewRequest(action="reject", ai_suggestion_id=draft.suggestion.id),
+        )
+
+    assert reviewed.content_piece.current_text == "Base line"
+    assert reviewed.content_piece.review_state == ReviewState.APPROVED
+    assert reviewed.content_piece.draft_history[0].decision_status.value == "rejected"
 
 
 async def test_ai_call_history_is_chronological_and_uses_canonical_input(session_factory, workflow_service) -> None:

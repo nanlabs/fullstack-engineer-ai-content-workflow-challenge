@@ -17,6 +17,8 @@ from app.api.schemas import (
     ContentPieceCreate,
     ContentPieceResponse,
     ContentPieceUpdate,
+    DraftDecisionStatus,
+    DraftHistoryItemResponse,
     GenerateDraftRequest,
     MetadataPayload,
     ReviewActionResponse,
@@ -27,7 +29,6 @@ from app.api.schemas import (
     WorkflowCounts,
 )
 from app.domain.enums import AISuggestionStatus, OperationType, ReviewActionType, ReviewState
-from app.domain.review import InvalidReviewTransition, ensure_transition
 from app.infrastructure.ai.base import AIProvider, GeneratedPayload
 from app.infrastructure.ai.metadata_parser import parse_metadata_output
 from app.infrastructure.ai.translation_parser import parse_translation_output
@@ -135,14 +136,12 @@ class WorkflowService:
         piece = await self._load_content_piece(session, content_piece_id)
 
         changed = False
-        for field in ("type", "source_text", "current_text", "source_language", "target_language"):
+        for field in ("type", "source_text", "current_text", "source_language", "target_language", "review_state"):
             value = getattr(payload, field)
             if value is not None and getattr(piece, field) != value:
-                setattr(piece, field, value)
+                setattr(piece, field, value.value if isinstance(value, ReviewState) else value)
                 changed = True
 
-        if payload.current_text is not None:
-            piece.review_state = ReviewState.IN_REVIEW.value
         if changed:
             piece.updated_at = datetime.now(UTC)
             await session.commit()
@@ -227,14 +226,26 @@ class WorkflowService:
 
         if payload.action == ReviewActionType.EDIT and not payload.edited_text:
             raise ValueError("edited_text is required for edit actions")
+        if payload.action in {ReviewActionType.ACCEPT, ReviewActionType.REJECT} and suggestion is None:
+            raise ValueError("ai_suggestion_id is required for accept and reject actions")
+        if (
+            suggestion is not None
+            and payload.action in {ReviewActionType.ACCEPT, ReviewActionType.REJECT}
+            and suggestion.operation_type != OperationType.GENERATE_DRAFT.value
+        ):
+            raise ValueError("Only generated drafts can be accepted or rejected")
+        if (
+            suggestion is not None
+            and payload.action in {ReviewActionType.ACCEPT, ReviewActionType.REJECT}
+            and suggestion.status != AISuggestionStatus.SUCCESS.value
+        ):
+            raise ValueError("Only successful draft suggestions can be accepted or rejected")
 
-        next_state = ensure_transition(ReviewState(piece.review_state), payload.action)
         if payload.action == ReviewActionType.ACCEPT:
             piece.current_text = (suggestion.output_text if suggestion else piece.current_text) or piece.current_text
         elif payload.action == ReviewActionType.EDIT:
             piece.current_text = payload.edited_text or piece.current_text
 
-        piece.review_state = next_state.value
         piece.updated_at = datetime.now(UTC)
 
         review_action = ReviewAction(
@@ -304,9 +315,6 @@ class WorkflowService:
             created_at=datetime.now(UTC),
         )
         session.add(suggestion)
-        if status == AISuggestionStatus.SUCCESS and operation_type == OperationType.GENERATE_DRAFT:
-            piece.review_state = ReviewState.AI_SUGGESTED.value
-            piece.updated_at = datetime.now(UTC)
         await session.commit()
         piece = await self._load_content_piece(session, piece.id)
         fresh_suggestion = await session.get(AISuggestion, suggestion.id)
@@ -334,6 +342,7 @@ class WorkflowService:
         latest_review_model = None
         latest_metadata_attempt_model = None
         latest_metadata = None
+        draft_history: list[DraftHistoryItemResponse] = []
         translation_versions: list[TranslationVersionResponse] = []
         ai_call_history: list[AISuggestionResponse] = []
 
@@ -347,6 +356,7 @@ class WorkflowService:
             and item.output_text
         ]
         latest_reviewable_suggestion = max(reviewable_suggestions, key=lambda item: item.created_at, default=None)
+        decision_by_suggestion_id = self._draft_decisions_by_suggestion(piece.review_actions)
 
         if latest_suggestion is not None:
             latest_suggestion_model = self._serialize_suggestion(latest_suggestion)
@@ -354,6 +364,18 @@ class WorkflowService:
             latest_reviewable_suggestion_model = self._serialize_suggestion(latest_reviewable_suggestion)
         if latest_review is not None:
             latest_review_model = ReviewActionResponse.model_validate(latest_review)
+        draft_history = [
+            DraftHistoryItemResponse(
+                id=item.id,
+                provider=item.provider,
+                model=item.model,
+                input_text=item.input_text,
+                output_text=self._normalize_suggestion_output(item) or "",
+                created_at=item.created_at,
+                decision_status=decision_by_suggestion_id.get(item.id, DraftDecisionStatus.PENDING),
+            )
+            for item in sorted(reviewable_suggestions, key=lambda item: item.created_at, reverse=True)
+        ]
 
         metadata_suggestions = [
             item
@@ -408,6 +430,7 @@ class WorkflowService:
             latest_review_action=latest_review_model,
             latest_metadata_attempt=latest_metadata_attempt_model,
             latest_metadata=latest_metadata,
+            draft_history=draft_history,
             translation_versions=translation_versions,
             ai_call_history=ai_call_history,
         )
@@ -426,6 +449,17 @@ class WorkflowService:
         if suggestion.operation_type == OperationType.TRANSLATE.value:
             return parse_translation_output(suggestion.output_text)
         return suggestion.output_text
+
+    def _draft_decisions_by_suggestion(self, review_actions: list[ReviewAction]) -> dict[str, DraftDecisionStatus]:
+        decisions: dict[str, DraftDecisionStatus] = {}
+        for action in sorted(review_actions, key=lambda item: item.created_at):
+            if not action.ai_suggestion_id:
+                continue
+            if action.action in {ReviewActionType.ACCEPT.value, ReviewActionType.EDIT.value}:
+                decisions[action.ai_suggestion_id] = DraftDecisionStatus.ACCEPTED
+            elif action.action == ReviewActionType.REJECT.value:
+                decisions[action.ai_suggestion_id] = DraftDecisionStatus.REJECTED
+        return decisions
 
     async def _publish_content_piece_event(self, piece: ContentPiece, event_type: str) -> None:
         await self.event_bus.publish(

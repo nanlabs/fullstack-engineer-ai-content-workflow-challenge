@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -36,6 +37,7 @@ class ContentPieceUpdate(BaseModel):
     current_text: str | None = None
     source_language: str | None = None
     target_language: str | None = None
+    review_state: ReviewState | None = None
 
 
 class GenerateDraftRequest(BaseModel):
@@ -103,6 +105,22 @@ class TranslationVersionResponse(BaseModel):
     created_at: datetime
 
 
+class DraftDecisionStatus(str, Enum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+
+
+class DraftHistoryItemResponse(BaseModel):
+    id: str
+    provider: str
+    model: str
+    input_text: str
+    output_text: str
+    created_at: datetime
+    decision_status: DraftDecisionStatus
+
+
 class ReviewActionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -133,6 +151,7 @@ class ContentPieceResponse(BaseModel):
     latest_review_action: ReviewActionResponse | None = None
     latest_metadata_attempt: AISuggestionResponse | None = None
     latest_metadata: MetadataPayload | None = None
+    draft_history: list[DraftHistoryItemResponse] = Field(default_factory=list)
     translation_versions: list[TranslationVersionResponse] = Field(default_factory=list)
     ai_call_history: list[AISuggestionResponse] = Field(default_factory=list)
 

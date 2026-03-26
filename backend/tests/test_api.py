@@ -27,7 +27,8 @@ async def test_campaign_ai_review_flow(api_client) -> None:
     assert draft_response.status_code == 200
     draft_payload = draft_response.json()
     assert draft_payload["suggestion"]["status"] == "success"
-    assert draft_payload["content_piece"]["review_state"] == "ai_suggested"
+    assert draft_payload["content_piece"]["review_state"] == "draft"
+    assert draft_payload["content_piece"]["draft_history"][0]["decision_status"] == "pending"
 
     review_response = await api_client.post(
         f"/content-pieces/{piece['id']}/review",
@@ -39,8 +40,15 @@ async def test_campaign_ai_review_flow(api_client) -> None:
     )
     assert review_response.status_code == 200
     review_payload = review_response.json()
-    assert review_payload["content_piece"]["review_state"] == "approved"
+    assert review_payload["content_piece"]["review_state"] == "draft"
     assert review_payload["content_piece"]["current_text"] == draft_payload["suggestion"]["output_text"]
+    assert review_payload["content_piece"]["draft_history"][0]["decision_status"] == "accepted"
+
+    manual_status_response = await api_client.patch(
+        f"/content-pieces/{piece['id']}",
+        json={"review_state": "approved"},
+    )
+    assert manual_status_response.status_code == 200
 
     campaign_detail = await api_client.get(f"/campaigns/{campaign['id']}")
     assert campaign_detail.status_code == 200
@@ -66,11 +74,11 @@ async def test_campaign_summary_includes_workflow_counts(api_client) -> None:
     )
     review_payload = review_piece.json()
 
-    start_review = await api_client.post(
-        f"/content-pieces/{review_payload['id']}/review",
-        json={"action": "start_review"},
+    set_in_review = await api_client.patch(
+        f"/content-pieces/{review_payload['id']}",
+        json={"review_state": "in_review"},
     )
-    assert start_review.status_code == 200
+    assert set_in_review.status_code == 200
 
     campaigns_response = await api_client.get("/campaigns")
     assert campaigns_response.status_code == 200
@@ -200,3 +208,37 @@ async def test_generate_draft_uses_current_canonical_text(api_client) -> None:
     payload = draft_response.json()
     assert payload["suggestion"]["input_text"] == "Refined canonical copy"
     assert payload["suggestion"]["output_text"] == "Draft for content: Refined canonical copy"
+
+
+async def test_reject_works_even_when_content_status_is_approved(api_client) -> None:
+    campaign_response = await api_client.post("/campaigns", json={"name": "Approved review"})
+    campaign = campaign_response.json()
+    piece_response = await api_client.post(
+        f"/campaigns/{campaign['id']}/content-pieces",
+        json={"source_text": "Base copy"},
+    )
+    piece = piece_response.json()
+
+    manual_status_response = await api_client.patch(
+        f"/content-pieces/{piece['id']}",
+        json={"review_state": "approved"},
+    )
+    assert manual_status_response.status_code == 200
+
+    draft_response = await api_client.post(
+        f"/content-pieces/{piece['id']}/ai/generate-draft",
+        json={"context": "hero"},
+    )
+    draft_payload = draft_response.json()
+
+    reject_response = await api_client.post(
+        f"/content-pieces/{piece['id']}/review",
+        json={
+            "action": "reject",
+            "ai_suggestion_id": draft_payload["suggestion"]["id"],
+        },
+    )
+    assert reject_response.status_code == 200
+    reject_payload = reject_response.json()
+    assert reject_payload["content_piece"]["review_state"] == "approved"
+    assert reject_payload["content_piece"]["draft_history"][0]["decision_status"] == "rejected"

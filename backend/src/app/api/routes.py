@@ -22,7 +22,6 @@ from app.api.schemas import (
     TranslateRequest,
 )
 from app.application.services import NotFoundError, WorkflowService
-from app.domain.review import InvalidReviewTransition
 
 router = APIRouter()
 
@@ -134,7 +133,7 @@ async def review_content_piece(
         return await service.review(session, content_piece_id, payload)
     except NotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except (InvalidReviewTransition, ValueError) as exc:
+    except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
