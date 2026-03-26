@@ -142,6 +142,12 @@ Recommended UI checks with the seeded data:
 - extracted metadata in the metadata panel
 - accept and reject actions on AI draft suggestions
 
+Important note:
+
+- add `?lab=1` to a content piece editor URL to expose the full persisted LLM interaction flow for that piece
+- the lab modal shows the chronological sequence of AI calls, including draft generation, translation/localization, and metadata extraction
+- each step includes the stored input text, output or extracted metadata, provider/model, status, and timestamp
+
 ## Full Docker mode
 
 Use this when you want the full reviewer/shared experience with both app services containerized.
