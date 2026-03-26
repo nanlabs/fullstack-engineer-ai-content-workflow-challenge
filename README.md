@@ -99,8 +99,9 @@ AI provider selection:
 
 - `AI_PROVIDER=gemini` uses `GEMINI_API_KEY` and `GEMINI_MODEL`
 - `AI_PROVIDER=openai` uses `OPENAI_API_KEY` and `OPENAI_MODEL`
+- `AI_SETTINGS_ENCRYPTION_KEY` is required to store provider settings from the UI
 
-The backend fails fast if the selected provider is missing its required API key.
+The backend can fall back to `.env` credentials when no provider settings are stored in the app. Once a provider is saved from Settings, the database-backed configuration takes priority and the API key is encrypted at rest.
 
 ### 4. Run the frontend locally
 
