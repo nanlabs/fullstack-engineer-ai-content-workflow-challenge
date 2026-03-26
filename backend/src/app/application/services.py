@@ -327,6 +327,7 @@ class WorkflowService:
         latest_review_model = None
         latest_metadata = None
         translation_versions: list[TranslationVersionResponse] = []
+        ai_call_history: list[AISuggestionResponse] = []
 
         latest_suggestion = max(piece.ai_suggestions, key=lambda item: item.created_at, default=None)
         latest_review = max(piece.review_actions, key=lambda item: item.created_at, default=None)
@@ -370,6 +371,10 @@ class WorkflowService:
         translation_versions = [
             TranslationVersionResponse.model_validate(item) for item in translation_suggestions
         ]
+        ai_call_history = [
+            AISuggestionResponse.model_validate(item)
+            for item in sorted(piece.ai_suggestions, key=lambda item: item.created_at)
+        ]
 
         return ContentPieceResponse(
             id=piece.id,
@@ -387,6 +392,7 @@ class WorkflowService:
             latest_review_action=latest_review_model,
             latest_metadata=latest_metadata,
             translation_versions=translation_versions,
+            ai_call_history=ai_call_history,
         )
 
     async def _publish_content_piece_event(self, piece: ContentPiece, event_type: str) -> None:

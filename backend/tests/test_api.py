@@ -138,6 +138,8 @@ async def test_translation_requires_languages_at_action_time(api_client) -> None
     assert len(payload["content_piece"]["translation_versions"]) == 1
     assert payload["content_piece"]["translation_versions"][0]["source_language"] == "es"
     assert payload["content_piece"]["translation_versions"][0]["target_language"] == "en"
+    assert len(payload["content_piece"]["ai_call_history"]) == 1
+    assert payload["content_piece"]["ai_call_history"][0]["operation_type"] == "translate"
     assert payload["content_piece"]["current_text"] == "Hola mundo"
 
 
