@@ -30,6 +30,15 @@ Reviewer support:
 - translation history and extracted metadata are included so the editor flow can be reviewed with realistic data
 - provider settings support browser-based switching while keeping API keys encrypted at rest and never returning them from the API
 
+Provider key security boundary:
+
+- provider API keys are encrypted at rest before they are stored in PostgreSQL
+- `GET /settings/ai-provider` never returns the stored key
+- the provider settings UI never re-displays or prefills a previously saved key
+- keys are rejected if sent through query params
+- because provider switching is supported directly from the web UI, entering a key necessarily sends it once in the HTTPS request body during the save operation
+- `.env` remains available as an alternative for reviewers who prefer not to enter a key in the browser
+
 Current scope intentionally does not include:
 
 - authentication
