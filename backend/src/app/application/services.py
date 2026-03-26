@@ -29,6 +29,7 @@ from app.api.schemas import (
 from app.domain.enums import AISuggestionStatus, OperationType, ReviewActionType, ReviewState
 from app.domain.review import InvalidReviewTransition, ensure_transition
 from app.infrastructure.ai.base import AIProvider, GeneratedPayload
+from app.infrastructure.ai.metadata_parser import parse_metadata_output
 from app.infrastructure.db.models import AISuggestion, Campaign, ContentPiece, ReviewAction
 from app.infrastructure.events.bus import EventBus
 
@@ -264,8 +265,11 @@ class WorkflowService:
         try:
             generated: GeneratedPayload = await invoke()
             structured_output = generated.structured_output
-            if operation == OperationType.EXTRACT_METADATA and structured_output is not None:
-                structured_output = MetadataPayload.model_validate(structured_output).model_dump()
+            if operation == OperationType.EXTRACT_METADATA:
+                if structured_output is None and generated.output_text:
+                    structured_output = parse_metadata_output(generated.output_text)
+                if structured_output is not None:
+                    structured_output = MetadataPayload.model_validate(structured_output).model_dump()
             return generated, AISuggestionStatus.SUCCESS, generated.output_text, structured_output
         except (ValidationError, ValueError) as exc:
             return None, AISuggestionStatus.FAILED, str(exc), None

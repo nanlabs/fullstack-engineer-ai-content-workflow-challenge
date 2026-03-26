@@ -41,6 +41,8 @@ async def test_invalid_metadata_is_saved_as_failed(session_factory, workflow_ser
     assert response.suggestion.status == AISuggestionStatus.FAILED
     assert response.content_piece.review_state == ReviewState.DRAFT
     assert response.content_piece.latest_metadata is None
+    assert response.content_piece.latest_metadata_attempt is not None
+    assert response.content_piece.latest_metadata_attempt.status == AISuggestionStatus.FAILED
 
 
 async def test_expanded_metadata_payload_is_returned(session_factory, workflow_service) -> None:
@@ -95,6 +97,70 @@ async def test_invalid_cta_strength_is_saved_as_failed(session_factory, workflow
 
     assert response.suggestion.status == AISuggestionStatus.FAILED
     assert response.content_piece.latest_metadata is None
+    assert response.content_piece.latest_metadata_attempt is not None
+    assert response.content_piece.latest_metadata_attempt.status == AISuggestionStatus.FAILED
+
+
+async def test_metadata_with_code_fences_is_recovered(session_factory, workflow_service, fake_ai_provider) -> None:
+    async def fenced_metadata(*, source_text: str, content_type: str) -> GeneratedPayload:
+        return GeneratedPayload(
+            output_text="""```json
+{
+  "keywords": ["launch", "story"],
+  "tone": "confident",
+  "sentiment": "positive",
+  "audience": "editorial leads",
+  "goal": "align campaign messaging",
+  "campaign_theme": "creator sprint",
+  "channel_fit": "homepage",
+  "cta_strength": "high"
+}
+```""",
+            structured_output=None,
+        )
+
+    fake_ai_provider.extract_metadata = fenced_metadata
+
+    async with session_factory() as session:
+        campaign = await workflow_service.create_campaign(session, CampaignCreate(name="Launch"))
+        piece = await workflow_service.create_content_piece(
+            session,
+            campaign.id,
+            ContentPieceCreate(source_text="Creator sprint launch line"),
+        )
+        response = await workflow_service.extract_metadata(session, piece.id)
+
+    assert response.suggestion.status == AISuggestionStatus.SUCCESS
+    assert response.content_piece.latest_metadata is not None
+    assert response.content_piece.latest_metadata.channel_fit == "homepage"
+
+
+async def test_metadata_with_prose_and_json_object_is_recovered(session_factory, workflow_service, fake_ai_provider) -> None:
+    async def prose_metadata(*, source_text: str, content_type: str) -> GeneratedPayload:
+        return GeneratedPayload(
+            output_text=(
+                "Here is the extracted metadata:\n"
+                '{"keywords": ["launch"], "tone": "direct", "sentiment": "positive", '
+                '"audience": "growth marketers", "goal": "increase signups", '
+                '"campaign_theme": "launch momentum", "channel_fit": "landing page", "cta_strength": "medium"}'
+            ),
+            structured_output=None,
+        )
+
+    fake_ai_provider.extract_metadata = prose_metadata
+
+    async with session_factory() as session:
+        campaign = await workflow_service.create_campaign(session, CampaignCreate(name="Launch"))
+        piece = await workflow_service.create_content_piece(
+            session,
+            campaign.id,
+            ContentPieceCreate(source_text="Landing page launch CTA"),
+        )
+        response = await workflow_service.extract_metadata(session, piece.id)
+
+    assert response.suggestion.status == AISuggestionStatus.SUCCESS
+    assert response.content_piece.latest_metadata is not None
+    assert response.content_piece.latest_metadata.goal == "increase signups"
 
 
 async def test_metadata_does_not_replace_latest_reviewable_suggestion(session_factory, workflow_service) -> None:
