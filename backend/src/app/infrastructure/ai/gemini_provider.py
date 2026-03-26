@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import json
-
 import httpx
 
 from app.infrastructure.ai.base import AIProvider, GeneratedPayload
+from app.infrastructure.ai.metadata_parser import parse_metadata_output
 
 
 class GeminiProvider(AIProvider):
@@ -20,6 +19,7 @@ class GeminiProvider(AIProvider):
                 f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent",
                 params={"key": self._api_key},
                 json={
+                    "generationConfig": {"responseMimeType": "application/json"},
                     "contents": [
                         {
                             "parts": [
@@ -81,4 +81,4 @@ class GeminiProvider(AIProvider):
             f"Source text: {source_text}"
         )
         output_text = await self._text_completion(prompt)
-        return GeneratedPayload(output_text=output_text, structured_output=json.loads(output_text))
+        return GeneratedPayload(output_text=output_text, structured_output=parse_metadata_output(output_text))

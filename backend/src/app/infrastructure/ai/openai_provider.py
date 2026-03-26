@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import json
-
 from openai import AsyncOpenAI
 
 from app.infrastructure.ai.base import AIProvider, GeneratedPayload
+from app.infrastructure.ai.metadata_parser import parse_metadata_output
 
 
 class OpenAIProvider(AIProvider):
@@ -60,4 +59,4 @@ class OpenAIProvider(AIProvider):
             f"Source text: {source_text}"
         )
         output_text = await self._text_completion(prompt)
-        return GeneratedPayload(output_text=output_text, structured_output=json.loads(output_text))
+        return GeneratedPayload(output_text=output_text, structured_output=parse_metadata_output(output_text))
