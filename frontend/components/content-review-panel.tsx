@@ -118,7 +118,20 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
             >
               {pendingAction === "save-canonical" ? "Saving..." : "Save Canonical Text"}
             </button>
+            <button
+              type="button"
+              className="editor-primary-button"
+              disabled={pendingAction === "metadata"}
+              onClick={() =>
+                runAction("metadata", () =>
+                  apiRequest(`/content-pieces/${piece.id}/ai/extract-metadata`, { method: "POST" }),
+                )
+              }
+            >
+              {pendingAction === "metadata" ? "Extracting..." : "Extract Metadata"}
+            </button>
           </div>
+          <p className="editor-canonical-note">Extract metadata from the latest saved canonical text.</p>
         </section>
 
         <section className="editor-ai-section">
@@ -165,18 +178,6 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
               onClick={() => setIsTranslateModalOpen(true)}
             >
               Translate/Localize
-            </button>
-            <button
-              type="button"
-              className="editor-primary-button"
-              disabled={pendingAction === "metadata"}
-              onClick={() =>
-                runAction("metadata", () =>
-                  apiRequest(`/content-pieces/${piece.id}/ai/extract-metadata`, { method: "POST" }),
-                )
-              }
-            >
-              {pendingAction === "metadata" ? "Extracting..." : "Extract Metadata"}
             </button>
           </div>
 

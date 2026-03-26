@@ -830,7 +830,7 @@ label span,
 .editor-ai-actions {
   grid-auto-flow: column;
   justify-content: start;
-  grid-template-columns: repeat(3, max-content);
+  grid-template-columns: repeat(2, max-content);
 }
 
 .editor-ghost-button,
@@ -875,6 +875,12 @@ label span,
 .editor-secondary-button {
   background: var(--surface-low);
   color: var(--text);
+}
+
+.editor-canonical-note {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-soft);
 }
 
 .editor-suggestion-card {
