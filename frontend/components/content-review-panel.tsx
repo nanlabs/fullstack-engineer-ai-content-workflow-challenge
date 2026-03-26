@@ -186,13 +186,6 @@ export function ContentReviewPanel({
                 View AI Logs
               </button>
             ) : null}
-            <label className="editor-context-input">
-              <span>Context</span>
-              <input
-                value={context}
-                onChange={(event) => setContext(event.target.value)}
-              />
-            </label>
           </div>
 
           <div className="editor-ai-actions">
