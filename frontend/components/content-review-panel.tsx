@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { apiRequest } from "@/lib/api";
-import { ContentPiece } from "@/lib/types";
+import { ContentPiece, DraftDecisionStatus, ReviewState } from "@/lib/types";
 import { useContentEvents } from "@/lib/use-content-events";
 import { ReviewStateBadge } from "@/components/review-state-badge";
 
@@ -27,6 +27,20 @@ const OPERATION_LABELS: Record<
   extract_metadata: "Extract Metadata",
 };
 
+const REVIEW_STATE_LABELS: Record<ReviewState, string> = {
+  draft: "Draft",
+  ai_suggested: "AI Suggested",
+  in_review: "In Review",
+  approved: "Approved",
+  rejected: "Rejected",
+};
+
+const DRAFT_DECISION_LABELS: Record<DraftDecisionStatus, string> = {
+  pending: "Pending",
+  accepted: "Accepted",
+  rejected: "Rejected",
+};
+
 export function ContentReviewPanel({
   piece,
   labMode = false,
@@ -45,11 +59,13 @@ export function ContentReviewPanel({
   );
   const [isTranslateModalOpen, setIsTranslateModalOpen] = useState(false);
   const [isLabModalOpen, setIsLabModalOpen] = useState(false);
+  const [draftToReject, setDraftToReject] = useState<
+    ContentPiece["draft_history"][number] | null
+  >(null);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lastLiveUpdate, setLastLiveUpdate] = useState<string | null>(null);
 
-  const latestReviewableSuggestion = piece.latest_reviewable_suggestion;
   const title = useMemo(() => {
     const trimmed = piece.current_text.trim();
     return trimmed.length > 72
@@ -107,6 +123,29 @@ export function ContentReviewPanel({
           <div className="editor-document-meta">
             <span className="editor-section-label">Document Piece</span>
             <ReviewStateBadge state={piece.review_state} />
+            <label className="editor-status-select">
+              <span>Content Status</span>
+              <select
+                value={piece.review_state}
+                disabled={pendingAction === "status"}
+                onChange={(event) =>
+                  runAction("status", () =>
+                    apiRequest(`/content-pieces/${piece.id}`, {
+                      method: "PATCH",
+                      body: JSON.stringify({
+                        review_state: event.target.value,
+                      }),
+                    }),
+                  )
+                }
+              >
+                {Object.entries(REVIEW_STATE_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
           <h1>{title}</h1>
         </header>
@@ -188,6 +227,15 @@ export function ContentReviewPanel({
             ) : null}
           </div>
 
+          <label className="editor-context-input">
+            <span>Context</span>
+            <input
+              value={context}
+              onChange={(event) => setContext(event.target.value)}
+              placeholder="Optional generation context"
+            />
+          </label>
+
           <div className="editor-ai-actions">
             <button
               type="button"
@@ -214,65 +262,82 @@ export function ContentReviewPanel({
             </button>
           </div>
 
-          <section className="editor-suggestion-card">
-            <div className="editor-suggestion-header">
-              <div className="editor-suggestion-meta">
-                <span className="editor-suggestion-badge">AI Suggestion</span>
-                <span className="editor-suggestion-note">
-                  {latestReviewableSuggestion
-                    ? "Optimized for engagement"
-                    : "No AI suggestion yet"}
-                </span>
+          <section className="editor-draft-history">
+            <div className="editor-draft-history-header">
+              <div>
+                <span className="editor-suggestion-badge">Draft History</span>
+                <p className="editor-suggestion-note">
+                  Draft decisions stay in AI history. Content status is managed
+                  separately.
+                </p>
               </div>
             </div>
-            <p className="editor-suggestion-copy">
-              {latestReviewableSuggestion?.output_text ??
-                "Generate a first draft from the current canonical text to bring an AI proposal into this workspace."}
-            </p>
-            <div className="editor-suggestion-actions">
-              <button
-                type="button"
-                className="editor-primary-dark-button"
-                disabled={
-                  !latestReviewableSuggestion || pendingAction === "accept"
-                }
-                onClick={() =>
-                  runAction("accept", () =>
-                    apiRequest(`/content-pieces/${piece.id}/review`, {
-                      method: "POST",
-                      body: JSON.stringify({
-                        action: "accept",
-                        ai_suggestion_id:
-                          latestReviewableSuggestion?.id ?? null,
-                      }),
-                    }),
-                  )
-                }
-              >
-                Accept
-              </button>
-              <button
-                type="button"
-                className="editor-danger-button"
-                disabled={
-                  !latestReviewableSuggestion || pendingAction === "reject"
-                }
-                onClick={() =>
-                  runAction("reject", () =>
-                    apiRequest(`/content-pieces/${piece.id}/review`, {
-                      method: "POST",
-                      body: JSON.stringify({
-                        action: "reject",
-                        ai_suggestion_id:
-                          latestReviewableSuggestion?.id ?? null,
-                      }),
-                    }),
-                  )
-                }
-              >
-                Reject
-              </button>
-            </div>
+            {piece.draft_history.length > 0 ? (
+              <div className="editor-draft-history-list">
+                {piece.draft_history.map((draft, index) => (
+                  <article key={draft.id} className="editor-suggestion-card">
+                    <div className="editor-suggestion-header">
+                      <div className="editor-suggestion-meta">
+                        <span className="editor-suggestion-badge">
+                          Draft {piece.draft_history.length - index}
+                        </span>
+                        <span
+                          className={`editor-soft-chip editor-draft-decision editor-draft-decision-${draft.decision_status}`}
+                        >
+                          {DRAFT_DECISION_LABELS[draft.decision_status]}
+                        </span>
+                      </div>
+                      <span className="editor-suggestion-note">
+                        {new Date(draft.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="editor-suggestion-copy">{draft.output_text}</p>
+                    <div className="editor-suggestion-footer">
+                      <span className="editor-suggestion-note">
+                        {draft.provider} · {draft.model}
+                      </span>
+                    </div>
+                    {draft.decision_status === "pending" ? (
+                      <div className="editor-suggestion-actions">
+                        <button
+                          type="button"
+                          className="editor-primary-dark-button"
+                          disabled={pendingAction === `accept-${draft.id}`}
+                          onClick={() =>
+                            runAction(`accept-${draft.id}`, () =>
+                              apiRequest(`/content-pieces/${piece.id}/review`, {
+                                method: "POST",
+                                body: JSON.stringify({
+                                  action: "accept",
+                                  ai_suggestion_id: draft.id,
+                                }),
+                              }),
+                            )
+                          }
+                        >
+                          Accept
+                        </button>
+                        <button
+                          type="button"
+                          className="editor-danger-button"
+                          disabled={pendingAction === `reject-${draft.id}`}
+                          onClick={() => setDraftToReject(draft)}
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <section className="editor-suggestion-card editor-draft-history-empty">
+                <p className="editor-suggestion-copy">
+                  Generate a first draft from the current canonical text to
+                  start the AI history for this piece.
+                </p>
+              </section>
+            )}
           </section>
         </section>
         {error ? <p className="error-text">{error}</p> : null}
@@ -481,6 +546,90 @@ export function ContentReviewPanel({
                 }
               >
                 {pendingAction === "translate" ? "Translating..." : "Translate"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {draftToReject ? (
+        <div className="modal-backdrop" role="presentation">
+          <div
+            className="modal-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reject-draft-modal-title"
+          >
+            <div className="modal-header">
+              <div>
+                <p className="eyebrow">Draft Review</p>
+                <h4 id="reject-draft-modal-title">Reject this AI draft</h4>
+              </div>
+              <button
+                type="button"
+                className="stitch-icon-button"
+                onClick={() => setDraftToReject(null)}
+              >
+                ×
+              </button>
+            </div>
+            <p className="muted">
+              Rejecting this suggestion does not change the content status. You
+              can reject it and stop there, or reject it and generate a new
+              draft from the current canonical text.
+            </p>
+            <section className="content-surface">
+              <h4>Selected draft</h4>
+              <p>{draftToReject.output_text}</p>
+            </section>
+            <div className="button-row">
+              <button
+                type="button"
+                className="button-secondary"
+                onClick={() => setDraftToReject(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="button-secondary"
+                disabled={pendingAction === `reject-${draftToReject.id}`}
+                onClick={() =>
+                  runAction(`reject-${draftToReject.id}`, async () => {
+                    await apiRequest(`/content-pieces/${piece.id}/review`, {
+                      method: "POST",
+                      body: JSON.stringify({
+                        action: "reject",
+                        ai_suggestion_id: draftToReject.id,
+                      }),
+                    });
+                    setDraftToReject(null);
+                  })
+                }
+              >
+                Reject only
+              </button>
+              <button
+                type="button"
+                disabled={pendingAction === `reject-regenerate-${draftToReject.id}`}
+                onClick={() =>
+                  runAction(`reject-regenerate-${draftToReject.id}`, async () => {
+                    await apiRequest(`/content-pieces/${piece.id}/review`, {
+                      method: "POST",
+                      body: JSON.stringify({
+                        action: "reject",
+                        ai_suggestion_id: draftToReject.id,
+                      }),
+                    });
+                    await apiRequest(`/content-pieces/${piece.id}/ai/generate-draft`, {
+                      method: "POST",
+                      body: JSON.stringify({ context: context || null }),
+                    });
+                    setDraftToReject(null);
+                  })
+                }
+              >
+                Reject and generate another
               </button>
             </div>
           </div>

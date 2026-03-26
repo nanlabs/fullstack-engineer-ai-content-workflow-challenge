@@ -36,6 +36,18 @@ export type TranslationVersion = {
   created_at: string;
 };
 
+export type DraftDecisionStatus = "pending" | "accepted" | "rejected";
+
+export type DraftHistoryItem = {
+  id: string;
+  provider: string;
+  model: string;
+  input_text: string;
+  output_text: string;
+  created_at: string;
+  decision_status: DraftDecisionStatus;
+};
+
 export type ReviewAction = {
   id: string;
   content_piece_id: string;
@@ -73,6 +85,7 @@ export type ContentPiece = {
   latest_review_action: ReviewAction | null;
   latest_metadata_attempt: AISuggestion | null;
   latest_metadata: MetadataPayload | null;
+  draft_history: DraftHistoryItem[];
   translation_versions: TranslationVersion[];
   ai_call_history: AISuggestion[];
 };
