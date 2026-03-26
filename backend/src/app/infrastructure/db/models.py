@@ -68,6 +68,19 @@ class AISuggestion(Base):
     review_actions: Mapped[list[ReviewAction]] = relationship(back_populates="ai_suggestion")
 
 
+class AIProviderSettings(Base):
+    __tablename__ = "ai_provider_settings"
+
+    id: Mapped[str] = mapped_column(Text, primary_key=True)
+    provider: Mapped[str] = mapped_column(Text, nullable=False)
+    encrypted_api_key: Mapped[str] = mapped_column(Text, nullable=False)
+    api_key_fingerprint: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
 class ReviewAction(Base):
     __tablename__ = "review_actions"
 

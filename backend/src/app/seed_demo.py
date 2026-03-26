@@ -118,7 +118,7 @@ async def seed_demo_campaign() -> tuple[str, str]:
     settings = get_settings()
     engine = build_engine(settings.database_url)
     session_factory = build_session_factory(engine)
-    workflow_service = WorkflowService(ai_provider=DemoSeedProvider(), event_bus=EventBus())
+    workflow_service = WorkflowService(event_bus=EventBus(), ai_provider=DemoSeedProvider())
 
     await run_migrations(engine)
 

@@ -50,6 +50,18 @@ class TranslateRequest(BaseModel):
     context: str | None = None
 
 
+class ProviderSettingsResponse(BaseModel):
+    provider: Literal["gemini", "openai"] | None = None
+    configured: bool
+    has_api_key: bool
+    source: Literal["database", "environment", "missing"]
+
+
+class UpdateProviderSettingsRequest(BaseModel):
+    provider: Literal["gemini", "openai"]
+    api_key: str | None = None
+
+
 class ReviewRequest(BaseModel):
     action: ReviewActionType
     comment: str | None = None

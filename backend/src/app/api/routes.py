@@ -17,11 +17,13 @@ from app.api.schemas import (
     ContentPieceResponse,
     ContentPieceUpdate,
     GenerateDraftRequest,
+    ProviderSettingsResponse,
     ReviewRequest,
     ReviewResponse,
     TranslateRequest,
+    UpdateProviderSettingsRequest,
 )
-from app.application.services import NotFoundError, WorkflowService
+from app.application.services import NotFoundError, ProviderNotConfiguredError, WorkflowService
 
 router = APIRouter()
 
@@ -34,6 +36,26 @@ async def create_campaign(payload: CampaignCreate, session: AsyncSession = Sessi
 @router.get("/campaigns", response_model=list[CampaignSummary])
 async def list_campaigns(session: AsyncSession = SessionDep, service: WorkflowService = ServiceDep) -> list[CampaignSummary]:
     return await service.list_campaigns(session)
+
+
+@router.get("/settings/ai-provider", response_model=ProviderSettingsResponse)
+async def get_ai_provider_settings(
+    session: AsyncSession = SessionDep,
+    service: WorkflowService = ServiceDep,
+) -> ProviderSettingsResponse:
+    return await service.get_provider_settings(session)
+
+
+@router.put("/settings/ai-provider", response_model=ProviderSettingsResponse)
+async def update_ai_provider_settings(
+    payload: UpdateProviderSettingsRequest,
+    session: AsyncSession = SessionDep,
+    service: WorkflowService = ServiceDep,
+) -> ProviderSettingsResponse:
+    try:
+        return await service.update_provider_settings(session, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.get("/campaigns/{campaign_id}", response_model=CampaignDetailResponse)
@@ -93,6 +115,8 @@ async def generate_draft(
         return await service.generate_draft(session, content_piece_id, payload)
     except NotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ProviderNotConfiguredError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @router.post("/content-pieces/{content_piece_id}/ai/translate", response_model=AIActionResponse)
@@ -106,6 +130,8 @@ async def translate(
         return await service.translate(session, content_piece_id, payload)
     except NotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ProviderNotConfiguredError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -120,6 +146,8 @@ async def extract_metadata(
         return await service.extract_metadata(session, content_piece_id)
     except NotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ProviderNotConfiguredError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @router.post("/content-pieces/{content_piece_id}/review", response_model=ReviewResponse)

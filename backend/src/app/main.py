@@ -8,7 +8,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import router
 from app.application.services import WorkflowService
 from app.config import get_settings
-from app.infrastructure.ai.factory import build_ai_provider
 from app.infrastructure.db.migrations import run_migrations
 from app.infrastructure.db.session import build_engine, build_session_factory
 from app.infrastructure.events.bus import EventBus
@@ -21,11 +20,10 @@ async def lifespan(app: FastAPI):
     await run_migrations(engine)
     session_factory = build_session_factory(engine)
     event_bus = EventBus()
-    ai_provider = build_ai_provider(settings)
 
     app.state.engine = engine
     app.state.session_factory = session_factory
-    app.state.workflow_service = WorkflowService(ai_provider=ai_provider, event_bus=event_bus)
+    app.state.workflow_service = WorkflowService(event_bus=event_bus, settings=settings)
     yield
     await engine.dispose()
 
