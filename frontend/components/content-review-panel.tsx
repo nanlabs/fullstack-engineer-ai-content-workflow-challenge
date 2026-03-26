@@ -244,7 +244,7 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
           <header className="editor-side-header">
             <div className="editor-metadata-heading">
               <h3>Extracted Metadata</h3>
-              <p>Reflects the latest saved canonical text.</p>
+              <p>Based on the latest saved canonical text.</p>
             </div>
             <span className="editor-soft-chip">
               {metadata ? "Ready" : metadataFailed ? "Failed" : "Pending"}
@@ -253,36 +253,34 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
           {metadata ? (
             <>
               <div className="editor-metadata-grid">
-                <div className="editor-side-section">
+                <div className="editor-side-section editor-side-section--card">
                   <label>Tone</label>
                   <span className="editor-soft-chip">{metadata.tone}</span>
                 </div>
-                <div className="editor-side-section">
+                <div className="editor-side-section editor-side-section--card">
                   <label>Sentiment</label>
                   <span className="editor-soft-chip">{metadata.sentiment}</span>
                 </div>
-                <div className="editor-side-section">
-                  <label>Audience</label>
-                  <p>{metadata.audience}</p>
-                </div>
-                <div className="editor-side-section">
-                  <label>Goal</label>
-                  <p>{metadata.goal}</p>
-                </div>
-                <div className="editor-side-section">
-                  <label>Campaign Theme</label>
-                  <p>{metadata.campaign_theme}</p>
-                </div>
-                <div className="editor-side-section">
+                <div className="editor-side-section editor-side-section--card">
                   <label>Channel Fit</label>
                   <p>{metadata.channel_fit}</p>
                 </div>
-                <div className="editor-side-section">
+                <div className="editor-side-section editor-side-section--card">
                   <label>CTA Strength</label>
                   <span className="editor-keyword-chip">{metadata.cta_strength}</span>
                 </div>
               </div>
-              <div className="editor-side-section">
+              <div className="editor-metadata-summary-grid">
+                <div className="editor-side-section editor-side-section--card">
+                  <label>Audience</label>
+                  <p>{metadata.audience}</p>
+                </div>
+                <div className="editor-side-section editor-side-section--card">
+                  <label>Goal</label>
+                  <p>{metadata.goal}</p>
+                </div>
+              </div>
+              <div className="editor-side-section editor-side-section--keywords">
                 <label>Keywords</label>
                 <div className="editor-chip-row">
                   {keywords.length > 0 ? (

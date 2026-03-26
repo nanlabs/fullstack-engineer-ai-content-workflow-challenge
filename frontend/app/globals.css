@@ -969,28 +969,30 @@ label span,
 }
 
 .editor-metadata-panel {
-  padding: 24px;
+  padding: 20px;
   border-radius: 12px;
   background: var(--surface-low);
+  gap: 14px;
 }
 
 .editor-side-header {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  padding-bottom: 16px;
+  gap: 12px;
+  padding-bottom: 14px;
   border-bottom: 1px solid rgba(169, 180, 185, 0.28);
 }
 
 .editor-metadata-heading {
   display: grid;
-  gap: 6px;
+  gap: 4px;
 }
 
 .editor-metadata-heading p,
 .editor-side-section p {
   margin: 0;
   color: var(--text-soft);
-  line-height: 1.45;
+  line-height: 1.4;
 }
 
 .editor-metadata-failure {
@@ -1021,18 +1023,42 @@ label span,
 
 .editor-metadata-grid {
   display: grid;
-  gap: 14px;
+  gap: 10px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.editor-metadata-summary-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.editor-side-section--card {
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid rgba(169, 180, 185, 0.18);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.editor-side-section--card p {
+  font-size: 0.98rem;
+  color: var(--text-body);
+}
+
+.editor-side-section--keywords {
+  gap: 10px;
 }
 
 .editor-soft-chip,
 .editor-keyword-chip {
   display: inline-flex;
   width: fit-content;
-  padding: 6px 10px;
+  align-items: center;
+  padding: 5px 10px;
   border-radius: 6px;
   background: var(--surface-lowest);
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   font-weight: 600;
   color: var(--text-muted);
   box-shadow: 0 1px 3px rgba(42, 52, 57, 0.04);
@@ -1042,6 +1068,10 @@ label span,
   background: rgba(74, 75, 215, 0.06);
   color: var(--secondary);
   border: 1px solid rgba(74, 75, 215, 0.08);
+}
+
+.editor-chip-row {
+  gap: 8px;
 }
 
 .editor-readability-row {
@@ -1064,6 +1094,13 @@ label span,
 
 .editor-preview-card {
   gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .editor-metadata-grid,
+  .editor-metadata-summary-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .editor-lab-modal {
