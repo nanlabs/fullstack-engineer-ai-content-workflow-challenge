@@ -16,13 +16,20 @@ const STATE_NOTES: Record<ContentPiece["review_state"], string> = {
   rejected: "The latest proposal was rejected. You can refine or translate the canonical text again.",
 };
 
-export function ContentReviewPanel({ piece }: { piece: ContentPiece }) {
+const OPERATION_LABELS: Record<ContentPiece["ai_call_history"][number]["operation_type"], string> = {
+  generate_draft: "Generate Draft",
+  translate: "Translate/Localize",
+  extract_metadata: "Extract Metadata",
+};
+
+export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentPiece; labMode?: boolean }) {
   const router = useRouter();
   const [canonicalText, setCanonicalText] = useState(piece.current_text);
   const [context, setContext] = useState("");
   const [targetLanguage, setTargetLanguage] = useState(piece.target_language ?? "en");
   const [sourceLanguage, setSourceLanguage] = useState(piece.source_language ?? "es");
   const [isTranslateModalOpen, setIsTranslateModalOpen] = useState(false);
+  const [isLabModalOpen, setIsLabModalOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lastLiveUpdate, setLastLiveUpdate] = useState<string | null>(null);
@@ -120,6 +127,15 @@ export function ContentReviewPanel({ piece }: { piece: ContentPiece }) {
               <span className="editor-ai-star">✦</span>
               <h3>AI Workspace</h3>
             </div>
+            {labMode ? (
+              <button
+                type="button"
+                className="editor-secondary-button editor-lab-button"
+                onClick={() => setIsLabModalOpen(true)}
+              >
+                View AI Logs
+              </button>
+            ) : null}
             <label className="editor-context-input">
               <span>Context</span>
               <input value={context} onChange={(event) => setContext(event.target.value)} />
@@ -361,6 +377,75 @@ export function ContentReviewPanel({ piece }: { piece: ContentPiece }) {
               >
                 {pendingAction === "translate" ? "Translating..." : "Translate"}
               </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {labMode && isLabModalOpen ? (
+        <div className="modal-backdrop" role="presentation">
+          <div className="modal-card editor-lab-modal" role="dialog" aria-modal="true" aria-labelledby="lab-modal-title">
+            <div className="modal-header">
+              <div>
+                <p className="eyebrow">Lab Mode</p>
+                <h4 id="lab-modal-title">AI Call History</h4>
+              </div>
+              <button type="button" className="stitch-icon-button" onClick={() => setIsLabModalOpen(false)}>
+                ×
+              </button>
+            </div>
+            <p className="muted">
+              Metadata extraction uses the canonical text saved at the time of the call. This view is visible only when
+              the editor URL includes <code>lab=1</code>.
+            </p>
+            <div className="editor-lab-history">
+              {piece.ai_call_history.length > 0 ? (
+                piece.ai_call_history.map((call, index) => (
+                  <article key={call.id} className="editor-lab-entry">
+                    <div className="editor-lab-entry-header">
+                      <div className="editor-lab-step">
+                        <span className="editor-suggestion-badge">Step {index + 1}</span>
+                        <h5>{OPERATION_LABELS[call.operation_type]}</h5>
+                      </div>
+                      <div className="editor-lab-meta">
+                        <span>{call.provider}</span>
+                        <span>{call.model}</span>
+                        <span>{new Date(call.created_at).toLocaleString()}</span>
+                        <span className="editor-soft-chip">{call.status}</span>
+                      </div>
+                    </div>
+                    {call.source_language || call.target_language ? (
+                      <p className="editor-lab-language">
+                        {call.source_language ?? "?"} → {call.target_language ?? "?"}
+                      </p>
+                    ) : null}
+                    <div className="editor-lab-panels">
+                      <section className="editor-lab-block">
+                        <label>Input text</label>
+                        <pre>{call.input_text}</pre>
+                      </section>
+                      <section className="editor-lab-block">
+                        <label>
+                          {call.operation_type === "extract_metadata"
+                            ? "Extracted metadata"
+                            : call.status === "failed"
+                              ? "Failure output"
+                              : "Output"}
+                        </label>
+                        <pre>
+                          {call.operation_type === "extract_metadata"
+                            ? JSON.stringify(call.structured_output_json ?? {}, null, 2)
+                            : call.output_text ?? "No output returned."}
+                        </pre>
+                      </section>
+                    </div>
+                  </article>
+                ))
+              ) : (
+                <section className="editor-lab-empty">
+                  <p>No AI calls recorded yet for this content piece.</p>
+                </section>
+              )}
             </div>
           </div>
         </div>

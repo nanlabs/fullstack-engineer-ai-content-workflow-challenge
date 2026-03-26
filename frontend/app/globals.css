@@ -823,6 +823,10 @@ label span,
   color: var(--text-muted);
 }
 
+.editor-lab-button {
+  width: fit-content;
+}
+
 .editor-ai-actions {
   grid-auto-flow: column;
   justify-content: start;
@@ -1010,6 +1014,80 @@ label span,
 
 .editor-preview-card {
   gap: 12px;
+}
+
+.editor-lab-modal {
+  width: min(1040px, 100%);
+  max-height: min(82vh, 920px);
+}
+
+.editor-lab-history,
+.editor-lab-entry,
+.editor-lab-entry-header,
+.editor-lab-step,
+.editor-lab-panels,
+.editor-lab-block,
+.editor-lab-empty {
+  display: grid;
+  gap: 12px;
+}
+
+.editor-lab-history {
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.editor-lab-entry {
+  padding: 20px;
+  border-radius: 16px;
+  background: rgba(247, 249, 251, 0.94);
+  border: 1px solid rgba(169, 180, 185, 0.18);
+}
+
+.editor-lab-entry-header {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.editor-lab-step h5,
+.editor-lab-language,
+.editor-lab-empty p {
+  margin: 0;
+}
+
+.editor-lab-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: 8px;
+  font-size: 0.76rem;
+  color: var(--text-soft);
+}
+
+.editor-lab-language {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--secondary);
+}
+
+.editor-lab-panels {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.editor-lab-block label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.editor-lab-block pre {
+  min-height: 120px;
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--surface-lowest);
+  border: 1px solid rgba(169, 180, 185, 0.18);
 }
 
 .editor-translation-history,

@@ -68,6 +68,7 @@ export type ContentPiece = {
   latest_review_action: ReviewAction | null;
   latest_metadata: MetadataPayload | null;
   translation_versions: TranslationVersion[];
+  ai_call_history: AISuggestion[];
 };
 
 export type CampaignDetail = {
