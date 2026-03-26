@@ -210,6 +210,44 @@ async def test_generate_draft_uses_current_canonical_text(api_client) -> None:
     assert payload["suggestion"]["output_text"] == "Draft for content: Refined canonical copy"
 
 
+async def test_provider_settings_endpoints_store_without_exposing_key(api_client) -> None:
+    initial = await api_client.get("/settings/ai-provider")
+    assert initial.status_code == 200
+    assert initial.json()["configured"] is False
+
+    updated = await api_client.put(
+        "/settings/ai-provider",
+        json={"provider": "gemini", "api_key": "super-secret-key"},
+    )
+    assert updated.status_code == 200
+    payload = updated.json()
+    assert payload == {
+        "provider": "gemini",
+        "configured": True,
+        "has_api_key": True,
+        "source": "database",
+    }
+
+    fetched = await api_client.get("/settings/ai-provider")
+    assert fetched.status_code == 200
+    assert fetched.json() == payload
+
+
+async def test_provider_settings_require_new_key_when_switching_provider(api_client) -> None:
+    first_save = await api_client.put(
+        "/settings/ai-provider",
+        json={"provider": "gemini", "api_key": "first-key"},
+    )
+    assert first_save.status_code == 200
+
+    switch_without_key = await api_client.put(
+        "/settings/ai-provider",
+        json={"provider": "openai", "api_key": ""},
+    )
+    assert switch_without_key.status_code == 400
+    assert "api_key is required when switching provider." in switch_without_key.text
+
+
 async def test_reject_works_even_when_content_status_is_approved(api_client) -> None:
     campaign_response = await api_client.post("/campaigns", json={"name": "Approved review"})
     campaign = campaign_response.json()

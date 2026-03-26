@@ -5,6 +5,7 @@ import os
 from urllib.parse import urlsplit, urlunsplit
 
 import asyncpg
+from cryptography.fernet import Fernet
 import pytest
 import pytest_asyncio
 from fastapi import FastAPI
@@ -14,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async
 
 from app.api.routes import router
 from app.application.services import WorkflowService
+from app.config import Settings
 from app.infrastructure.ai.base import GeneratedPayload
 from app.infrastructure.db.migrations import run_migrations
 from app.infrastructure.events.bus import EventBus
@@ -103,7 +105,11 @@ async def engine(database_url: str) -> AsyncIterator[AsyncEngine]:
 @pytest_asyncio.fixture
 async def session_factory(engine: AsyncEngine) -> AsyncIterator[async_sessionmaker]:
     async with engine.begin() as conn:
-        await conn.execute(text("TRUNCATE TABLE review_actions, ai_suggestions, content_pieces, campaigns RESTART IDENTITY CASCADE"))
+        await conn.execute(
+            text(
+                "TRUNCATE TABLE review_actions, ai_suggestions, content_pieces, campaigns, ai_provider_settings RESTART IDENTITY CASCADE"
+            )
+        )
     yield async_sessionmaker(engine, expire_on_commit=False)
 
 
@@ -118,8 +124,17 @@ def event_bus() -> EventBus:
 
 
 @pytest.fixture
-def workflow_service(fake_ai_provider: FakeAIProvider, event_bus: EventBus) -> WorkflowService:
-    return WorkflowService(ai_provider=fake_ai_provider, event_bus=event_bus)
+def app_settings(database_url: str) -> Settings:
+    return Settings(
+        _env_file=None,
+        database_url=database_url,
+        ai_settings_encryption_key=Fernet.generate_key().decode("utf-8"),
+    )
+
+
+@pytest.fixture
+def workflow_service(fake_ai_provider: FakeAIProvider, event_bus: EventBus, app_settings: Settings) -> WorkflowService:
+    return WorkflowService(ai_provider=fake_ai_provider, event_bus=event_bus, settings=app_settings)
 
 
 @pytest_asyncio.fixture

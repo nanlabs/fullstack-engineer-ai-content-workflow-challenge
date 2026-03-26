@@ -1,5 +1,7 @@
-from app.api.schemas import CampaignCreate, ContentPieceCreate, ContentPieceUpdate, GenerateDraftRequest, ReviewRequest, TranslateRequest
+from app.api.schemas import CampaignCreate, ContentPieceCreate, ContentPieceUpdate, GenerateDraftRequest, ReviewRequest, TranslateRequest, UpdateProviderSettingsRequest
 from app.domain.enums import AISuggestionStatus, ReviewState
+from app.application.services import ProviderNotConfiguredError, WorkflowService
+from app.infrastructure.events.bus import EventBus
 from app.infrastructure.ai.base import GeneratedPayload
 
 
@@ -366,3 +368,113 @@ async def test_ai_call_history_is_chronological_and_uses_canonical_input(session
     assert history[-1].structured_output_json is not None
     assert history[1].source_language == "en"
     assert history[1].target_language == "es"
+
+
+async def test_database_provider_settings_override_environment_fallback(session_factory) -> None:
+    class RuntimeProvider:
+        def __init__(self, provider_name: str, model_name: str) -> None:
+            self.provider_name = provider_name
+            self.model_name = model_name
+
+        async def generate_draft(self, *, source_text: str, content_type: str, context: str | None) -> GeneratedPayload:
+            return GeneratedPayload(output_text=f"{self.provider_name}:{source_text}")
+
+        async def translate(
+            self,
+            *,
+            source_text: str,
+            source_language: str,
+            target_language: str,
+            context: str | None,
+        ) -> GeneratedPayload:
+            return GeneratedPayload(output_text=source_text)
+
+        async def extract_metadata(self, *, source_text: str, content_type: str) -> GeneratedPayload:
+            return GeneratedPayload(
+                output_text='{"keywords":[],"tone":"direct","sentiment":"neutral","audience":"team","goal":"test","campaign_theme":"test","channel_fit":"homepage","cta_strength":"low"}',
+                structured_output={
+                    "keywords": [],
+                    "tone": "direct",
+                    "sentiment": "neutral",
+                    "audience": "team",
+                    "goal": "test",
+                    "campaign_theme": "test",
+                    "channel_fit": "homepage",
+                    "cta_strength": "low",
+                },
+            )
+
+    from cryptography.fernet import Fernet
+    from app.config import Settings
+
+    settings = Settings(
+        _env_file=None,
+        database_url="postgresql+asyncpg://postgres:postgres@localhost:5432/app",
+        ai_provider="gemini",
+        gemini_api_key="env-gemini-key",
+        ai_settings_encryption_key=Fernet.generate_key().decode("utf-8"),
+    )
+    workflow_service = WorkflowService(
+        event_bus=EventBus(),
+        settings=settings,
+        provider_builder=lambda provider_name, api_key: RuntimeProvider(provider_name, f"runtime:{api_key}"),
+    )
+
+    async with session_factory() as session:
+        campaign = await workflow_service.create_campaign(session, CampaignCreate(name="Provider"))
+        piece = await workflow_service.create_content_piece(
+            session,
+            campaign.id,
+            ContentPieceCreate(source_text="Base line"),
+        )
+        env_response = await workflow_service.generate_draft(
+            session,
+            piece.id,
+            GenerateDraftRequest(context="hero"),
+        )
+        await workflow_service.update_provider_settings(
+            session,
+            UpdateProviderSettingsRequest(provider="openai", api_key="db-openai-key"),
+        )
+        db_response = await workflow_service.generate_draft(
+            session,
+            piece.id,
+            GenerateDraftRequest(context="hero"),
+        )
+
+    assert env_response.suggestion.provider == "gemini"
+    assert db_response.suggestion.provider == "openai"
+
+
+async def test_missing_provider_configuration_raises_explicit_error(session_factory) -> None:
+    from cryptography.fernet import Fernet
+    from app.config import Settings
+
+    workflow_service = WorkflowService(
+        event_bus=EventBus(),
+        settings=Settings(
+            _env_file=None,
+            database_url="postgresql+asyncpg://postgres:postgres@localhost:5432/app",
+            ai_settings_encryption_key=Fernet.generate_key().decode("utf-8"),
+        ),
+        provider_builder=lambda provider_name, api_key: None,  # pragma: no cover
+    )
+
+    async with session_factory() as session:
+        campaign = await workflow_service.create_campaign(session, CampaignCreate(name="Provider"))
+        piece = await workflow_service.create_content_piece(
+            session,
+            campaign.id,
+            ContentPieceCreate(source_text="Base line"),
+        )
+
+        try:
+            await workflow_service.generate_draft(
+                session,
+                piece.id,
+                GenerateDraftRequest(context="hero"),
+            )
+        except ProviderNotConfiguredError as exc:
+            assert str(exc) == "AI provider is not configured."
+        else:  # pragma: no cover
+            raise AssertionError("Expected ProviderNotConfiguredError")
