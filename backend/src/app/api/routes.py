@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -49,9 +49,12 @@ async def get_ai_provider_settings(
 @router.put("/settings/ai-provider", response_model=ProviderSettingsResponse)
 async def update_ai_provider_settings(
     payload: UpdateProviderSettingsRequest,
+    request: Request,
     session: AsyncSession = SessionDep,
     service: WorkflowService = ServiceDep,
 ) -> ProviderSettingsResponse:
+    if "api_key" in request.query_params:
+        raise HTTPException(status_code=400, detail="api_key must be sent in the request body, not as a query parameter.")
     try:
         return await service.update_provider_settings(session, payload)
     except ValueError as exc:

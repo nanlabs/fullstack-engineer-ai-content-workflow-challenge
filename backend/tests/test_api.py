@@ -1,3 +1,6 @@
+from sqlalchemy import select
+
+from app.infrastructure.db.models import AIProviderSettings
 from app.infrastructure.ai.base import GeneratedPayload
 
 
@@ -231,6 +234,30 @@ async def test_provider_settings_endpoints_store_without_exposing_key(api_client
     fetched = await api_client.get("/settings/ai-provider")
     assert fetched.status_code == 200
     assert fetched.json() == payload
+
+
+async def test_provider_settings_store_only_ciphertext(session_factory, api_client) -> None:
+    save_response = await api_client.put(
+        "/settings/ai-provider",
+        json={"provider": "gemini", "api_key": "super-secret-key"},
+    )
+    assert save_response.status_code == 200
+
+    async with session_factory() as session:
+        stored = (await session.execute(select(AIProviderSettings))).scalar_one()
+
+    assert stored.provider == "gemini"
+    assert stored.encrypted_api_key != "super-secret-key"
+    assert "super-secret-key" not in stored.encrypted_api_key
+
+
+async def test_provider_settings_reject_api_key_in_query_string(api_client) -> None:
+    response = await api_client.put(
+        "/settings/ai-provider?api_key=super-secret-key",
+        json={"provider": "gemini"},
+    )
+    assert response.status_code == 400
+    assert "request body" in response.text
 
 
 async def test_provider_settings_require_new_key_when_switching_provider(api_client) -> None:

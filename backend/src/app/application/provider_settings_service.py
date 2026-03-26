@@ -63,7 +63,7 @@ class ProviderSettingsService:
             raise ValueError("Settings-backed provider configuration is unavailable.")
 
         stored_settings = await session.get(AIProviderSettings, GLOBAL_PROVIDER_SETTINGS_ID)
-        api_key = (payload.api_key or "").strip()
+        api_key = payload.api_key.get_secret_value().strip() if payload.api_key else ""
         provider_changed = stored_settings is not None and stored_settings.provider != payload.provider
 
         if stored_settings is None and not api_key:

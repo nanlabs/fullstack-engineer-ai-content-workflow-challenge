@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 from typing import Literal
 
 from app.domain.enums import AISuggestionStatus, OperationType, ReviewActionType, ReviewState
@@ -59,7 +59,7 @@ class ProviderSettingsResponse(BaseModel):
 
 class UpdateProviderSettingsRequest(BaseModel):
     provider: Literal["gemini", "openai"]
-    api_key: str | None = None
+    api_key: SecretStr | None = None
 
 
 class ReviewRequest(BaseModel):
