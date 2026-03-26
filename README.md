@@ -31,7 +31,7 @@ V1 implementation for the full-stack challenge using `Next.js + FastAPI + Postgr
 - Create content pieces inside campaigns
 - Generate AI drafts
 - Generate translations/localizations
-- Extract metadata (`keywords`, `tone`, `sentiment`)
+- Extract editorial metadata from the canonical text
 - Review draft suggestions with `accept` and `reject` in the main editor flow
 - Persist canonical content separately from AI suggestions
 - Keep translation outputs as parallel versions without replacing canonical text
@@ -51,16 +51,33 @@ V1 implementation for the full-stack challenge using `Next.js + FastAPI + Postgr
 - `POST /content-pieces/:id/review`
 - `GET /events`
 
-## Workflow rules
+## Reviewer quick start
 
-- New content pieces start in `draft`
-- Successful AI operations move the piece to `ai_suggested`
-- Manual editing through `PATCH /content-pieces/:id` moves the piece to `in_review`
-- `start_review` moves the piece to `in_review`
-- `accept` and `edit` end in `approved`
-- `reject` ends in `rejected`
-- `current_text` is canonical and is updated only by manual edit or review acceptance/editing
-- Failed AI operations are stored as failed suggestions and do not mutate canonical content
+Use this path for the challenge review. It is the simplest way to run the full app locally.
+
+```bash
+docker compose --env-file .env.docker.example up --build
+```
+
+What this does:
+
+- starts PostgreSQL, backend, and frontend
+- runs the demo seed automatically
+- leaves the campaign `ACME Media | Creator Launch Demo` available in the UI
+- does not require an AI key to boot the stack or review the seeded workflow
+
+Open:
+
+- Frontend: [http://localhost:3000](http://localhost:3000)
+- Backend: [http://localhost:8000](http://localhost:8000)
+- API health: [http://localhost:8000/health](http://localhost:8000/health)
+
+To test real AI after boot:
+
+- set `GEMINI_API_KEY` or `OPENAI_API_KEY` in `.env.docker.example` before running Compose, or
+- open `Settings` in the app and save a provider there
+
+Provider settings saved from the UI take priority over `.env`, and the API key is encrypted at rest and never returned by the API after it is saved.
 
 ## Development workflow
 
@@ -117,7 +134,7 @@ The frontend dev script also reads API-related environment values from the repo 
 
 Use the seeded campaign to review the current V1 flow with realistic content instead of placeholder text.
 
-Load or recreate the demo data:
+Load or recreate the demo data locally:
 
 ```bash
 cd backend
@@ -125,6 +142,8 @@ uv run seed-demo
 ```
 
 The seed recreates the campaign by name: `ACME Media | Creator Launch Demo`.
+
+In Docker reviewer mode, this seed runs automatically during `docker compose up --build`.
 
 If the metadata schema changes, rerun `uv run seed-demo` so the demo dataset matches the current shape expected by the backend and UI.
 
@@ -151,23 +170,10 @@ Important note:
 - the lab modal shows the chronological sequence of AI calls, including draft generation, translation/localization, and metadata extraction
 - each step includes the stored input text, output or extracted metadata, provider/model, status, and timestamp
 
-## Full Docker mode
-
-Use this when you want the full reviewer/shared experience with both app services containerized.
-
-```bash
-docker compose --env-file .env.docker.example up --build
-```
-
-Services:
-- Frontend: [http://localhost:3000](http://localhost:3000)
-- Backend: [http://localhost:8000](http://localhost:8000)
-- API health: [http://localhost:8000/health](http://localhost:8000/health)
-
 ## Environment files
 
-- `.env.example`: local development values, including `localhost` Postgres DSNs and Gemini as the default AI provider
-- `.env.docker.example`: container runtime values, including `db` as the database hostname and Gemini as the default AI provider
+- `.env.example`: local development values, including `localhost` Postgres DSNs and optional AI provider credentials
+- `.env.docker.example`: reviewer/container values, including automatic demo seeding support and optional AI provider credentials
 
 The backend is Postgres-only. It will fail to start if `DATABASE_URL` is missing or uses a non-Postgres driver.
 
