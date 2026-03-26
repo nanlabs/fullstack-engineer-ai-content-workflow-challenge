@@ -9,25 +9,40 @@ import { useContentEvents } from "@/lib/use-content-events";
 import { ReviewStateBadge } from "@/components/review-state-badge";
 
 const STATE_NOTES: Record<ContentPiece["review_state"], string> = {
-  draft: "Start from the canonical text, then ask AI for a first draft or translate it when the content is ready.",
+  draft:
+    "Start from the canonical text, then ask AI for a first draft or translate it when the content is ready.",
   ai_suggested: "There is an AI proposal ready for editorial review.",
   in_review: "This piece is currently under human review.",
   approved: "The current canonical text is approved and ready to ship.",
-  rejected: "The latest proposal was rejected. You can refine or translate the canonical text again.",
+  rejected:
+    "The latest proposal was rejected. You can refine or translate the canonical text again.",
 };
 
-const OPERATION_LABELS: Record<ContentPiece["ai_call_history"][number]["operation_type"], string> = {
+const OPERATION_LABELS: Record<
+  ContentPiece["ai_call_history"][number]["operation_type"],
+  string
+> = {
   generate_draft: "Generate Draft",
   translate: "Translate/Localize",
   extract_metadata: "Extract Metadata",
 };
 
-export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentPiece; labMode?: boolean }) {
+export function ContentReviewPanel({
+  piece,
+  labMode = false,
+}: {
+  piece: ContentPiece;
+  labMode?: boolean;
+}) {
   const router = useRouter();
   const [canonicalText, setCanonicalText] = useState(piece.current_text);
   const [context, setContext] = useState("");
-  const [targetLanguage, setTargetLanguage] = useState(piece.target_language ?? "en");
-  const [sourceLanguage, setSourceLanguage] = useState(piece.source_language ?? "es");
+  const [targetLanguage, setTargetLanguage] = useState(
+    piece.target_language ?? "en",
+  );
+  const [sourceLanguage, setSourceLanguage] = useState(
+    piece.source_language ?? "es",
+  );
   const [isTranslateModalOpen, setIsTranslateModalOpen] = useState(false);
   const [isLabModalOpen, setIsLabModalOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
@@ -37,7 +52,9 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
   const latestReviewableSuggestion = piece.latest_reviewable_suggestion;
   const title = useMemo(() => {
     const trimmed = piece.current_text.trim();
-    return trimmed.length > 72 ? `${trimmed.slice(0, 72)}...` : trimmed || "Untitled Content Piece";
+    return trimmed.length > 72
+      ? `${trimmed.slice(0, 72)}...`
+      : trimmed || "Untitled Content Piece";
   }, [piece.current_text]);
 
   const refreshForPiece = useCallback(
@@ -59,7 +76,9 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
       await request();
       router.refresh();
     } catch (actionError) {
-      setError(actionError instanceof Error ? actionError.message : "Request failed");
+      setError(
+        actionError instanceof Error ? actionError.message : "Request failed",
+      );
     } finally {
       setPendingAction(null);
     }
@@ -95,7 +114,11 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
         <section className="editor-canonical-section">
           <div className="editor-section-bar">
             <label>Canonical Text</label>
-            <span>{lastLiveUpdate ? `Live updated ${lastLiveUpdate}` : "Last edited just now"}</span>
+            <span>
+              {lastLiveUpdate
+                ? `Live updated ${lastLiveUpdate}`
+                : "Last edited just now"}
+            </span>
           </div>
           <div className="editor-canonical-card">
             <textarea
@@ -108,7 +131,10 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
             <button
               type="button"
               className="editor-secondary-button"
-              disabled={pendingAction === "save-canonical" || canonicalText === piece.current_text}
+              disabled={
+                pendingAction === "save-canonical" ||
+                canonicalText === piece.current_text
+              }
               onClick={() =>
                 runAction("save-canonical", () =>
                   apiRequest(`/content-pieces/${piece.id}`, {
@@ -118,7 +144,9 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
                 )
               }
             >
-              {pendingAction === "save-canonical" ? "Saving..." : "Save Canonical Text"}
+              {pendingAction === "save-canonical"
+                ? "Saving..."
+                : "Save Canonical Text"}
             </button>
             <button
               type="button"
@@ -126,14 +154,21 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
               disabled={pendingAction === "metadata"}
               onClick={() =>
                 runAction("metadata", () =>
-                  apiRequest(`/content-pieces/${piece.id}/ai/extract-metadata`, { method: "POST" }),
+                  apiRequest(
+                    `/content-pieces/${piece.id}/ai/extract-metadata`,
+                    { method: "POST" },
+                  ),
                 )
               }
             >
-              {pendingAction === "metadata" ? "Extracting..." : "Extract Metadata"}
+              {pendingAction === "metadata"
+                ? "Extracting..."
+                : "Extract Metadata"}
             </button>
           </div>
-          <p className="editor-canonical-note">Extract metadata from the latest saved canonical text.</p>
+          <p className="editor-canonical-note">
+            Extract metadata from the latest saved canonical text.
+          </p>
         </section>
 
         <section className="editor-ai-section">
@@ -153,7 +188,10 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
             ) : null}
             <label className="editor-context-input">
               <span>Context</span>
-              <input value={context} onChange={(event) => setContext(event.target.value)} />
+              <input
+                value={context}
+                onChange={(event) => setContext(event.target.value)}
+              />
             </label>
           </div>
 
@@ -188,7 +226,9 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
               <div className="editor-suggestion-meta">
                 <span className="editor-suggestion-badge">AI Suggestion</span>
                 <span className="editor-suggestion-note">
-                  {latestReviewableSuggestion ? "Optimized for engagement" : "No AI suggestion yet"}
+                  {latestReviewableSuggestion
+                    ? "Optimized for engagement"
+                    : "No AI suggestion yet"}
                 </span>
               </div>
             </div>
@@ -200,14 +240,17 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
               <button
                 type="button"
                 className="editor-primary-dark-button"
-                disabled={!latestReviewableSuggestion || pendingAction === "accept"}
+                disabled={
+                  !latestReviewableSuggestion || pendingAction === "accept"
+                }
                 onClick={() =>
                   runAction("accept", () =>
                     apiRequest(`/content-pieces/${piece.id}/review`, {
                       method: "POST",
                       body: JSON.stringify({
                         action: "accept",
-                        ai_suggestion_id: latestReviewableSuggestion?.id ?? null,
+                        ai_suggestion_id:
+                          latestReviewableSuggestion?.id ?? null,
                       }),
                     }),
                   )
@@ -218,14 +261,17 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
               <button
                 type="button"
                 className="editor-danger-button"
-                disabled={!latestReviewableSuggestion || pendingAction === "reject"}
+                disabled={
+                  !latestReviewableSuggestion || pendingAction === "reject"
+                }
                 onClick={() =>
                   runAction("reject", () =>
                     apiRequest(`/content-pieces/${piece.id}/review`, {
                       method: "POST",
                       body: JSON.stringify({
                         action: "reject",
-                        ai_suggestion_id: latestReviewableSuggestion?.id ?? null,
+                        ai_suggestion_id:
+                          latestReviewableSuggestion?.id ?? null,
                       }),
                     }),
                   )
@@ -267,7 +313,9 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
                 </div>
                 <div className="editor-side-section editor-side-section--card">
                   <label>CTA Strength</label>
-                  <span className="editor-keyword-chip">{metadata.cta_strength}</span>
+                  <span className="editor-keyword-chip">
+                    {metadata.cta_strength}
+                  </span>
                 </div>
               </div>
               <div className="editor-metadata-summary-grid">
@@ -290,7 +338,9 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
                       </span>
                     ))
                   ) : (
-                    <span className="editor-soft-chip">No keywords returned</span>
+                    <span className="editor-soft-chip">
+                      No keywords returned
+                    </span>
                   )}
                 </div>
               </div>
@@ -301,8 +351,13 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
               <div className="editor-chip-row">
                 <span className="editor-failure-chip">Failed</span>
               </div>
-              <p>Metadata extraction failed for the latest saved canonical text.</p>
-              <pre>{latestMetadataAttempt?.output_text ?? "Unknown metadata extraction error."}</pre>
+              <p>
+                Metadata extraction failed for the latest saved canonical text.
+              </p>
+              <pre>
+                {latestMetadataAttempt?.output_text ??
+                  "Unknown metadata extraction error."}
+              </pre>
               {labMode ? (
                 <button
                   type="button"
@@ -317,7 +372,9 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
             <div className="editor-side-section">
               <label>Metadata Status</label>
               <div className="editor-chip-row">
-                <span className="editor-soft-chip">Awaiting extraction from canonical text</span>
+                <span className="editor-soft-chip">
+                  Awaiting extraction from canonical text
+                </span>
               </div>
             </div>
           )}
@@ -328,63 +385,59 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
           <div className="editor-translation-history">
             {piece.translation_versions.length > 0 ? (
               piece.translation_versions.map((translation) => (
-                <article key={translation.id} className="editor-translation-item">
+                <article
+                  key={translation.id}
+                  className="editor-translation-item"
+                >
                   <div className="editor-translation-meta">
                     <strong>
-                      {translation.source_language ?? "?"} → {translation.target_language ?? "?"}
+                      {translation.source_language ?? "?"} →{" "}
+                      {translation.target_language ?? "?"}
                     </strong>
-                    <span>{new Date(translation.created_at).toLocaleString()}</span>
+                    <span>
+                      {new Date(translation.created_at).toLocaleString()}
+                    </span>
                   </div>
-                  <p>{translation.output_text ?? "No translated output returned."}</p>
+                  <p>
+                    {translation.output_text ??
+                      "No translated output returned."}
+                  </p>
                 </article>
               ))
             ) : (
               <p className="editor-preview-caption">
-                No translations yet. Use Translate/Localize to generate localized versions from the canonical text.
+                No translations yet. Use Translate/Localize to generate
+                localized versions from the canonical text.
               </p>
             )}
           </div>
-        </section>
-
-        <section className="editor-preview-card">
-          <label>Layout Context</label>
-          <div className="editor-preview-visual">
-            <div className="editor-preview-overlay">
-              <p>Canonical Preview</p>
-              <span>{piece.target_language ? `${piece.source_language ?? "?"} → ${piece.target_language}` : "Base content"}</span>
-            </div>
-          </div>
-          <p className="editor-preview-caption">{piece.source_text}</p>
-        </section>
-
-        <section className="editor-tip-card">
-          <div className="editor-tip-header">
-            <span>Editor Tip</span>
-          </div>
-          <p>{STATE_NOTES[piece.review_state]}</p>
-          {piece.latest_review_action ? (
-            <p className="editor-tip-meta">
-              Last action: {piece.latest_review_action.action}
-              {piece.latest_review_action.comment ? ` · ${piece.latest_review_action.comment}` : ""}
-            </p>
-          ) : null}
         </section>
       </aside>
 
       {isTranslateModalOpen ? (
         <div className="modal-backdrop" role="presentation">
-          <div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="translate-modal-title">
+          <div
+            className="modal-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="translate-modal-title"
+          >
             <div className="modal-header">
               <div>
                 <p className="eyebrow">Translation</p>
                 <h4 id="translate-modal-title">Translate this content</h4>
               </div>
-              <button type="button" className="stitch-icon-button" onClick={() => setIsTranslateModalOpen(false)}>
+              <button
+                type="button"
+                className="stitch-icon-button"
+                onClick={() => setIsTranslateModalOpen(false)}
+              >
                 ×
               </button>
             </div>
             <p className="muted">
-              Translate the current canonical text of this piece. Save the canonical text first if you want to translate a different version.
+              Translate the current canonical text of this piece. Save the
+              canonical text first if you want to translate a different version.
             </p>
             <section className="content-surface">
               <h4>Current text</h4>
@@ -393,15 +446,25 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
             <div className="action-grid">
               <label>
                 <span>From</span>
-                <input value={sourceLanguage} onChange={(event) => setSourceLanguage(event.target.value)} />
+                <input
+                  value={sourceLanguage}
+                  onChange={(event) => setSourceLanguage(event.target.value)}
+                />
               </label>
               <label>
                 <span>To</span>
-                <input value={targetLanguage} onChange={(event) => setTargetLanguage(event.target.value)} />
+                <input
+                  value={targetLanguage}
+                  onChange={(event) => setTargetLanguage(event.target.value)}
+                />
               </label>
             </div>
             <div className="button-row">
-              <button type="button" className="button-secondary" onClick={() => setIsTranslateModalOpen(false)}>
+              <button
+                type="button"
+                className="button-secondary"
+                onClick={() => setIsTranslateModalOpen(false)}
+              >
                 Cancel
               </button>
               <button
@@ -409,14 +472,17 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
                 disabled={pendingAction === "translate"}
                 onClick={() =>
                   runAction("translate", async () => {
-                    await apiRequest(`/content-pieces/${piece.id}/ai/translate`, {
-                      method: "POST",
-                      body: JSON.stringify({
-                        context: context || null,
-                        source_language: sourceLanguage,
-                        target_language: targetLanguage,
-                      }),
-                    });
+                    await apiRequest(
+                      `/content-pieces/${piece.id}/ai/translate`,
+                      {
+                        method: "POST",
+                        body: JSON.stringify({
+                          context: context || null,
+                          source_language: sourceLanguage,
+                          target_language: targetLanguage,
+                        }),
+                      },
+                    );
                     setIsTranslateModalOpen(false);
                   })
                 }
@@ -430,19 +496,29 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
 
       {labMode && isLabModalOpen ? (
         <div className="modal-backdrop" role="presentation">
-          <div className="modal-card editor-lab-modal" role="dialog" aria-modal="true" aria-labelledby="lab-modal-title">
+          <div
+            className="modal-card editor-lab-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="lab-modal-title"
+          >
             <div className="modal-header">
               <div>
                 <p className="eyebrow">Lab Mode</p>
                 <h4 id="lab-modal-title">AI Call History</h4>
               </div>
-              <button type="button" className="stitch-icon-button" onClick={() => setIsLabModalOpen(false)}>
+              <button
+                type="button"
+                className="stitch-icon-button"
+                onClick={() => setIsLabModalOpen(false)}
+              >
                 ×
               </button>
             </div>
             <p className="muted">
-              Metadata extraction uses the canonical text saved at the time of the call. This view is visible only when
-              the editor URL includes <code>lab=1</code>.
+              Metadata extraction uses the canonical text saved at the time of
+              the call. This view is visible only when the editor URL includes{" "}
+              <code>lab=1</code>.
             </p>
             <div className="editor-lab-history">
               {piece.ai_call_history.length > 0 ? (
@@ -450,19 +526,24 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
                   <article key={call.id} className="editor-lab-entry">
                     <div className="editor-lab-entry-header">
                       <div className="editor-lab-step">
-                        <span className="editor-suggestion-badge">Step {index + 1}</span>
+                        <span className="editor-suggestion-badge">
+                          Step {index + 1}
+                        </span>
                         <h5>{OPERATION_LABELS[call.operation_type]}</h5>
                       </div>
                       <div className="editor-lab-meta">
                         <span>{call.provider}</span>
                         <span>{call.model}</span>
-                        <span>{new Date(call.created_at).toLocaleString()}</span>
+                        <span>
+                          {new Date(call.created_at).toLocaleString()}
+                        </span>
                         <span className="editor-soft-chip">{call.status}</span>
                       </div>
                     </div>
                     {call.source_language || call.target_language ? (
                       <p className="editor-lab-language">
-                        {call.source_language ?? "?"} → {call.target_language ?? "?"}
+                        {call.source_language ?? "?"} →{" "}
+                        {call.target_language ?? "?"}
                       </p>
                     ) : null}
                     <div className="editor-lab-panels">
@@ -480,8 +561,12 @@ export function ContentReviewPanel({ piece, labMode = false }: { piece: ContentP
                         </label>
                         <pre>
                           {call.operation_type === "extract_metadata"
-                            ? JSON.stringify(call.structured_output_json ?? {}, null, 2)
-                            : call.output_text ?? "No output returned."}
+                            ? JSON.stringify(
+                                call.structured_output_json ?? {},
+                                null,
+                                2,
+                              )
+                            : (call.output_text ?? "No output returned.")}
                         </pre>
                       </section>
                     </div>
