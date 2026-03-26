@@ -28,6 +28,7 @@ Reviewer support:
 - the demo seed recreates `ACME Media | Creator Launch Demo`
 - the seeded data includes content pieces in `draft`, `ai_suggested`, `in_review`, `approved`, and `rejected`
 - translation history and extracted metadata are included so the editor flow can be reviewed with realistic data
+- provider settings support browser-based switching while keeping API keys encrypted at rest and never returning them from the API
 
 Current scope intentionally does not include:
 

@@ -120,6 +120,13 @@ AI provider selection:
 
 The backend can fall back to `.env` credentials when no provider settings are stored in the app. Once a provider is saved from Settings, the database-backed configuration takes priority and the API key is encrypted at rest.
 
+Important security note:
+
+- API keys are never returned by the API after they are saved
+- API keys are encrypted at rest before they are persisted in PostgreSQL
+- entering a key in the web UI necessarily sends it once in the HTTPS request body for that save operation
+- the app never re-displays a stored key in the UI
+
 ### 4. Run the frontend locally
 
 ```bash

@@ -36,6 +36,17 @@ export function ProviderSettingsModal({
     return null;
   }
 
+  function resetForm() {
+    setProvider(settings.provider ?? "gemini");
+    setApiKey("");
+    setError(null);
+  }
+
+  function handleClose() {
+    resetForm();
+    onClose();
+  }
+
   async function handleSubmit() {
     setPending(true);
     setError(null);
@@ -47,7 +58,7 @@ export function ProviderSettingsModal({
           api_key: apiKey,
         }),
       });
-      setApiKey("");
+      resetForm();
       onSaved(updated);
       onClose();
     } catch (actionError) {
@@ -66,13 +77,13 @@ export function ProviderSettingsModal({
             <h4 id="provider-settings-title">Provider configuration</h4>
           </div>
           {!blocking ? (
-            <button type="button" className="stitch-icon-button" onClick={onClose}>
+            <button type="button" className="stitch-icon-button" onClick={handleClose}>
               ×
             </button>
           ) : null}
         </div>
         <p className="muted">
-          Configure the global AI provider used by the app. The API key is encrypted at rest and is never returned after it is saved.
+          Configure the global AI provider used by the app. The API key is sent once in this save request, encrypted at rest in PostgreSQL, and never returned after it is saved.
         </p>
         <section className="provider-settings-summary">
           <div>
@@ -108,17 +119,18 @@ export function ProviderSettingsModal({
               value={apiKey}
               placeholder="Enter a new API key"
               onChange={(event) => setApiKey(event.target.value)}
-              autoComplete="off"
+              autoComplete="new-password"
+              spellCheck={false}
             />
           </label>
         </div>
         <p className="muted">
-          Leave the field blank only if you are keeping the same provider and existing stored key.
+          Leave the field blank only if you are keeping the same provider and existing stored key. The field is never prefilled or shown again after save.
         </p>
         {error ? <p className="error-text">{error}</p> : null}
         <div className="button-row">
           {!blocking ? (
-            <button type="button" className="button-secondary" onClick={onClose}>
+            <button type="button" className="button-secondary" onClick={handleClose}>
               Cancel
             </button>
           ) : null}
