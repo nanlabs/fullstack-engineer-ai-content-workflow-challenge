@@ -824,6 +824,11 @@ label span,
   gap: 12px;
 }
 
+.editor-provider-button {
+  width: 36px;
+  height: 36px;
+}
+
 .editor-ai-title h3,
 .editor-side-header h3 {
   margin: 0;
@@ -849,6 +854,17 @@ label span,
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-muted);
+}
+
+.editor-context-input input,
+.action-grid input,
+.action-grid select {
+  height: 42px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(169, 180, 185, 0.28);
+  background: var(--surface-lowest);
+  color: var(--text);
 }
 
 .editor-lab-button {
@@ -1666,6 +1682,34 @@ button:disabled {
   box-shadow: var(--shadow);
 }
 
+.provider-settings-page,
+.provider-settings-page-header,
+.provider-settings-summary {
+  display: grid;
+  gap: 16px;
+}
+
+.provider-settings-page-header {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.provider-settings-summary {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.provider-settings-summary div {
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--surface-low);
+}
+
+.provider-settings-summary strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 1rem;
+}
+
 .campaign-card-header,
 .workflow-summary {
   display: grid;
@@ -1902,6 +1946,10 @@ button:disabled {
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 12px 32px -4px rgba(42, 52, 57, 0.08);
+}
+
+.provider-settings-modal {
+  width: min(720px, 100%);
 }
 
 .modal-header {

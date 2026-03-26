@@ -48,6 +48,17 @@ export type DraftHistoryItem = {
   decision_status: DraftDecisionStatus;
 };
 
+export type ProviderSource = "database" | "environment" | "missing";
+
+export type ProviderName = "gemini" | "openai";
+
+export type ProviderSettings = {
+  provider: ProviderName | null;
+  configured: boolean;
+  has_api_key: boolean;
+  source: ProviderSource;
+};
+
 export type ReviewAction = {
   id: string;
   content_piece_id: string;

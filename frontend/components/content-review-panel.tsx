@@ -4,9 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { apiRequest } from "@/lib/api";
-import { ContentPiece, DraftDecisionStatus, ReviewState } from "@/lib/types";
+import { ContentPiece, DraftDecisionStatus, ProviderSettings, ReviewState } from "@/lib/types";
+import { ProviderSettingsModal } from "@/components/provider-settings-modal";
 import { useContentEvents } from "@/lib/use-content-events";
 import { ReviewStateBadge } from "@/components/review-state-badge";
+import { SettingsIcon } from "@/components/stitch-icons";
 
 const STATE_NOTES: Record<ContentPiece["review_state"], string> = {
   draft:
@@ -44,9 +46,11 @@ const DRAFT_DECISION_LABELS: Record<DraftDecisionStatus, string> = {
 export function ContentReviewPanel({
   piece,
   labMode = false,
+  initialProviderSettings,
 }: {
   piece: ContentPiece;
   labMode?: boolean;
+  initialProviderSettings: ProviderSettings;
 }) {
   const router = useRouter();
   const [canonicalText, setCanonicalText] = useState(piece.current_text);
@@ -59,12 +63,15 @@ export function ContentReviewPanel({
   );
   const [isTranslateModalOpen, setIsTranslateModalOpen] = useState(false);
   const [isLabModalOpen, setIsLabModalOpen] = useState(false);
+  const [isProviderModalOpen, setIsProviderModalOpen] = useState(false);
   const [draftToReject, setDraftToReject] = useState<
     ContentPiece["draft_history"][number] | null
   >(null);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lastLiveUpdate, setLastLiveUpdate] = useState<string | null>(null);
+  const [providerSettings, setProviderSettings] = useState(initialProviderSettings);
+  const [pendingProviderAction, setPendingProviderAction] = useState<null | (() => Promise<void>)>(null);
 
   const title = useMemo(() => {
     const trimmed = piece.current_text.trim();
@@ -98,6 +105,18 @@ export function ContentReviewPanel({
     } finally {
       setPendingAction(null);
     }
+  }
+
+  async function runProviderAwareAction(
+    actionKey: string,
+    request: () => Promise<unknown>,
+  ) {
+    if (!providerSettings.configured) {
+      setPendingProviderAction(() => () => runAction(actionKey, request));
+      setIsProviderModalOpen(true);
+      return;
+    }
+    await runAction(actionKey, request);
   }
 
   useEffect(() => {
@@ -192,7 +211,7 @@ export function ContentReviewPanel({
               className="editor-primary-button"
               disabled={pendingAction === "metadata"}
               onClick={() =>
-                runAction("metadata", () =>
+                runProviderAwareAction("metadata", () =>
                   apiRequest(
                     `/content-pieces/${piece.id}/ai/extract-metadata`,
                     { method: "POST" },
@@ -215,6 +234,14 @@ export function ContentReviewPanel({
             <div className="editor-ai-title">
               <span className="editor-ai-star">✦</span>
               <h3>AI Workspace</h3>
+              <button
+                type="button"
+                className="stitch-icon-button editor-provider-button"
+                aria-label="Configure AI provider"
+                onClick={() => setIsProviderModalOpen(true)}
+              >
+                <SettingsIcon />
+              </button>
             </div>
             {labMode ? (
               <button
@@ -227,13 +254,22 @@ export function ContentReviewPanel({
             ) : null}
           </div>
 
+          <label className="editor-context-input">
+            <span>Context</span>
+            <input
+              value={context}
+              onChange={(event) => setContext(event.target.value)}
+              placeholder="Optional generation context"
+            />
+          </label>
+
           <div className="editor-ai-actions">
             <button
               type="button"
               className="editor-ghost-button"
               disabled={pendingAction === "draft"}
               onClick={() =>
-                runAction("draft", () =>
+                runProviderAwareAction("draft", () =>
                   apiRequest(`/content-pieces/${piece.id}/ai/generate-draft`, {
                     method: "POST",
                     body: JSON.stringify({ context: context || null }),
@@ -247,7 +283,16 @@ export function ContentReviewPanel({
               type="button"
               className="editor-ghost-button"
               disabled={pendingAction === "translate"}
-              onClick={() => setIsTranslateModalOpen(true)}
+              onClick={() => {
+                if (!providerSettings.configured) {
+                  setPendingProviderAction(() => async () => {
+                    setIsTranslateModalOpen(true);
+                  });
+                  setIsProviderModalOpen(true);
+                  return;
+                }
+                setIsTranslateModalOpen(true);
+              }}
             >
               Translate/Localize
             </button>
@@ -618,13 +663,23 @@ export function ContentReviewPanel({
                           ai_suggestion_id: draftToReject.id,
                         }),
                       });
-                      await apiRequest(
-                        `/content-pieces/${piece.id}/ai/generate-draft`,
-                        {
-                          method: "POST",
-                          body: JSON.stringify({ context: context || null }),
-                        },
-                      );
+                      if (!providerSettings.configured) {
+                        setDraftToReject(null);
+                        setPendingProviderAction(() => () =>
+                          runAction("draft", () =>
+                            apiRequest(`/content-pieces/${piece.id}/ai/generate-draft`, {
+                              method: "POST",
+                              body: JSON.stringify({ context: context || null }),
+                            }),
+                          ),
+                        );
+                        setIsProviderModalOpen(true);
+                        return;
+                      }
+                      await apiRequest(`/content-pieces/${piece.id}/ai/generate-draft`, {
+                        method: "POST",
+                        body: JSON.stringify({ context: context || null }),
+                      });
                       setDraftToReject(null);
                     },
                   )
@@ -724,6 +779,26 @@ export function ContentReviewPanel({
           </div>
         </div>
       ) : null}
+      <ProviderSettingsModal
+        open={isProviderModalOpen}
+        blocking={!providerSettings.configured}
+        settings={providerSettings}
+        onClose={() => {
+          if (!providerSettings.configured) {
+            return;
+          }
+          setIsProviderModalOpen(false);
+        }}
+        onSaved={(nextSettings) => {
+          setProviderSettings(nextSettings);
+          setIsProviderModalOpen(false);
+          const pending = pendingProviderAction;
+          setPendingProviderAction(null);
+          if (pending) {
+            void pending();
+          }
+        }}
+      />
     </article>
   );
 }

@@ -1,13 +1,14 @@
+import { fetchProviderSettings } from "@/lib/api";
+import { ProviderSettingsPage } from "@/components/provider-settings-page";
 import { StitchShell } from "@/components/stitch-shell";
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const settings = await fetchProviderSettings();
+
   return (
     <StitchShell activeHref="/settings" pageTitle="Campaign Manager">
       <main className="dashboard-layout">
-        <section className="dashboard-empty">
-          <h2>Settings</h2>
-          <p>Esta vista queda como placeholder visual dentro de la shell de Stitch. La configuración detallada sigue fuera del scope actual.</p>
-        </section>
+        <ProviderSettingsPage initialSettings={settings} />
       </main>
     </StitchShell>
   );

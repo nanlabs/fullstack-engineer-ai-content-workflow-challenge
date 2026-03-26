@@ -1,4 +1,4 @@
-import { CampaignDetail, CampaignSummary, ContentPiece } from "@/lib/types";
+import { CampaignDetail, CampaignSummary, ContentPiece, ProviderSettings } from "@/lib/types";
 
 function getServerApiBaseUrl(): string {
   return (
@@ -39,6 +39,15 @@ export async function fetchContentPiece(contentPieceId: string): Promise<Content
   if (!response.ok) {
     const message = await response.text();
     throw new Error(message || "Failed to fetch content piece");
+  }
+  return response.json();
+}
+
+export async function fetchProviderSettings(): Promise<ProviderSettings> {
+  const response = await fetch(`${getServerApiBaseUrl()}/settings/ai-provider`, { cache: "no-store" });
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || "Failed to fetch provider settings");
   }
   return response.json();
 }
