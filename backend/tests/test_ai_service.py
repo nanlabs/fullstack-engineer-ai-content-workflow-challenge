@@ -167,6 +167,37 @@ async def test_metadata_with_prose_and_json_object_is_recovered(session_factory,
     assert response.content_piece.latest_metadata.goal == "increase signups"
 
 
+async def test_metadata_coerces_list_fields_into_strings(session_factory, workflow_service, fake_ai_provider) -> None:
+    async def list_metadata(*, source_text: str, content_type: str) -> GeneratedPayload:
+        return GeneratedPayload(
+            output_text=(
+                '{"keywords": ["popup", "vintage"], "tone": ["excited", "urgent"], '
+                '"sentiment": "positive", "audience": ["shoppers", "community members"], '
+                '"goal": "increase weekend visits", "campaign_theme": "street market", '
+                '"channel_fit": ["social media", "email newsletter"], "cta_strength": "High"}'
+            ),
+            structured_output=None,
+        )
+
+    fake_ai_provider.extract_metadata = list_metadata
+
+    async with session_factory() as session:
+        campaign = await workflow_service.create_campaign(session, CampaignCreate(name="Launch"))
+        piece = await workflow_service.create_content_piece(
+            session,
+            campaign.id,
+            ContentPieceCreate(source_text="Pop-up fair market discovery line"),
+        )
+        response = await workflow_service.extract_metadata(session, piece.id)
+
+    assert response.suggestion.status == AISuggestionStatus.SUCCESS
+    assert response.content_piece.latest_metadata is not None
+    assert response.content_piece.latest_metadata.tone == "excited, urgent"
+    assert response.content_piece.latest_metadata.audience == "shoppers, community members"
+    assert response.content_piece.latest_metadata.channel_fit == "social media, email newsletter"
+    assert response.content_piece.latest_metadata.cta_strength == "high"
+
+
 async def test_metadata_does_not_replace_latest_reviewable_suggestion(session_factory, workflow_service) -> None:
     async with session_factory() as session:
         campaign = await workflow_service.create_campaign(session, CampaignCreate(name="Launch"))

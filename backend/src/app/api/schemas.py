@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, SecretStr
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 from typing import Literal
 
 from app.domain.enums import AISuggestionStatus, OperationType, ReviewActionType, ReviewState
@@ -19,6 +19,45 @@ class MetadataPayload(BaseModel):
     campaign_theme: str
     channel_fit: str
     cta_strength: Literal["low", "medium", "high"]
+
+    @field_validator("keywords", mode="before")
+    @classmethod
+    def normalize_keywords(cls, value: Any) -> list[str]:
+        if value is None:
+            return []
+        if isinstance(value, str):
+            cleaned = value.strip()
+            return [cleaned] if cleaned else []
+        if isinstance(value, list):
+            normalized = []
+            for item in value:
+                text = cls._stringify_value(item)
+                if text:
+                    normalized.append(text)
+            return normalized
+        text = cls._stringify_value(value)
+        return [text] if text else []
+
+    @field_validator("tone", "sentiment", "audience", "goal", "campaign_theme", "channel_fit", mode="before")
+    @classmethod
+    def normalize_text_fields(cls, value: Any) -> str:
+        return cls._stringify_value(value)
+
+    @field_validator("cta_strength", mode="before")
+    @classmethod
+    def normalize_cta_strength(cls, value: Any) -> str:
+        return cls._stringify_value(value).lower()
+
+    @staticmethod
+    def _stringify_value(value: Any) -> str:
+        if value is None:
+            return ""
+        if isinstance(value, str):
+            return value.strip()
+        if isinstance(value, list):
+            parts = [MetadataPayload._stringify_value(item) for item in value]
+            return ", ".join(part for part in parts if part)
+        return str(value).strip()
 
 
 class CampaignCreate(BaseModel):
