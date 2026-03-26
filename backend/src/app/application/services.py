@@ -325,6 +325,7 @@ class WorkflowService:
         latest_suggestion_model = None
         latest_reviewable_suggestion_model = None
         latest_review_model = None
+        latest_metadata_attempt_model = None
         latest_metadata = None
         translation_versions: list[TranslationVersionResponse] = []
         ai_call_history: list[AISuggestionResponse] = []
@@ -351,13 +352,15 @@ class WorkflowService:
             item
             for item in piece.ai_suggestions
             if item.operation_type == OperationType.EXTRACT_METADATA.value
-            and item.status == AISuggestionStatus.SUCCESS.value
-            and item.structured_output_json
         ]
         if metadata_suggestions:
-            latest_metadata = MetadataPayload.model_validate(
-                max(metadata_suggestions, key=lambda item: item.created_at).structured_output_json
-            )
+            latest_metadata_attempt = max(metadata_suggestions, key=lambda item: item.created_at)
+            latest_metadata_attempt_model = AISuggestionResponse.model_validate(latest_metadata_attempt)
+            if (
+                latest_metadata_attempt.status == AISuggestionStatus.SUCCESS.value
+                and latest_metadata_attempt.structured_output_json
+            ):
+                latest_metadata = MetadataPayload.model_validate(latest_metadata_attempt.structured_output_json)
 
         translation_suggestions = sorted(
             [
@@ -390,6 +393,7 @@ class WorkflowService:
             latest_suggestion=latest_suggestion_model,
             latest_reviewable_suggestion=latest_reviewable_suggestion_model,
             latest_review_action=latest_review_model,
+            latest_metadata_attempt=latest_metadata_attempt_model,
             latest_metadata=latest_metadata,
             translation_versions=translation_versions,
             ai_call_history=ai_call_history,

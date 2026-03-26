@@ -131,6 +131,7 @@ class ContentPieceResponse(BaseModel):
     latest_suggestion: AISuggestionResponse | None = None
     latest_reviewable_suggestion: AISuggestionResponse | None = None
     latest_review_action: ReviewActionResponse | None = None
+    latest_metadata_attempt: AISuggestionResponse | None = None
     latest_metadata: MetadataPayload | None = None
     translation_versions: list[TranslationVersionResponse] = Field(default_factory=list)
     ai_call_history: list[AISuggestionResponse] = Field(default_factory=list)
