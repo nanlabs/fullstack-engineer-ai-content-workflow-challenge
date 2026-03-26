@@ -6,11 +6,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY pyproject.toml ./
-RUN pip install --no-cache-dir uv && uv sync --no-dev
+COPY pyproject.toml uv.lock README.md ./
+RUN pip install --no-cache-dir uv && uv sync --frozen --no-dev --no-install-project
 
 COPY migrations ./migrations
 COPY src ./src
+RUN uv sync --frozen --no-dev
 
 EXPOSE 8000
 
