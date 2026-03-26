@@ -125,6 +125,8 @@ uv run seed-demo
 
 The seed recreates the campaign by name: `ACME Media | Creator Launch Demo`.
 
+If the metadata schema changes, rerun `uv run seed-demo` so the demo dataset matches the current shape expected by the backend and UI.
+
 After seeding, the dataset includes content pieces across these workflow states:
 
 - `draft`
