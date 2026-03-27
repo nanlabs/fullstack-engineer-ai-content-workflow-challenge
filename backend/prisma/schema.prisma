@@ -1,0 +1,79 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ContentType {
+  HEADLINE
+  DESCRIPTION
+  CTA
+  TAGLINE
+  BODY_COPY
+}
+
+enum ContentStatus {
+  DRAFT
+  AI_SUGGESTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum AIModel {
+  CLAUDE_3_5_SONNET
+  GPT_4O
+}
+
+model Campaign {
+  id           String         @id @default(uuid())
+  name         String
+  description  String?
+  targetLangs  String[]       @default([])
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  contents     ContentPiece[]
+}
+
+model ContentPiece {
+  id           String        @id @default(uuid())
+  campaignId   String
+  campaign     Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  type         ContentType
+  originalText String
+  status       ContentStatus @default(DRAFT)
+  reviewNotes  String?
+  aiDrafts     AIDraft[]
+  translations Translation[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model AIDraft {
+  id             String       @id @default(uuid())
+  contentPieceId String
+  contentPiece   ContentPiece @relation(fields: [contentPieceId], references: [id], onDelete: Cascade)
+  model          AIModel
+  prompt         String
+  generatedText  String
+  keywords       String[]     @default([])
+  tone           String?
+  sentiment      String?
+  isSelected     Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+}
+
+model Translation {
+  id             String        @id @default(uuid())
+  contentPieceId String
+  contentPiece   ContentPiece  @relation(fields: [contentPieceId], references: [id], onDelete: Cascade)
+  targetLanguage String
+  translatedText String
+  model          AIModel
+  status         ContentStatus @default(AI_SUGGESTED)
+  createdAt      DateTime      @default(now())
+}

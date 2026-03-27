@@ -1,0 +1,463 @@
+================================================================================
+  ACME GLOBAL MEDIA – AI CONTENT WORKFLOW: TECHNICAL WALKTHROUGH
+================================================================================
+
+This document walks through every major step taken to build this system,
+explaining not just what was done but why — anticipating the technical
+questions a reviewer is likely to ask.
+
+--------------------------------------------------------------------------------
+STEP 1: UNDERSTANDING THE REQUIREMENTS AND CHOOSING THE ARCHITECTURE
+--------------------------------------------------------------------------------
+
+The challenge asked for a fullstack system to manage AI-powered content
+creation for marketing campaigns. Core needs: campaign + content CRUD,
+AI draft generation (Claude + GPT-4o), translation, a review state machine,
+and real-time updates in the UI.
+
+Before writing a single line, we mapped which layer owns what:
+  - Backend: NestJS (business logic, AI calls, DB, WebSocket)
+  - Database: PostgreSQL via Prisma
+  - Frontend: Next.js App Router (UI, real-time subscription)
+  - Infrastructure: Docker Compose (local), Kubernetes + ArgoCD (production)
+
+Common questions:
+
+  Q1. Why NestJS and not Express or Fastify directly?
+  A1. NestJS provides a module/DI system that keeps concerns separated cleanly.
+      With multiple domains (campaigns, content, AI, gateway) a flat Express app
+      becomes a mess fast. NestJS gives structure without over-engineering.
+
+  Q2. Why Fastify adapter instead of the default Express adapter?
+  A2. Fastify benchmarks at roughly 2x the throughput of Express with virtually
+      zero config change in NestJS. For an API that proxies AI calls (which can
+      be slow), maximizing raw request handling capacity matters.
+
+  Q3. Why PostgreSQL and not MongoDB?
+  A3. The data is relational by nature: campaigns own content pieces, content
+      pieces own drafts and translations. A document store would require
+      manually re-implementing joins and referential integrity. Postgres + Prisma
+      gives us typed joins, migrations, and transactions for free.
+
+  Q4. Why Prisma over TypeORM or Sequelize?
+  A4. Prisma's schema-first approach generates a type-safe client from the
+      schema file. TypeORM relies on decorators and class reflection, which
+      introduces runtime overhead and weaker inference. Prisma is also simpler
+      to migrate.
+
+--------------------------------------------------------------------------------
+STEP 2: DATABASE SCHEMA DESIGN
+--------------------------------------------------------------------------------
+
+We defined four models in schema.prisma:
+  - Campaign: top-level entity with name, description, targetLangs (String[])
+  - ContentPiece: belongs to Campaign; tracks type (HEADLINE, CTA, etc.),
+    originalText, and status (DRAFT → AI_SUGGESTED → UNDER_REVIEW →
+    APPROVED/REJECTED)
+  - AIDraft: generated content from an AI model, linked to ContentPiece;
+    stores generatedText, keywords, tone, sentiment, isSelected flag
+  - Translation: translated version of a ContentPiece into a target language
+
+Common questions:
+
+  Q1. Why store keywords, tone, and sentiment on AIDraft?
+  A1. Structured metadata lets reviewers compare drafts analytically, not just
+      by reading. A marketer can filter by tone or keyword presence without
+      re-reading every draft. It also demonstrates that AI output can be
+      structured and queryable, not just raw text.
+
+  Q2. Why a ContentStatus enum on both ContentPiece and Translation?
+  A2. They evolve independently. A content piece can be APPROVED in English
+      while its Spanish translation is still UNDER_REVIEW. Separating the
+      statuses prevents one blocking the other.
+
+  Q3. Why targetLangs as a String array on Campaign rather than a join table?
+  A3. Target languages are a simple list with no extra attributes — no join
+      table adds value here. Prisma supports scalar arrays in PostgreSQL, so
+      this keeps the schema lean.
+
+  Q4. Why an isSelected flag on AIDraft instead of a selectedDraftId on ContentPiece?
+  A4. Multiple drafts can be generated over time. Marking one as selected on the
+      draft itself makes it trivial to query "which draft is selected?" without
+      a nullable foreign key on the parent. A transaction ensures only one is
+      ever marked selected at a time.
+
+--------------------------------------------------------------------------------
+STEP 3: BACKEND MODULES — CAMPAIGNS AND CONTENT
+--------------------------------------------------------------------------------
+
+We scaffolded NestJS modules for campaigns and content:
+  - CampaignsModule: CRUD endpoints, full Prisma integration
+  - ContentModule: CRUD + POST /review (status transition) +
+    POST /select-draft/:draftId
+
+The review endpoint enforces the state machine: you cannot jump from DRAFT
+directly to APPROVED. Transitions must follow the defined flow.
+
+Common questions:
+
+  Q1. Why a dedicated /review endpoint instead of just PUT on the content piece?
+  A1. A PUT suggests "replace this resource". A review is a deliberate state
+      transition with business rules attached. A dedicated endpoint makes the
+      intent explicit and lets us validate transitions without mixing that
+      logic into a generic update handler.
+
+  Q2. Why use Prisma transactions for selectDraft?
+  A2. We need to atomically deselect all other drafts AND select the target one.
+      Without a transaction, a crash between the two operations would leave the
+      data in an inconsistent state — two drafts selected, or none.
+
+  Q3. Why return the full updated ContentPiece (with drafts and translations
+      included) from most endpoints?
+  A3. The frontend always needs the full picture after a mutation. Returning the
+      full object avoids a second round-trip GET. It's a pragmatic trade-off:
+      slightly larger responses, but half the network calls.
+
+  Q4. Why NotFoundException from @nestjs/common instead of a manual 404?
+  A4. NestJS exception filters map built-in exceptions to correct HTTP status
+      codes automatically. Throwing NotFoundException keeps the code readable
+      and consistent — no need to manually set res.status(404) anywhere.
+
+--------------------------------------------------------------------------------
+STEP 4: AI SERVICE — CLAUDE AND GPT-4O INTEGRATION
+--------------------------------------------------------------------------------
+
+AiService is the core of the system. It wraps the Anthropic SDK (Claude 3.5
+Sonnet) and OpenAI SDK (GPT-4o) behind a provider-agnostic interface.
+
+Every AI call uses a structured JSON prompt: the system prompt instructs the
+model to return a JSON object with generatedText, keywords (array), tone, and
+sentiment. The response is parsed and validated before being stored.
+
+Common questions:
+
+  Q1. Why instruct the model to return JSON instead of plain text?
+  A1. Plain text requires regex or heuristic parsing to extract keywords, tone,
+      etc. A structured JSON contract makes the output machine-readable and
+      directly insertable into the database. Both Claude and GPT-4o reliably
+      follow JSON instructions when prompted correctly.
+
+  Q2. Why not use OpenAI's response_format: { type: "json_object" } for GPT-4o?
+  A2. We do — GPT-4o is called with json_object mode enabled. For Claude,
+      structured output is enforced via the system prompt, since the Anthropic
+      SDK achieves the same result through prompt engineering.
+
+  Q3. Why keep Claude and GPT-4o in the same service instead of separate
+      provider services?
+  A3. Both models serve the same business operations (generate, translate,
+      compare). Separating them would duplicate interface contracts. The current
+      design means adding a third provider (Gemini, Mistral) is one private
+      method — zero changes to controllers or database code.
+
+  Q4. Why is compareModels a Promise.all and not sequential?
+  A4. The two model calls are fully independent. Running them in parallel cuts
+      total latency roughly in half — instead of (Claude latency + GPT latency),
+      we pay max(Claude latency, GPT latency).
+
+--------------------------------------------------------------------------------
+STEP 5: REDIS CACHING LAYER
+--------------------------------------------------------------------------------
+
+CacheService wraps ioredis with lazyConnect and enableOfflineQueue: false.
+If Redis is not available, every method is a no-op — the service degrades
+gracefully to a pass-through without crashing.
+
+AI responses (Claude and GPT-4o) are cached for 1 hour using a key built from
+the model name and a base64 hash of the system + user prompt.
+
+Common questions:
+
+  Q1. Why cache AI responses?
+  A1. AI API calls are expensive (latency + cost). The same content piece with
+      the same prompt will return near-identical outputs. Caching turns a
+      1–3 second round-trip into a sub-millisecond memory lookup for repeated
+      requests.
+
+  Q2. Why ioredis and not the built-in NestJS CacheModule?
+  A2. NestJS CacheModule is primarily designed for HTTP response caching. Here
+      we need fine-grained control: custom TTLs, typed get/set, and the ability
+      to cache arbitrary objects (not just HTTP responses). ioredis gives direct
+      access without the abstraction overhead.
+
+  Q3. Why lazyConnect and enableOfflineQueue: false?
+  A3. lazyConnect means the client doesn't throw on startup if Redis is down.
+      Disabling the offline queue means commands fail immediately instead of
+      accumulating — so a Redis outage doesn't cause a memory leak or delayed
+      failures. Both settings are required for graceful degradation.
+
+  Q4. Why not cache translated content as well?
+  A4. Translation caching would require invalidation logic (if the source text
+      changes, cached translations are stale). Keeping caching limited to AI
+      generation — where the input is explicit and stable — avoids that
+      complexity while still covering the most expensive operations.
+
+--------------------------------------------------------------------------------
+STEP 6: WEBSOCKET GATEWAY (SOCKET.IO)
+--------------------------------------------------------------------------------
+
+EventsGateway is a NestJS @WebSocketGateway that emits three events:
+  - draft:generated     → when a new AI draft is created
+  - translation:created → when a translation is completed
+  - content:updated     → when review status changes
+
+The IoAdapter from @nestjs/platform-socket.io is manually registered on the
+app in main.ts. This is required when using the Fastify adapter.
+
+Common questions:
+
+  Q1. Why Socket.io and not Server-Sent Events (SSE) or long polling?
+  A1. Socket.io provides automatic reconnection, heartbeat/ping-pong, and easy
+      room/namespace scoping. SSE is simpler but only server→client. For a
+      future where clients might send collaboration signals back to the server,
+      Socket.io is already positioned for it.
+
+  Q2. Why do you manually call app.useWebSocketAdapter(new IoAdapter(app))?
+  A2. NestJS defaults to its own WsAdapter when no adapter is specified. That
+      default adapter is incompatible with Fastify's request lifecycle. Without
+      the IoAdapter, WebSocket handshakes fail silently. This is an undocumented
+      gotcha in the NestJS + Fastify + Socket.io stack.
+
+  Q3. Why emit events with flat IDs alongside the full object?
+  A3. The frontend uses contentId and draftId to decide whether to refresh.
+      Requiring clients to dig into nested objects (data.draft.contentPieceId)
+      to get a routing key is fragile. Flat IDs in the payload keep the
+      consumer code simple and reduce coupling to the shape of the nested object.
+
+  Q4. Why emit to all connected clients instead of per-campaign rooms?
+  A4. For this scope it's acceptable — the frontend filters by contentId before
+      acting. In production with many concurrent campaigns, you'd use socket
+      rooms (socket.join(campaignId)) so events are scoped and don't fan out
+      unnecessarily.
+
+--------------------------------------------------------------------------------
+STEP 7: LANGCHAIN PIPELINE (CHAIN ENDPOINT)
+--------------------------------------------------------------------------------
+
+LangchainService uses @langchain/core RunnableSequence to chain three steps:
+
+  Step 1 → Generate a draft using Claude or GPT-4o (via AiService)
+  Step 2 → Translate the draft into the target language
+  Step 3 → Produce a strategic summary of what was generated and why
+
+Each step persists its result to the database and emits a WebSocket event
+before passing data to the next step. The endpoint is POST /chain.
+
+Common questions:
+
+  Q1. Why LangChain instead of just calling the AI methods sequentially?
+  Q1. LangChain's RunnableSequence makes the pipeline declarative — each step is
+      a composable unit. Adding, removing, or reordering steps is a one-line
+      change. Sequential imperative calls would require manually wiring outputs
+      to inputs and handling partial failures at each stage.
+
+  Q2. Why three steps specifically?
+  A2. Generate + translate covers the core workflow. The summary step
+      demonstrates LangChain's ability to chain context from previous steps —
+      the summarizer receives both the draft and the translation and comments on
+      the transformation. It adds strategic value for marketing teams reviewing
+      what the AI produced.
+
+  Q3. Why not run all three steps in parallel?
+  A3. They are inherently sequential: you cannot translate a draft that hasn't
+      been generated yet, and you cannot summarize a translation that doesn't
+      exist. The dependency chain is linear.
+
+  Q4. Why persist drafts and translations to the DB inside the chain steps
+      instead of at the end?
+  A4. Persisting at each step means partial results are saved even if a later
+      step fails. If step 3 (summary) errors, the draft and translation are
+      already in the database. Users don't lose work due to a failure in an
+      unrelated step.
+
+--------------------------------------------------------------------------------
+STEP 8: FRONTEND — NEXT.JS APP ROUTER
+--------------------------------------------------------------------------------
+
+The frontend is a Next.js 14 App Router application with TailwindCSS.
+Key structure:
+  - /campaigns → campaign list + create form
+  - /campaigns/[id] → campaign detail + content list
+  - /campaigns/[id]/content/[contentId] → content detail, AI panel,
+    draft list, translation panel, review panel
+
+All data fetching is done via custom hooks (useContentList, useContentPiece)
+that wrap a thin api.ts client. Real-time updates come from useRealtime, which
+subscribes to Socket.io events and calls refresh() when relevant events fire.
+
+Common questions:
+
+  Q1. Why App Router instead of Pages Router?
+  A1. App Router is the current Next.js default and supports React Server
+      Components, nested layouts, and streaming. Even though this app uses
+      mostly client components (due to real-time requirements), App Router's
+      layout system keeps the shell (nav, toasts) cleanly separated from page
+      content.
+
+  Q2. Why custom hooks instead of a state management library (Redux, Zustand)?
+  A2. The data model here is per-page: each route owns its own data slice.
+      There's no global state that needs to be shared between unrelated pages.
+      Custom hooks with local useState are simpler, easier to test, and don't
+      require a store setup.
+
+  Q3. Why does useRealtime call refresh() instead of updating state directly
+      from the WebSocket payload?
+  A3. WebSocket payloads are optimistic — they don't include the full updated
+      object with all relations. Calling refresh() ensures the UI always shows
+      the authoritative database state. The trade-off is one extra GET request
+      per event, which is acceptable given the low event frequency.
+
+  Q4. Why is the generate panel split into Single / Compare / Chain modes?
+  A4. Each mode has a different contract: Single takes a model, Compare is
+      always both models in parallel, Chain takes model + target language.
+      A single form with conditional fields would be cluttered. Tab-style modes
+      keep the UI focused and each path's inputs explicit.
+
+--------------------------------------------------------------------------------
+STEP 9: DOCKER COMPOSE SETUP
+--------------------------------------------------------------------------------
+
+compose.yml defines four services:
+  - postgres: PostgreSQL 16 with a healthcheck
+  - redis: Redis 7 Alpine with a healthcheck
+  - backend: NestJS built image; runs prisma db push on startup,
+    waits on postgres + redis to be healthy
+  - frontend: Next.js built image; waits on backend
+
+Common questions:
+
+  Q1. Why prisma db push instead of prisma migrate deploy?
+  A1. migrate deploy requires pre-generated migration files in the repo.
+      The original project had no migration history — only a schema.prisma.
+      db push applies the schema directly to the database, which is correct
+      for a greenfield setup. In a production system with existing data,
+      you'd switch to versioned migrations.
+
+  Q2. Why Redis 7 Alpine instead of the full Redis image?
+  A2. Alpine-based images are ~30MB vs ~100MB+ for full images. For a cache
+      service with no special system dependencies, Alpine is the right default.
+
+  Q3. Why service healthchecks on postgres and redis?
+  A3. Docker's depends_on only waits for the container to start, not for the
+      process inside to be ready. Without healthchecks, the backend can start
+      before Postgres accepts connections, causing connection errors on boot.
+      Healthchecks + condition: service_healthy solve this deterministically.
+
+  Q4. Why not mount a volume for postgres data in this setup?
+  A4. For a development/challenge context, data persistence between docker
+      compose down/up is secondary. In production you'd add a named volume
+      or a PersistentVolumeClaim to survive restarts.
+
+--------------------------------------------------------------------------------
+STEP 10: KUBERNETES MANIFESTS AND ARGOCD
+--------------------------------------------------------------------------------
+
+The k8s/ directory contains manifests for production deployment:
+  - namespace.yaml: isolates all resources in acme-content namespace
+  - configmap.yaml: non-sensitive environment variables
+  - secret.yaml: template for API keys (base64-encoded, not committed)
+  - postgres.yaml: StatefulSet + PVC + Service
+  - redis.yaml: Deployment + Service
+  - backend.yaml: Deployment (2 replicas) + Service; init container runs
+    prisma db push before the main container starts
+  - frontend.yaml: Deployment (2 replicas) + Service
+  - ingress.yaml: routes /api/* to backend, /* to frontend
+  - argocd-application.yaml: ArgoCD Application pointing to this repo's k8s/
+
+Common questions:
+
+  Q1. Why ArgoCD instead of applying manifests manually via kubectl?
+  A1. ArgoCD implements GitOps: the cluster state is declaratively defined in
+      Git. Any push to the k8s/ directory triggers a sync. There's a full audit
+      trail, rollback is a git revert, and no one needs kubectl access to deploy.
+
+  Q2. Why 2 replicas for backend and frontend?
+  A2. Minimum for zero-downtime rolling updates. With 1 replica, a deployment
+      causes a brief outage. With 2, Kubernetes can drain one pod while the
+      other keeps serving traffic.
+
+  Q3. Why an init container for prisma db push on the backend?
+  A3. Schema migrations must complete before the application starts accepting
+      traffic. An init container runs to completion before the main container
+      starts, guaranteeing the database is in sync with the code at every deploy.
+
+  Q4. Why a separate namespace (acme-content) instead of default?
+  A4. Namespaces provide resource isolation, RBAC scoping, and network policy
+      boundaries. Using default for everything makes it impossible to apply
+      policies per environment or application without affecting everything else.
+
+--------------------------------------------------------------------------------
+STEP 11: GITHUB ACTIONS CI PIPELINE
+--------------------------------------------------------------------------------
+
+.github/workflows/ci.yml runs on push to main/develop and on PRs:
+  1. Backend job: install → prisma generate → lint → unit tests
+     (uses a postgres service container for integration coverage)
+  2. Frontend job: install → lint → build
+  3. Docker job: docker compose build (runs after both pass)
+
+Common questions:
+
+  Q1. Why run Prisma generate in CI instead of committing the generated client?
+  A1. The generated Prisma client contains platform-specific binaries. Committing
+      it pollutes the repo and causes cross-platform issues. Generating it from
+      the schema in CI ensures it matches the current schema and the CI platform.
+
+  Q2. Why a postgres service container in CI rather than mocking the DB?
+  A2. Mocking the database gives false confidence — it can't catch SQL errors,
+      constraint violations, or migration issues. A real Postgres instance in CI
+      means tests that pass there will pass in production.
+
+  Q3. Why run the Docker build job only after both backend and frontend pass?
+  A3. No point spending CI minutes building Docker images if the code itself
+      doesn't compile or tests fail. Gate the expensive step on the cheap ones.
+
+  Q4. Why lint in CI if developers should lint locally?
+  A4. CI is the enforcement point, not a trust system. Developers will sometimes
+      skip local checks. CI lint ensures no unformatted or type-invalid code
+      ever reaches the main branch regardless of local habits.
+
+--------------------------------------------------------------------------------
+STEP 12: UNIT TESTS
+--------------------------------------------------------------------------------
+
+Two test suites were written:
+
+  backend/src/campaigns/campaigns.service.spec.ts
+    - Tests: findAll, findOne (success + NotFoundException), create, remove
+    - Strategy: PrismaService is mocked via jest.fn() — the unit under test
+      is the service logic, not the database driver
+
+  backend/src/ai/langchain.service.spec.ts
+    - Tests: NotFoundException on missing content, happy path with a mocked
+      LangChain chain
+    - Strategy: the LangChain chain itself is replaced with a jest mock that
+      returns a fixed result, isolating LangchainService logic
+
+Common questions:
+
+  Q1. Why mock PrismaService instead of using a test database?
+  A1. Unit tests should be fast and deterministic. Mocking Prisma lets us test
+      service logic — null checks, exceptions, state transformations — without
+      network I/O. Integration tests (e2e) use a real DB for the full stack.
+
+  Q2. Why test NotFoundException specifically?
+  A2. It's the most common runtime error for these services. If findOne silently
+      returns null instead of throwing, the caller will get a confusing undefined
+      somewhere downstream. Explicitly testing the exception documents the
+      contract.
+
+  Q3. Why not test the AI service with real API calls in CI?
+  A3. Real API calls require credentials, cost money, and are non-deterministic.
+      Tests that call live AI APIs are slow, flaky, and can't be run in CI
+      without exposing secrets. Unit tests mock the HTTP layer; manual QA covers
+      real integration.
+
+  Q4. Why are there fewer tests than one might expect for a production system?
+  A4. This is a challenge scoped to demonstrate architecture and feature breadth.
+      In a production codebase you'd add: controller tests, e2e tests per
+      endpoint, snapshot tests for UI components, and contract tests between
+      frontend and backend. The existing tests establish the pattern.
+
+================================================================================
+  END OF WALKTHROUGH
+================================================================================
