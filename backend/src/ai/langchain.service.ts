@@ -152,7 +152,7 @@ export class LangchainService {
     }
 
     return new ChatAnthropic({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-3-5-sonnet-20251001',
       apiKey: this.config.get<string>('ANTHROPIC_API_KEY'),
       maxTokens: 1024,
     });
