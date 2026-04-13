@@ -5,6 +5,7 @@ import { CampaignsModule } from './campaigns/campaigns.module';
 import { ContentModule } from './content/content.module';
 import { DraftsModule } from './drafts/drafts.module';
 import { AiModule } from './ai/ai.module';
+import { ReviewModule } from './review/review.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { AiModule } from './ai/ai.module';
     ContentModule,
     DraftsModule,
     AiModule,
+    ReviewModule,
   ],
 })
 export class AppModule {}
