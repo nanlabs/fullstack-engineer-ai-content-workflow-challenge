@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ──────────────────────────────────────────────
+
+enum CampaignStatus {
+  active
+  paused
+  completed
+  archived
+}
+
+enum ContentType {
+  headline
+  description
+  body
+  cta
+  tagline
+}
+
+enum AiProvider {
+  openai
+  anthropic
+}
+
+enum TaskType {
+  generation
+  translation
+  extraction
+  summarization
+}
+
+enum ReviewState {
+  draft
+  ai_suggested
+  reviewed
+  approved
+  rejected
+}
+
+// ─── Models ─────────────────────────────────────────────
+
+model Campaign {
+  id              String         @id @default(uuid()) @db.Uuid
+  name            String         @db.VarChar(255)
+  description     String?        @db.Text
+  status          CampaignStatus @default(active)
+  targetLanguages String[]       @default([])
+  sourceLanguage  String         @default("en") @db.VarChar(10)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  contentPieces ContentPiece[]
+
+  @@map("campaigns")
+}
+
+model ContentPiece {
+  id           String      @id @default(uuid()) @db.Uuid
+  campaignId   String      @db.Uuid
+  type         ContentType
+  originalText String?     @db.Text
+  language     String      @default("en") @db.VarChar(10)
+  metadata     Json?       @db.JsonB
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  campaign Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  aiDrafts AiDraft[]
+
+  @@index([campaignId])
+  @@map("content_pieces")
+}
+
+model AiDraft {
+  id             String      @id @default(uuid()) @db.Uuid
+  contentPieceId String      @db.Uuid
+  provider       AiProvider
+  model          String      @db.VarChar(100)
+  taskType       TaskType
+  targetLanguage String?     @db.VarChar(10)
+  generatedText  String      @db.Text
+  metadata       Json?       @db.JsonB
+  reviewState    ReviewState @default(draft)
+  reviewerNotes  String?     @db.Text
+  editedText     String?     @db.Text
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  contentPiece ContentPiece @relation(fields: [contentPieceId], references: [id], onDelete: Cascade)
+
+  @@index([contentPieceId])
+  @@index([reviewState])
+  @@map("ai_drafts")
+}
