@@ -2,12 +2,17 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, ConflictException } from '@nestjs/common';
 import { ReviewService } from './review.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { EventsGateway } from '../websocket/events.gateway';
 
 const mockPrisma = {
   aiDraft: {
     findUnique: jest.fn(),
     update: jest.fn(),
   },
+};
+
+const mockGateway = {
+  emitToCampaign: jest.fn().mockResolvedValue(undefined),
 };
 
 const makeDraft = (reviewState: string) => ({
@@ -18,6 +23,7 @@ const makeDraft = (reviewState: string) => ({
   taskType: 'generation',
   generatedText: 'Generated text',
   reviewState,
+  contentPiece: { campaignId: 'c-1' },
   createdAt: new Date(),
   updatedAt: new Date(),
 });
@@ -30,6 +36,7 @@ describe('ReviewService', () => {
       providers: [
         ReviewService,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: EventsGateway, useValue: mockGateway },
       ],
     }).compile();
 

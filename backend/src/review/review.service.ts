@@ -2,14 +2,19 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  Optional,
 } from '@nestjs/common';
 import { ReviewState } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { EventsGateway } from '../websocket/events.gateway';
 import { assertTransition } from './review-state.machine';
 
 @Injectable()
 export class ReviewService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly events?: EventsGateway,
+  ) {}
 
   /**
    * Transitions a draft from ai_suggested → reviewed.
@@ -19,13 +24,16 @@ export class ReviewService {
    * @throws ConflictException if state transition is invalid
    */
   async markReviewed(draftId: string) {
-    const draft = await this.getDraft(draftId);
+    const draft = await this.getDraftWithCampaign(draftId);
     this.validateTransition(draft.reviewState, ReviewState.reviewed);
 
-    return this.prisma.aiDraft.update({
+    const updated = await this.prisma.aiDraft.update({
       where: { id: draftId },
       data: { reviewState: ReviewState.reviewed },
     });
+
+    await this.emitDraftEvent(draft.contentPiece.campaignId, updated);
+    return updated;
   }
 
   /**
@@ -36,16 +44,19 @@ export class ReviewService {
    * @throws ConflictException if state transition is invalid
    */
   async approve(draftId: string, editedText?: string) {
-    const draft = await this.getDraft(draftId);
+    const draft = await this.getDraftWithCampaign(draftId);
     this.validateTransition(draft.reviewState, ReviewState.approved);
 
-    return this.prisma.aiDraft.update({
+    const updated = await this.prisma.aiDraft.update({
       where: { id: draftId },
       data: {
         reviewState: ReviewState.approved,
         ...(editedText !== undefined && { editedText }),
       },
     });
+
+    await this.emitDraftEvent(draft.contentPiece.campaignId, updated);
+    return updated;
   }
 
   /**
@@ -56,16 +67,19 @@ export class ReviewService {
    * @throws ConflictException if state transition is invalid
    */
   async reject(draftId: string, reviewerNotes?: string) {
-    const draft = await this.getDraft(draftId);
+    const draft = await this.getDraftWithCampaign(draftId);
     this.validateTransition(draft.reviewState, ReviewState.rejected);
 
-    return this.prisma.aiDraft.update({
+    const updated = await this.prisma.aiDraft.update({
       where: { id: draftId },
       data: {
         reviewState: ReviewState.rejected,
         ...(reviewerNotes !== undefined && { reviewerNotes }),
       },
     });
+
+    await this.emitDraftEvent(draft.contentPiece.campaignId, updated);
+    return updated;
   }
 
   /**
@@ -75,10 +89,10 @@ export class ReviewService {
    * @throws ConflictException if state transition is invalid
    */
   async reset(draftId: string) {
-    const draft = await this.getDraft(draftId);
+    const draft = await this.getDraftWithCampaign(draftId);
     this.validateTransition(draft.reviewState, ReviewState.draft);
 
-    return this.prisma.aiDraft.update({
+    const updated = await this.prisma.aiDraft.update({
       where: { id: draftId },
       data: {
         reviewState: ReviewState.draft,
@@ -86,6 +100,9 @@ export class ReviewService {
         editedText: null,
       },
     });
+
+    await this.emitDraftEvent(draft.contentPiece.campaignId, updated);
+    return updated;
   }
 
   /**
@@ -96,13 +113,16 @@ export class ReviewService {
   async bulkApprove(draftIds: string[]) {
     const results = await Promise.allSettled(
       draftIds.map(async (id) => {
-        const draft = await this.getDraft(id);
+        const draft = await this.getDraftWithCampaign(id);
         this.validateTransition(draft.reviewState, ReviewState.approved);
 
-        return this.prisma.aiDraft.update({
+        const updated = await this.prisma.aiDraft.update({
           where: { id },
           data: { reviewState: ReviewState.approved },
         });
+
+        await this.emitDraftEvent(draft.contentPiece.campaignId, updated);
+        return updated;
       }),
     );
 
@@ -114,9 +134,10 @@ export class ReviewService {
     }));
   }
 
-  private async getDraft(id: string) {
+  private async getDraftWithCampaign(id: string) {
     const draft = await this.prisma.aiDraft.findUnique({
       where: { id },
+      include: { contentPiece: { select: { campaignId: true } } },
     });
 
     if (!draft) {
@@ -124,6 +145,17 @@ export class ReviewService {
     }
 
     return draft;
+  }
+
+  private async emitDraftEvent(
+    campaignId: string,
+    draft: { id: string; reviewState: ReviewState; updatedAt: Date },
+  ) {
+    await this.events?.emitToCampaign(campaignId, 'draft:updated', {
+      draftId: draft.id,
+      reviewState: draft.reviewState,
+      updatedAt: draft.updatedAt.toISOString(),
+    });
   }
 
   private validateTransition(from: ReviewState, to: ReviewState) {
