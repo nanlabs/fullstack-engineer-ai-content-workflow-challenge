@@ -5,7 +5,7 @@ WORKDIR /app
 FROM base AS deps
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma/
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # ─── Development ─────────────────────────────────────────
 FROM base AS development
@@ -13,7 +13,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate
 EXPOSE 3000
-CMD ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed && npm run start:dev"]
+CMD ["sh", "-c", "npx prisma db push && npx prisma db seed && npm run start:dev"]
 
 # ─── Build ───────────────────────────────────────────────
 FROM base AS build

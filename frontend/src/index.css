@@ -1,1 +1,384 @@
 @import "tailwindcss";
+
+/* ============================================
+   DESIGN SYSTEM — Inspired by Linear
+   with cherry-picked tokens from Cursor & Claude
+   ============================================ */
+
+@theme {
+  /* ── Background Surfaces ── */
+  --color-surface-base: #08090a;
+  --color-surface-panel: #0f1011;
+  --color-surface-raised: #191a1b;
+  --color-surface-overlay: #28282c;
+
+  /* ── Text ── */
+  --color-text-primary: #f7f8f8;
+  --color-text-secondary: #d0d6e0;
+  --color-text-tertiary: #8a8f98;
+  --color-text-muted: #62666d;
+
+  /* ── Brand Accent (Linear Indigo-Violet) ── */
+  --color-accent: #5e6ad2;
+  --color-accent-bright: #7170ff;
+  --color-accent-hover: #828fff;
+
+  /* ── Status Colors ── */
+  --color-success: #10b981;
+  --color-success-muted: #27a644;
+  --color-warning: #c08532;
+  --color-error: #ef4444;
+
+  /* ── AI Operation Colors (from Cursor) ── */
+  --color-ai-generate: #dfa88f;
+  --color-ai-translate: #9fbbe0;
+  --color-ai-extract: #c0a8dd;
+
+  /* ── Borders ── */
+  --color-border-subtle: rgba(255, 255, 255, 0.05);
+  --color-border-default: rgba(255, 255, 255, 0.08);
+  --color-border-emphasis: rgba(255, 255, 255, 0.12);
+  --color-border-strong: #23252a;
+
+  /* ── Review State Colors ── */
+  --color-review-draft: #62666d;
+  --color-review-draft-bg: rgba(255, 255, 255, 0.05);
+  --color-review-ai: #5e6ad2;
+  --color-review-ai-bg: rgba(94, 106, 210, 0.15);
+  --color-review-reviewed: #c08532;
+  --color-review-reviewed-bg: rgba(192, 133, 50, 0.15);
+  --color-review-approved: #10b981;
+  --color-review-approved-bg: rgba(16, 185, 129, 0.15);
+  --color-review-rejected: #ef4444;
+  --color-review-rejected-bg: rgba(239, 68, 68, 0.15);
+}
+
+/* ── Base Styles ── */
+* {
+  font-feature-settings: "cv01", "ss03";
+}
+
+html {
+  font-family: 'Inter', 'SF Pro Display', -apple-system, system-ui, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--color-surface-base);
+  color: var(--color-text-primary);
+}
+
+/* ── Scrollbar (dark theme) ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ── Focus Ring (Linear-style) ── */
+*:focus-visible {
+  outline: 2px solid var(--color-accent-bright);
+  outline-offset: 2px;
+}
+
+/* ── Selection ── */
+::selection {
+  background-color: rgba(94, 106, 210, 0.3);
+  color: var(--color-text-primary);
+}
+
+/* ── Utility Classes ── */
+
+/* AI-generated text: editorial serif from Claude design */
+.ai-generated-text {
+  font-family: Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+}
+
+/* Surface cards */
+.surface-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.surface-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Glass elevated surface */
+.surface-raised {
+  background: var(--color-surface-raised);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+}
+
+/* Ghost button */
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgb(36, 40, 44);
+  color: #e2e4e7;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text-primary);
+}
+
+.btn-ghost:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Primary brand button */
+.btn-primary {
+  background: var(--color-accent);
+  color: #ffffff;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn-primary:hover {
+  background: var(--color-accent-hover);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* AI action buttons */
+.btn-ai {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-ai:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-ai-generate {
+  background: rgba(223, 168, 143, 0.15);
+  color: #dfa88f;
+  border-color: rgba(223, 168, 143, 0.25);
+}
+
+.btn-ai-generate:hover:not(:disabled) {
+  background: rgba(223, 168, 143, 0.25);
+}
+
+.btn-ai-translate {
+  background: rgba(159, 187, 224, 0.15);
+  color: #9fbbe0;
+  border-color: rgba(159, 187, 224, 0.25);
+}
+
+.btn-ai-translate:hover:not(:disabled) {
+  background: rgba(159, 187, 224, 0.25);
+}
+
+.btn-ai-extract {
+  background: rgba(192, 168, 221, 0.15);
+  color: #c0a8dd;
+  border-color: rgba(192, 168, 221, 0.25);
+}
+
+.btn-ai-extract:hover:not(:disabled) {
+  background: rgba(192, 168, 221, 0.25);
+}
+
+/* Review state badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 510;
+  line-height: 1.4;
+}
+
+.badge-draft {
+  background: var(--color-review-draft-bg);
+  color: var(--color-review-draft);
+}
+
+.badge-ai {
+  background: var(--color-review-ai-bg);
+  color: var(--color-review-ai);
+}
+
+.badge-reviewed {
+  background: var(--color-review-reviewed-bg);
+  color: var(--color-review-reviewed);
+}
+
+.badge-approved {
+  background: var(--color-review-approved-bg);
+  color: var(--color-review-approved);
+}
+
+.badge-rejected {
+  background: var(--color-review-rejected-bg);
+  color: var(--color-review-rejected);
+}
+
+/* Campaign status badges */
+.badge-status-active {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.badge-status-paused {
+  background: rgba(192, 133, 50, 0.15);
+  color: #c08532;
+}
+
+.badge-status-completed {
+  background: rgba(94, 106, 210, 0.15);
+  color: #828fff;
+}
+
+.badge-status-archived {
+  background: rgba(255, 255, 255, 0.05);
+  color: #62666d;
+}
+
+/* Pill selector (provider toggle) */
+.pill-select {
+  appearance: none;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--color-text-secondary);
+  padding: 4px 28px 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 510;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%238a8f98' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m3 5 3 3 3-3'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  transition: border-color 0.15s ease;
+}
+
+.pill-select:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.pill-select:focus {
+  border-color: var(--color-accent-bright);
+  outline: none;
+}
+
+/* Dark input */
+.input-dark {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--color-text-primary);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 0.875rem;
+  transition: border-color 0.15s ease;
+}
+
+.input-dark::placeholder {
+  color: var(--color-text-muted);
+}
+
+.input-dark:focus {
+  border-color: var(--color-accent-bright);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(113, 112, 255, 0.15);
+}
+
+/* Textarea dark */
+.textarea-dark {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--color-text-primary);
+  border-radius: 6px;
+  padding: 12px 14px;
+  font-size: 0.875rem;
+  resize: none;
+  transition: border-color 0.15s ease;
+}
+
+.textarea-dark::placeholder {
+  color: var(--color-text-muted);
+}
+
+.textarea-dark:focus {
+  border-color: var(--color-accent-bright);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(113, 112, 255, 0.15);
+}
+
+/* Pulse animation for live indicator */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Fade-in animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+/* Shimmer loading animation */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.loading-shimmer {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.02) 25%,
+    rgba(255,255,255,0.06) 50%,
+    rgba(255,255,255,0.02) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { io, Socket } from 'socket.io-client';
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3000';
+const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:4000';
 
 export function useRealtimeUpdates(campaignId?: string) {
   const qc = useQueryClient();

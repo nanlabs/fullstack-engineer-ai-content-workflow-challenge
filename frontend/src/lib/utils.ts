@@ -6,11 +6,11 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const REVIEW_STATE_COLORS: Record<string, string> = {
-  draft: 'bg-gray-100 text-gray-700',
-  ai_suggested: 'bg-blue-100 text-blue-700',
-  reviewed: 'bg-yellow-100 text-yellow-700',
-  approved: 'bg-green-100 text-green-700',
-  rejected: 'bg-red-100 text-red-700',
+  draft: 'badge-draft',
+  ai_suggested: 'badge-ai',
+  reviewed: 'badge-reviewed',
+  approved: 'badge-approved',
+  rejected: 'badge-rejected',
 };
 
 export const REVIEW_STATE_LABELS: Record<string, string> = {
@@ -19,6 +19,13 @@ export const REVIEW_STATE_LABELS: Record<string, string> = {
   reviewed: 'Reviewed',
   approved: 'Approved',
   rejected: 'Rejected',
+};
+
+export const STATUS_BADGE: Record<string, string> = {
+  active: 'badge-status-active',
+  paused: 'badge-status-paused',
+  completed: 'badge-status-completed',
+  archived: 'badge-status-archived',
 };
 
 export const CONTENT_TYPE_LABELS: Record<string, string> = {
