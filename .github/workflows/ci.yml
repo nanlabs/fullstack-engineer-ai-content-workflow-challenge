@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-lint-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        working-directory: backend
+        run: uv sync
+
+      - name: Lint
+        working-directory: backend
+        run: uv run ruff check src tests
+
+      - name: Test
+        working-directory: backend
+        run: uv run pytest
+
+  frontend-lint-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: "10"
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: pnpm install
+
+      - name: Lint
+        working-directory: frontend
+        run: pnpm lint
+
+      - name: Test
+        working-directory: frontend
+        run: pnpm test --run
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker images
+        run: docker compose build
