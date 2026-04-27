@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     anthropic_api_key: str | None = None
     openai_api_key: str | None = None
     default_llm_provider: str = "anthropic"
+    enable_llm_fallback: bool = False
     log_level: str = "INFO"
     cors_origins: str = "http://localhost:5173"
 
