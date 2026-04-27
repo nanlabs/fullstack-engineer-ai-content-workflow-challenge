@@ -1,9 +1,18 @@
 from fastapi import FastAPI
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
+from src.api.errors import DomainError
+from src.api.routers import campaigns, content_pieces, drafts
 from src.config import settings
 
-app = FastAPI(title="ACME Content Backend", version="0.1.0")
+app = FastAPI(
+    title="ACME Content Workflow API",
+    description="Multilingual content workflow management powered by LLMs with human-in-the-loop.",
+    version="0.1.0",
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -13,8 +22,32 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Routers included in subsequent specs
-# app.include_router(...)
+
+@app.exception_handler(DomainError)
+async def domain_error_handler(request: object, exc: DomainError) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"error": {"code": exc.code, "message": exc.message}},
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(request: object, exc: RequestValidationError) -> JSONResponse:
+    return JSONResponse(
+        status_code=422,
+        content={
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "Invalid request",
+                "details": jsonable_encoder(exc.errors()),
+            }
+        },
+    )
+
+
+app.include_router(campaigns.router, prefix="/api/campaigns", tags=["campaigns"])
+app.include_router(content_pieces.router, prefix="/api", tags=["content-pieces"])
+app.include_router(drafts.router, prefix="/api", tags=["drafts"])
 
 
 @app.get("/health")
