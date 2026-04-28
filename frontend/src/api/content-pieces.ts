@@ -24,6 +24,8 @@ export const contentPiecesApi = {
 export const contentPieceKeys = {
   all: ["content-pieces"] as const,
   detail: (id: string) => [...contentPieceKeys.all, "detail", id] as const,
+  byCampaign: (campaignId: string) =>
+    [...contentPieceKeys.all, "byCampaign", campaignId] as const,
 };
 
 export function useContentPiece(id: string) {
@@ -68,5 +70,17 @@ export function useDeleteContentPiece(campaignId: string) {
 export function useGenerateContent(contentPieceId: string) {
   return useMutation({
     mutationFn: (body?: GenerateRequest) => contentPiecesApi.generate(contentPieceId, body),
+  });
+}
+
+export function useStartWorkflow() {
+  return useMutation({
+    mutationFn: ({
+      contentPieceId,
+      body,
+    }: {
+      contentPieceId: string;
+      body?: GenerateRequest;
+    }) => contentPiecesApi.generate(contentPieceId, body),
   });
 }

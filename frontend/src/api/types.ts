@@ -40,6 +40,9 @@ export interface ContentPieceSummary {
   title: string | null;
   has_drafts: boolean;
   latest_status: DraftStatus | null;
+  drafts_count: number;
+  workflow_status: WorkflowStatus | null;
+  latest_thread_id: string | null;
 }
 
 export interface CampaignDetail extends Campaign {

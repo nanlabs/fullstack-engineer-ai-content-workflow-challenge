@@ -5,7 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from src.db.enums import ContentPieceType, DraftStatus
+from src.db.enums import ContentPieceType, DraftStatus, WorkflowStatus
 
 
 class ContentPieceCreate(BaseModel):
@@ -25,6 +25,9 @@ class ContentPieceSummary(BaseModel):
     title: str | None
     has_drafts: bool
     latest_status: DraftStatus | None
+    drafts_count: int = 0
+    workflow_status: WorkflowStatus | None = None
+    latest_thread_id: str | None = None
 
     model_config = {"from_attributes": True}
 

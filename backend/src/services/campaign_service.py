@@ -14,6 +14,7 @@ from src.api.schemas.content_piece import ContentPieceSummary
 from src.db.models.campaign import Campaign
 from src.db.models.content_piece import ContentPiece
 from src.db.models.draft import Draft
+from src.db.models.workflow_run import WorkflowRun  # noqa: F401 — ensure relationship loaded
 
 
 async def create_campaign(session: AsyncSession, data: CampaignCreate) -> CampaignRead:
@@ -66,7 +67,12 @@ async def get_campaign(session: AsyncSession, campaign_id: UUID) -> CampaignDeta
     result = await session.execute(
         select(Campaign)
         .where(Campaign.id == campaign_id)
-        .options(selectinload(Campaign.content_pieces).selectinload(ContentPiece.drafts))
+        .options(
+            selectinload(Campaign.content_pieces).options(
+                selectinload(ContentPiece.drafts),
+                selectinload(ContentPiece.workflow_run),
+            )
+        )
     )
     campaign = result.scalar_one_or_none()
     if campaign is None:
@@ -136,10 +142,14 @@ def _to_detail(campaign: Campaign) -> CampaignDetail:
 
 def _piece_summary(cp: ContentPiece) -> ContentPieceSummary:
     drafts: list[Draft] = sorted(cp.drafts, key=lambda d: d.created_at, reverse=True)
+    wr = cp.workflow_run
     return ContentPieceSummary(
         id=cp.id,
         type=cp.type,
         title=cp.title,
         has_drafts=len(drafts) > 0,
         latest_status=drafts[0].status if drafts else None,
+        drafts_count=len(drafts),
+        workflow_status=wr.status if wr is not None else None,
+        latest_thread_id=wr.langgraph_thread_id if wr is not None else None,
     )

@@ -1,11 +1,13 @@
 import { Outlet } from "react-router";
 import { Header } from "./header";
 import { Sidebar } from "./sidebar";
+import { SseProvider, useSseContext } from "@/lib/sse-context";
 
-export function AppShell() {
+function AppShellInner() {
+  const { connected } = useSseContext();
   return (
     <div className="bg-background min-h-screen">
-      <Header />
+      <Header sseConnected={connected} />
       <div className="flex">
         <Sidebar />
         <main className="flex-1 p-6">
@@ -13,5 +15,13 @@ export function AppShell() {
         </main>
       </div>
     </div>
+  );
+}
+
+export function AppShell() {
+  return (
+    <SseProvider>
+      <AppShellInner />
+    </SseProvider>
   );
 }

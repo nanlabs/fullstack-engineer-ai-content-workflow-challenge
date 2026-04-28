@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
@@ -25,14 +25,24 @@ export type SseEvent = {
 
 type EventHandler = (event: SseEvent) => void;
 
-export function useEventStream(url: string | null, handler: EventHandler, enabled: boolean = true) {
+export function useEventStream(
+  url: string | null,
+  handler: EventHandler,
+  enabled: boolean = true
+): { connected: boolean } {
+  const [connected, setConnected] = useState(false);
   const handlerRef = useRef(handler);
   handlerRef.current = handler;
 
   useEffect(() => {
-    if (!url || !enabled) return;
+    if (!url || !enabled) {
+      setConnected(false);
+      return;
+    }
     const fullUrl = url.startsWith("http") ? url : `${BASE_URL}${url}`;
     const es = new EventSource(fullUrl);
+
+    es.onopen = () => setConnected(true);
 
     const onAny = (e: MessageEvent) => {
       try {
@@ -48,14 +58,18 @@ export function useEventStream(url: string | null, handler: EventHandler, enable
     }
 
     es.onerror = () => {
+      setConnected(false);
       console.debug("SSE error, browser will reconnect");
     };
 
     return () => {
+      setConnected(false);
       for (const t of SSE_EVENT_TYPES) {
         es.removeEventListener(t, onAny as EventListener);
       }
       es.close();
     };
   }, [url, enabled]);
+
+  return { connected };
 }

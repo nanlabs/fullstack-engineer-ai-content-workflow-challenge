@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCampaigns } from "@/api/campaigns";
 import { useState } from "react";
-import { CreateCampaignDialog } from "@/features/campaigns/create-campaign-dialog";
+import { CampaignFormDialog } from "@/features/campaigns/campaign-form-dialog";
 
 export function Sidebar() {
   const { data, isLoading } = useCampaigns();
@@ -52,7 +52,7 @@ export function Sidebar() {
         )}
       </nav>
 
-      <CreateCampaignDialog open={open} onOpenChange={setOpen} />
+      <CampaignFormDialog open={open} onOpenChange={setOpen} />
     </aside>
   );
 }

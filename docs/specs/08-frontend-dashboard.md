@@ -217,14 +217,14 @@ Test focus: few but significant. Don't test trivial buttons.
 
 ## Acceptance criteria
 
-- [ ] I can create a campaign from the UI with all fields.
-- [ ] The campaign appears in the list and sidebar immediately.
-- [ ] Clicking a campaign navigates to detail with its content pieces.
-- [ ] I can create a content piece inside a campaign.
-- [ ] Clicking "Generate with AI" triggers the workflow and I see the badge change to "Generating..."
-- [ ] When the workflow reaches awaiting_human, the badge changes to "Awaiting review" without a refresh.
-- [ ] If I open the same campaign in two tabs, both update in real time.
-- [ ] Tests pass.
+- [x] I can create a campaign from the UI with all fields.
+- [x] The campaign appears in the list and sidebar immediately.
+- [x] Clicking a campaign navigates to detail with its content pieces.
+- [x] I can create a content piece inside a campaign.
+- [x] Clicking "Generate with AI" triggers the workflow and I see the badge change to "Generating..."
+- [x] When the workflow reaches awaiting_human, the badge changes to "Awaiting review" without a refresh.
+- [x] If I open the same campaign in two tabs, both update in real time.
+- [x] Tests pass.
 
 ## Suggested commit plan
 
@@ -247,18 +247,50 @@ test(web): campaigns list page integration with msw
 - **Multi-select of languages:** chips/badges over dropdown. More visual.
 - **Polling as SSE fallback:** NOT implemented in MVP. If SSE drops, the user has to refresh. Document as limitation.
 
-## Notes
+## Implementation notes (actual deviations from spec)
 
-- For multi-select of languages, shadcn does not ship a multi-select. Options:
-  1. Hand-roll with badges + dropdown (~30 lines, not terrible).
-  2. Use `cmdk` (which shadcn already uses internally) — better for long lists.
-- For "current_node" in the spinner, don't invent labels: use the node name as it comes from the backend (`generate_draft`, `translate_to_language`). For nicer UX, map in a dict:
-  ```ts
-  const NODE_LABELS = {
-    generate_draft: "Generating draft",
-    extract_metadata: "Analyzing content",
-    translate_to_language: "Translating",
-    refine: "Refining based on feedback",
-  };
-  ```
+### Backend changes (not originally in scope but required)
+
+`ContentPieceSummary` was extended with three new fields to support the frontend status badge:
+- `workflow_status: WorkflowStatus | None` — live workflow run state
+- `latest_thread_id: str | None` — thread ID for `useWorkflow` queries
+- `drafts_count: int` — total draft count for the "Awaiting review (N drafts)" label
+
+`campaign_service.get_campaign` updated to load `ContentPiece.workflow_run` via `selectinload` alongside drafts.
+
+### Multi-select for target languages
+
+Hand-rolled with Badge chips + inline toggle buttons (option 1). Unselected languages appear as `+ Language` clickable buttons; selected ones show as Badge chips with an × remove button.
+
+### SSE connection state → Header wiring
+
+Implemented via `SseContext` + `SseProvider` in `AppShell`. `CampaignDetailPage` calls `setConnected(true/false)` via the context; `AppShell` reads `connected` and passes it to `Header`. This is cleaner than React Router outlet context since `Header` is a sibling, not a descendant, of the outlet.
+
+### `useEventStream` return value
+
+Updated to return `{ connected: boolean }` by adding `useState` and `es.onopen` / `es.onerror` handlers. Backward-compatible — existing callers that ignore the return value continue to work.
+
+### `frontend/.npmrc` added
+
+`node-linker=hoisted` required on this Windows dev machine because pnpm's default virtual store uses junction points that Node.js v22 cannot traverse. The hoisted layout creates a flat `node_modules` tree. CI (Linux) is unaffected.
+
+### NODE_LABELS mapping (implemented)
+
+```ts
+const NODE_LABELS = {
+  generate_draft: "Generating draft",
+  extract_metadata: "Analyzing content",
+  translate_to_language: "Translating",
+  refine: "Refining based on feedback",
+};
+```
+
+### Sidebar
+
+`CreateCampaignDialog` (spec-07 stub) replaced by `CampaignFormDialog` (spec-08 full implementation). The old file was deleted.
+
+### `contentPieceKeys.byCampaign` / workflow invalidation
+
+`byCampaign` key added and invalidated on SSE events. `workflowKeys.detail(threadId)` also invalidated on `workflow.node.started` and `workflow.node.completed` to refresh `current_node` in `ContentPieceRow`.
+
 - If the campaign list grows, the sidebar can saturate. Don't optimize in MVP, just allow scroll and note in "Future improvements".
