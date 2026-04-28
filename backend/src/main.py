@@ -1,17 +1,31 @@
+from __future__ import annotations
+
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from src.ai.graph.runner import init_runner
 from src.api.errors import DomainError
 from src.api.routers import campaigns, content_pieces, drafts
 from src.config import settings
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    await init_runner()
+    yield
+
 
 app = FastAPI(
     title="ACME Content Workflow API",
     description="Multilingual content workflow management powered by LLMs with human-in-the-loop.",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(

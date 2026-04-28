@@ -9,6 +9,7 @@ Generate a compelling advertising description for the following campaign.
 - Type: {content_type}
 - Target language: {language}
 - Tone: persuasive but not pushy
+- Additional context: {source_text}
 
 # Constraints
 - Maximum 50 words.

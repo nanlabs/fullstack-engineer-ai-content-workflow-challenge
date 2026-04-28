@@ -39,6 +39,7 @@ def test_registry_renders_headline_template() -> None:
         brief="Eco-friendly water bottle",
         content_type="headline",
         language="English",
+        source_text="(none)",
     )
     assert "Eco-friendly water bottle" in rendered
     assert "headline" in rendered
