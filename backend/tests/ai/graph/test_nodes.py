@@ -68,12 +68,18 @@ def _mock_session_cm() -> tuple[MagicMock, AsyncMock]:
 # ---------------------------------------------------------------------------
 
 
+_DRAFT_CONFIG: dict = {"configurable": {"thread_id": "test-thread"}}
+
+
 async def test_generate_draft_node_updates_initial_draft() -> None:
     state = _base_state()
     provider = MockProvider(fixtures={"launch": "Buy our amazing widget today!"})
 
-    with patch("src.ai.graph.nodes.generate_draft.get_provider", return_value=provider):
-        result = await generate_draft(state)
+    with (
+        patch("src.ai.graph.nodes.generate_draft.get_provider", return_value=provider),
+        patch("src.ai.graph.nodes.generate_draft.publish_workflow_event", new_callable=AsyncMock),
+    ):
+        result = await generate_draft(state, _DRAFT_CONFIG)
 
     assert result["initial_draft"] is not None
     assert len(result["initial_draft"]) > 0
@@ -84,8 +90,11 @@ async def test_generate_draft_node_uses_source_text() -> None:
     state = _base_state(source_text="reference copy here")
     provider = MockProvider()
 
-    with patch("src.ai.graph.nodes.generate_draft.get_provider", return_value=provider):
-        result = await generate_draft(state)
+    with (
+        patch("src.ai.graph.nodes.generate_draft.get_provider", return_value=provider),
+        patch("src.ai.graph.nodes.generate_draft.publish_workflow_event", new_callable=AsyncMock),
+    ):
+        result = await generate_draft(state, _DRAFT_CONFIG)
 
     assert result["initial_draft"] is not None
 
@@ -94,8 +103,11 @@ async def test_generate_draft_handles_none_source_text() -> None:
     state = _base_state(source_text=None)
     provider = MockProvider()
 
-    with patch("src.ai.graph.nodes.generate_draft.get_provider", return_value=provider):
-        result = await generate_draft(state)
+    with (
+        patch("src.ai.graph.nodes.generate_draft.get_provider", return_value=provider),
+        patch("src.ai.graph.nodes.generate_draft.publish_workflow_event", new_callable=AsyncMock),
+    ):
+        result = await generate_draft(state, _DRAFT_CONFIG)
 
     assert result["initial_draft"] is not None
 

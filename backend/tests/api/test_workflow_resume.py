@@ -164,9 +164,7 @@ async def test_get_workflow_returns_status(
     app.dependency_overrides[get_event_bus] = lambda: _mock_events_dep()
 
     try:
-        resp = await client.get(
-            f"/api/workflows/{seeded_workflow_run.langgraph_thread_id}"
-        )
+        resp = await client.get(f"/api/workflows/{seeded_workflow_run.langgraph_thread_id}")
         assert resp.status_code == 200
         data = resp.json()
         assert data["thread_id"] == seeded_workflow_run.langgraph_thread_id

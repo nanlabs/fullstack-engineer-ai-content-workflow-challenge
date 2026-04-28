@@ -14,7 +14,7 @@ from src.api.schemas.workflow import (
     WorkflowRunRead,
 )
 from src.db.enums import WorkflowStatus
-from src.events.bus import EventBus, get_event_bus
+from src.events.bus import InMemoryEventBus, get_event_bus
 from src.services.workflow_service import WorkflowService
 
 router = APIRouter()
@@ -23,7 +23,7 @@ router = APIRouter()
 def _get_service(
     session: AsyncSession = Depends(get_session),
     runner: WorkflowRunner = Depends(get_runner),
-    events: EventBus = Depends(get_event_bus),
+    events: InMemoryEventBus = Depends(get_event_bus),
 ) -> WorkflowService:
     return WorkflowService(runner=runner, session=session, events=events)
 

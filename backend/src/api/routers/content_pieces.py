@@ -13,7 +13,7 @@ from src.api.schemas.content_piece import (
     ContentPieceUpdate,
 )
 from src.api.schemas.generate import GenerateRequest, GenerateResponse
-from src.events.bus import EventBus, get_event_bus
+from src.events.bus import InMemoryEventBus, get_event_bus
 from src.services import content_piece_service
 from src.services.workflow_service import WorkflowService
 
@@ -23,7 +23,7 @@ router = APIRouter()
 def _get_workflow_service(
     session: AsyncSession = Depends(get_session),
     runner: WorkflowRunner = Depends(get_runner),
-    events: EventBus = Depends(get_event_bus),
+    events: InMemoryEventBus = Depends(get_event_bus),
 ) -> WorkflowService:
     return WorkflowService(runner=runner, session=session, events=events)
 

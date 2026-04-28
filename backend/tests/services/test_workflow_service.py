@@ -14,8 +14,8 @@ from src.db.models.campaign import Campaign
 from src.db.models.content_piece import ContentPiece
 from src.db.models.draft import Draft
 from src.db.models.workflow_run import WorkflowRun
-from src.events.bus import EventBus
-from src.events.types import WORKFLOW_COMPLETED, WORKFLOW_RESUMED
+from src.events.bus import InMemoryEventBus
+from src.events.types import EventType
 from src.services.workflow_service import WorkflowService
 
 # ---------------------------------------------------------------------------
@@ -46,7 +46,7 @@ def _mock_runner(*, graph_done: bool = True, graph_status: str = "approved") -> 
 
 
 def _mock_events() -> AsyncMock:
-    bus = AsyncMock(spec=EventBus)
+    bus = AsyncMock(spec=InMemoryEventBus)
     bus.publish = AsyncMock(return_value=None)
     return bus
 
@@ -142,7 +142,8 @@ async def test_start_creates_workflow_run_and_returns_thread_id() -> None:
     session.add.assert_called_once()
     session.flush.assert_awaited_once()
     session.commit.assert_awaited_once()
-    events.publish.assert_awaited_once()
+    # publish_workflow_event fans out to workflow + campaign topics → 2 publish calls
+    assert events.publish.await_count == 2
 
 
 @pytest.mark.asyncio
@@ -244,9 +245,7 @@ async def test_resume_when_not_awaiting_raises_conflict(
     db_session: AsyncSession,
 ) -> None:
     run, draft = await _seed_workflow_context(db_session, wf_status=WorkflowStatus.completed)
-    service = WorkflowService(
-        runner=_mock_runner(), session=db_session, events=_mock_events()
-    )
+    service = WorkflowService(runner=_mock_runner(), session=db_session, events=_mock_events())
 
     with pytest.raises(ConflictError) as exc_info:
         await service.resume(
@@ -287,6 +286,8 @@ async def test_resume_publishes_events(
         notes=None,
     )
 
-    published_types = [call.args[0].type for call in events.publish.call_args_list]
-    assert WORKFLOW_RESUMED in published_types
-    assert WORKFLOW_COMPLETED in published_types
+    # publish_workflow_event fans out to workflow + campaign topics, so each logical
+    # event results in 2 bus.publish calls. Check event types from args[1].
+    published_types = [call.args[1].type for call in events.publish.call_args_list]
+    assert EventType.WORKFLOW_RESUMED in published_types
+    assert EventType.WORKFLOW_COMPLETED in published_types

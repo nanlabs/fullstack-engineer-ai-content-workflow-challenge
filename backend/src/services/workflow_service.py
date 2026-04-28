@@ -20,15 +20,9 @@ from src.db.models.campaign import Campaign  # noqa: F401 — ensure relationshi
 from src.db.models.content_piece import ContentPiece
 from src.db.models.draft import Draft
 from src.db.models.workflow_run import WorkflowRun
-from src.events.bus import EventBus
-from src.events.types import (
-    WORKFLOW_COMPLETED,
-    WORKFLOW_DRAFT_UPDATED,
-    WORKFLOW_FAILED,
-    WORKFLOW_RESUMED,
-    WORKFLOW_STARTED,
-    WorkflowEvent,
-)
+from src.events.bus import InMemoryEventBus
+from src.events.topics import publish_workflow_event
+from src.events.types import Event, EventType
 
 logger = structlog.get_logger(__name__)
 
@@ -42,7 +36,7 @@ class WorkflowService:
         self,
         runner: WorkflowRunner,
         session: AsyncSession,
-        events: EventBus,
+        events: InMemoryEventBus,
     ) -> None:
         self._runner = runner
         self._session = session
@@ -101,14 +95,16 @@ class WorkflowService:
             content_piece_id=str(content_piece_id),
         )
 
-        await self._events.publish(
-            WorkflowEvent(
-                type=WORKFLOW_STARTED,
-                thread_id=thread_id,
-                content_piece_id=content_piece_id,
+        await publish_workflow_event(
+            self._events,
+            Event(
+                type=EventType.WORKFLOW_STARTED,
                 timestamp=datetime.now(tz=UTC),
+                thread_id=thread_id,
+                campaign_id=cp.campaign_id,
+                content_piece_id=content_piece_id,
                 payload={},
-            )
+            ),
         )
 
         return run
@@ -131,18 +127,14 @@ class WorkflowService:
             raise NotFoundError(f"Workflow {thread_id} not found")
 
         if run.status == WorkflowStatus.running:
-            raise ConflictError(
-                f"Workflow is busy, current node: {run.current_node or 'unknown'}"
-            )
+            raise ConflictError(f"Workflow is busy, current node: {run.current_node or 'unknown'}")
         if run.status != WorkflowStatus.awaiting_human:
             raise ConflictError(
                 f"Workflow is not awaiting input, current status: {run.status.value}"
             )
 
         # 2. Load and validate the target draft
-        draft_result = await self._session.execute(
-            select(Draft).where(Draft.id == draft_id)
-        )
+        draft_result = await self._session.execute(select(Draft).where(Draft.id == draft_id))
         draft = draft_result.scalar_one_or_none()
         if draft is None:
             raise NotFoundError(f"Draft {draft_id} not found")
@@ -150,7 +142,14 @@ class WorkflowService:
         if draft.content_piece_id != run.content_piece_id:
             raise ValidationError("draft_id does not belong to this workflow")
 
-        # 3. Apply local effects to the draft per action
+        # 3. Fetch campaign_id for event fan-out (content_piece → campaign)
+        cp_result = await self._session.execute(
+            select(ContentPiece).where(ContentPiece.id == run.content_piece_id)
+        )
+        cp = cp_result.scalar_one_or_none()
+        campaign_id: UUID | None = cp.campaign_id if cp else None
+
+        # 4. Apply local effects to the draft per action
         now = datetime.now(tz=UTC)
         match action:
             case "approve":
@@ -175,17 +174,17 @@ class WorkflowService:
         draft.updated_at = now
         await self._session.flush()
 
-        # 4. Build HumanFeedback dict for the graph
+        # 5. Build HumanFeedback dict for the graph
         feedback: HumanFeedback = {
             "action": action,  # type: ignore[typeddict-item]
             "edited_content": edited_content,
             "notes": notes,
         }
 
-        # 5. Resume the graph — blocks until next interrupt or termination
+        # 6. Resume the graph — blocks until next interrupt or termination
         await self._runner.resume(thread_id, feedback)
 
-        # 6. Re-read graph state to determine final workflow status
+        # 7. Re-read graph state to determine final workflow status
         snapshot = await self._runner.get_state(thread_id)
 
         if snapshot.next == ():
@@ -206,44 +205,37 @@ class WorkflowService:
 
         await self._session.commit()
 
-        # 7. Publish events
-        await self._events.publish(
-            WorkflowEvent(
-                type=WORKFLOW_RESUMED,
-                thread_id=thread_id,
-                content_piece_id=run.content_piece_id,
+        def _wf_event(etype: EventType, payload: dict) -> Event:
+            return Event(
+                type=etype,
                 timestamp=now,
-                payload={"action": action},
+                thread_id=thread_id,
+                campaign_id=campaign_id,
+                content_piece_id=run.content_piece_id,
+                payload=payload,
             )
+
+        # 8. Publish events
+        await publish_workflow_event(
+            self._events,
+            _wf_event(EventType.WORKFLOW_RESUMED, {"action": action}),
         )
-        await self._events.publish(
-            WorkflowEvent(
-                type=WORKFLOW_DRAFT_UPDATED,
-                thread_id=thread_id,
-                content_piece_id=run.content_piece_id,
-                timestamp=now,
-                payload={"draft_id": str(draft_id), "status": draft.status.value},
-            )
+        await publish_workflow_event(
+            self._events,
+            _wf_event(
+                EventType.DRAFT_UPDATED,
+                {"draft_id": str(draft_id), "status": draft.status.value},
+            ),
         )
         if new_wf_status == WorkflowStatus.completed:
-            await self._events.publish(
-                WorkflowEvent(
-                    type=WORKFLOW_COMPLETED,
-                    thread_id=thread_id,
-                    content_piece_id=run.content_piece_id,
-                    timestamp=now,
-                    payload={},
-                )
+            await publish_workflow_event(
+                self._events,
+                _wf_event(EventType.WORKFLOW_COMPLETED, {}),
             )
         elif new_wf_status == WorkflowStatus.failed:
-            await self._events.publish(
-                WorkflowEvent(
-                    type=WORKFLOW_FAILED,
-                    thread_id=thread_id,
-                    content_piece_id=run.content_piece_id,
-                    timestamp=now,
-                    payload={"error": run.error or ""},
-                )
+            await publish_workflow_event(
+                self._events,
+                _wf_event(EventType.WORKFLOW_FAILED, {"error": run.error or ""}),
             )
 
         logger.info("workflow_resumed", thread_id=thread_id, action=action)

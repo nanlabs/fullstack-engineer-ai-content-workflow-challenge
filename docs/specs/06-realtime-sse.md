@@ -139,8 +139,23 @@ A **single singleton instance** via dependency injection:
 ```python
 _bus = InMemoryEventBus()
 
-def get_event_bus() -> EventBus:
+def get_event_bus() -> InMemoryEventBus:
     return _bus
+```
+
+**Implementation addition:** `InMemoryEventBus` also exposes a `subscription(topic)` async context manager (in addition to `subscribe()` generator). SSE endpoints use the context manager to guarantee subscriber cleanup when Starlette cancels the generator on client disconnect:
+
+```python
+@asynccontextmanager
+async def subscription(self, topic: str) -> AsyncGenerator[asyncio.Queue[Event], None]:
+    queue: asyncio.Queue[Event] = asyncio.Queue(maxsize=100)
+    async with self._lock:
+        self._subscribers[topic].add(queue)
+    try:
+        yield queue
+    finally:
+        async with self._lock:
+            self._subscribers[topic].discard(queue)
 ```
 
 > ⚠️ **Documented limitation (trade-off):** an in-memory bus only works with **a single worker**. If in the future you run with multiple uvicorn workers or multiple replicas, SSE clients connected to one worker do not receive events published from another. Solution: switch to `RedisEventBus` (Redis pub/sub). This is what the abstraction allows for, and it's a swap without touching callers. Document in README and ADR 0005.
@@ -288,24 +303,14 @@ function useEventStream<T>(url: string, onEvent: (event: T) => void) {
 
 ### `tests/api/test_sse.py`
 
-Trickier because of the stream. Strategy:
-- Use `httpx.AsyncClient` with `stream("GET", ...)` and read `aiter_bytes()` with timeout.
-- Trigger publish from a parallel task.
-- Assert the client receives the expected event in SSE format.
+**Implementation deviation:** `httpx.ASGITransport` collects the complete response body before returning, making it incompatible with infinite streaming generators. Tests exercise `_sse_generator` directly (the internal async generator function) instead of going through the HTTP stack. This covers:
 
-```python
-async def test_campaign_events_stream(client, bus):
-    async with client.stream("GET", f"/api/campaigns/{campaign_id}/events") as response:
-        async def consume():
-            async for chunk in response.aiter_bytes():
-                return chunk
+- Event delivery (campaign topic, workflow topic)
+- SSE wire format validation (`event:` line, `data:` line, `\n\n` separator)
+- Heartbeat yielded on `asyncio.TimeoutError`
+- Subscriber cleanup on generator close
 
-        # publish from a separate task
-        asyncio.create_task(bus.publish(f"campaign:{campaign_id}", Event(...)))
-
-        chunk = await asyncio.wait_for(consume(), timeout=2)
-        assert b"event: workflow.started" in chunk
-```
+Route registration is verified via `app.routes`.
 
 ## Acceptance criteria
 
@@ -326,7 +331,7 @@ feat(api): SSE endpoint for workflow events
 feat(graph): publish token streaming events from generate_draft
 test(events): bus unit tests
 test(api): sse stream integration tests
-docs(adr): 0004 sse over websockets
+docs(adr): 0005 sse over websockets
 ```
 
 ## Trade-offs (ADR 0005)

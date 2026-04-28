@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse
 
 from src.ai.graph.runner import init_runner
 from src.api.errors import DomainError
-from src.api.routers import campaigns, content_pieces, drafts, workflows
+from src.api.routers import campaigns, content_pieces, drafts, events, workflows
 from src.config import settings
 
 
@@ -63,6 +63,7 @@ app.include_router(campaigns.router, prefix="/api/campaigns", tags=["campaigns"]
 app.include_router(content_pieces.router, prefix="/api", tags=["content-pieces"])
 app.include_router(drafts.router, prefix="/api", tags=["drafts"])
 app.include_router(workflows.router, prefix="/api/workflows", tags=["workflows"])
+app.include_router(events.router, prefix="/api", tags=["events"])
 
 
 @app.get("/health")
