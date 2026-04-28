@@ -271,7 +271,7 @@ test(api): workflow resume endpoint integration tests
 docs(adr): 0005 human-in-the-loop design
 ```
 
-## Trade-offs and decisions for ADR 0005
+## Trade-offs and decisions for ADR 0004
 
 - **Draft-by-draft vs workflow-as-a-block:** chose draft-by-draft for simplicity and UX flexibility.
 - **`approve` and `reject` do not affect other drafts of the same workflow:** conscious decision, document it.

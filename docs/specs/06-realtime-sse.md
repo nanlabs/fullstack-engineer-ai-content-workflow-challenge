@@ -25,7 +25,7 @@ All over SSE (Server-Sent Events). No WebSockets.
 | LLM token streaming | fits perfectly | overkill |
 | FastAPI implementation | trivial (`StreamingResponse`) | requires extra lib |
 
-Document in ADR 0004.
+Document in ADR 0005.
 
 ## Architecture
 
@@ -143,7 +143,7 @@ def get_event_bus() -> EventBus:
     return _bus
 ```
 
-> ⚠️ **Documented limitation (trade-off):** an in-memory bus only works with **a single worker**. If in the future you run with multiple uvicorn workers or multiple replicas, SSE clients connected to one worker do not receive events published from another. Solution: switch to `RedisEventBus` (Redis pub/sub). This is what the abstraction allows for, and it's a swap without touching callers. Document in README and ADR 0004.
+> ⚠️ **Documented limitation (trade-off):** an in-memory bus only works with **a single worker**. If in the future you run with multiple uvicorn workers or multiple replicas, SSE clients connected to one worker do not receive events published from another. Solution: switch to `RedisEventBus` (Redis pub/sub). This is what the abstraction allows for, and it's a swap without touching callers. Document in README and ADR 0005.
 
 ### Topics
 
@@ -329,7 +329,7 @@ test(api): sse stream integration tests
 docs(adr): 0004 sse over websockets
 ```
 
-## Trade-offs (ADR 0004)
+## Trade-offs (ADR 0005)
 
 - **In-memory bus vs Redis pub/sub:** in-memory for simplicity. Works perfectly with 1 worker (MVP case). Document the upgrade path.
 - **SSE vs WebSockets:** SSE wins. Listed above.

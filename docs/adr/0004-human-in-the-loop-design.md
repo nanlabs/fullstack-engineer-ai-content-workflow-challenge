@@ -1,4 +1,4 @@
-# ADR 0005 — Human-in-the-Loop & Workflow Resume Design
+# ADR 0004 — Human-in-the-Loop & Workflow Resume Design
 
 - **Status:** Accepted
 - **Date:** 2026-04-28
