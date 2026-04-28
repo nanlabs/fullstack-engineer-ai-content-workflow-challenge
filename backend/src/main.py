@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse
 
 from src.ai.graph.runner import init_runner
 from src.api.errors import DomainError
-from src.api.routers import campaigns, content_pieces, drafts
+from src.api.routers import campaigns, content_pieces, drafts, workflows
 from src.config import settings
 
 
@@ -62,6 +62,7 @@ async def validation_error_handler(request: object, exc: RequestValidationError)
 app.include_router(campaigns.router, prefix="/api/campaigns", tags=["campaigns"])
 app.include_router(content_pieces.router, prefix="/api", tags=["content-pieces"])
 app.include_router(drafts.router, prefix="/api", tags=["drafts"])
+app.include_router(workflows.router, prefix="/api/workflows", tags=["workflows"])
 
 
 @app.get("/health")

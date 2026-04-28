@@ -1,27 +1,31 @@
 from __future__ import annotations
 
-from uuid import UUID, uuid4
+from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Depends
-from sqlalchemy import select
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
-from src.ai.graph.runner import get_runner
+from src.ai.graph.runner import WorkflowRunner, get_runner
 from src.api.deps import get_session
-from src.api.errors import NotFoundError, ValidationError
 from src.api.schemas.content_piece import (
     ContentPieceCreate,
     ContentPieceDetail,
     ContentPieceUpdate,
 )
 from src.api.schemas.generate import GenerateRequest, GenerateResponse
-from src.db.enums import WorkflowStatus
-from src.db.models.content_piece import ContentPiece
-from src.db.models.workflow_run import WorkflowRun
+from src.events.bus import EventBus, get_event_bus
 from src.services import content_piece_service
+from src.services.workflow_service import WorkflowService
 
 router = APIRouter()
+
+
+def _get_workflow_service(
+    session: AsyncSession = Depends(get_session),
+    runner: WorkflowRunner = Depends(get_runner),
+    events: EventBus = Depends(get_event_bus),
+) -> WorkflowService:
+    return WorkflowService(runner=runner, session=session, events=events)
 
 
 @router.post(
@@ -69,58 +73,13 @@ async def delete_content_piece(
 )
 async def generate_content(
     content_piece_id: UUID,
-    body: GenerateRequest,
-    background_tasks: BackgroundTasks,
-    session: AsyncSession = Depends(get_session),
+    body: GenerateRequest,  # noqa: ARG001 — reserved for future provider override
+    service: WorkflowService = Depends(_get_workflow_service),
 ) -> GenerateResponse:
     """Launch the LangGraph workflow for a content piece. Returns 202 immediately."""
-    result = await session.execute(
-        select(ContentPiece)
-        .options(selectinload(ContentPiece.campaign))
-        .where(ContentPiece.id == content_piece_id)
-    )
-    cp = result.scalar_one_or_none()
-    if cp is None:
-        raise NotFoundError(f"ContentPiece {content_piece_id} not found")
-
-    campaign = cp.campaign
-    if not campaign.target_languages:
-        raise ValidationError("Campaign has no target languages configured.")
-
-    thread_id = str(uuid4())
-    run = WorkflowRun(
-        content_piece_id=content_piece_id,
-        langgraph_thread_id=thread_id,
-        status=WorkflowStatus.running,
-    )
-    session.add(run)
-    await session.flush()
-
-    # Commit now so the WorkflowRun row is visible to the background task before it starts.
-    await session.commit()
-
-    inputs: dict = {
-        "content_piece_id": str(content_piece_id),
-        "campaign_id": str(cp.campaign_id),
-        "content_type": cp.type.value,
-        "brief": campaign.brief,
-        "source_language": campaign.source_language,
-        "target_languages": list(campaign.target_languages),
-        "source_text": cp.source_text,
-        "initial_draft": None,
-        "metadata": None,
-        "translations": [],
-        "pending_feedback": None,
-        "iteration": 0,
-        "status": "initializing",
-        "error": None,
-    }
-
-    runner = get_runner()
-    background_tasks.add_task(runner.run_graph, thread_id, inputs)
-
+    run = await service.start(content_piece_id)
     return GenerateResponse(
         workflow_run_id=str(run.id),
-        thread_id=thread_id,
+        thread_id=run.langgraph_thread_id,
         status="running",
     )
