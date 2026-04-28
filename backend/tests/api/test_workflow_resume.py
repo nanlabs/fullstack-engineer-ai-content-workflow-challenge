@@ -13,7 +13,7 @@ from src.ai.graph.runner import WorkflowRunner, get_runner
 from src.db.enums import WorkflowStatus
 from src.db.models.draft import Draft
 from src.db.models.workflow_run import WorkflowRun
-from src.events.bus import EventBus, get_event_bus
+from src.events.bus import InMemoryEventBus, get_event_bus
 from src.main import app
 
 
@@ -39,8 +39,8 @@ def _mock_runner_dep(*, graph_done: bool = True, graph_status: str = "approved")
     return runner  # type: ignore[return-value]
 
 
-def _mock_events_dep() -> EventBus:
-    bus = AsyncMock(spec=EventBus)
+def _mock_events_dep() -> InMemoryEventBus:
+    bus = AsyncMock(spec=InMemoryEventBus)
     bus.publish = AsyncMock(return_value=None)
     return bus  # type: ignore[return-value]
 
