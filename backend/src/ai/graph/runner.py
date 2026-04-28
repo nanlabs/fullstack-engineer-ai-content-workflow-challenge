@@ -12,13 +12,15 @@ from src.db.enums import WorkflowStatus
 from src.db.models.workflow_run import WorkflowRun
 from src.db.session import AsyncSessionLocal
 
-# AsyncPostgresSaver is imported lazily inside get_checkpointer() to avoid triggering
+# AsyncPostgresSaver is imported lazily inside init_runner() to avoid triggering
 # the psycopg / libpq import chain at module load time (which fails if libpq is absent).
 
 logger = structlog.get_logger(__name__)
 
-# Module-level singleton initialised on app startup via init_runner().
+# Module-level singletons initialised on app startup via init_runner().
 _runner: WorkflowRunner | None = None
+# Holds the async context manager so we can exit it cleanly on shutdown.
+_checkpointer_cm: object | None = None
 
 
 def _checkpoint_db_url() -> str:
@@ -26,23 +28,30 @@ def _checkpoint_db_url() -> str:
     return settings.database_url.replace("+asyncpg", "")
 
 
-async def get_checkpointer() -> object:
-    from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver  # lazy — needs libpq
-
-    saver = AsyncPostgresSaver.from_conn_string(_checkpoint_db_url())
-    await saver.setup()  # idempotent — creates tables if missing
-    return saver
-
-
 async def init_runner() -> None:
     """Called once on application startup to initialise the graph and checkpointer."""
-    global _runner
+    global _runner, _checkpointer_cm
+    from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver  # lazy — needs libpq
+
     from src.ai.graph.builder import build_graph
 
-    checkpointer = await get_checkpointer()
-    graph = build_graph(checkpointer)
+    # from_conn_string() is an @asynccontextmanager in langgraph-checkpoint-postgres v3.
+    cm = AsyncPostgresSaver.from_conn_string(_checkpoint_db_url())
+    saver = await cm.__aenter__()
+    await saver.setup()  # idempotent — creates LangGraph checkpoint tables if missing
+    _checkpointer_cm = cm
+
+    graph = build_graph(saver)
     _runner = WorkflowRunner(graph)
     logger.info("workflow_runner_initialised")
+
+
+async def shutdown_runner() -> None:
+    """Called on application shutdown to release the checkpointer connection pool."""
+    global _checkpointer_cm
+    if _checkpointer_cm is not None:
+        await _checkpointer_cm.__aexit__(None, None, None)
+        _checkpointer_cm = None
 
 
 def get_runner() -> WorkflowRunner:

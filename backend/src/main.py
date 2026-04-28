@@ -9,7 +9,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from src.ai.graph.runner import init_runner
+from src.ai.graph.runner import init_runner, shutdown_runner
 from src.api.errors import DomainError
 from src.api.routers import campaigns, content_pieces, drafts, events, workflows
 from src.config import settings
@@ -19,6 +19,7 @@ from src.config import settings
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     await init_runner()
     yield
+    await shutdown_runner()
 
 
 app = FastAPI(
