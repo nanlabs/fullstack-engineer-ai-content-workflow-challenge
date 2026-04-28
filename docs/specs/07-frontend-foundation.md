@@ -400,12 +400,12 @@ test("App renders without crashing", () => {
 
 ## Acceptance criteria
 
-- [ ] Navigating to `/` redirects to `/campaigns`.
-- [ ] The sidebar shows an empty list with "No campaigns yet" message (real listing is spec 08).
-- [ ] The header shows the SSE indicator (may be gray if no campaign is selected yet).
-- [ ] React Query devtools (in dev) show active queries.
-- [ ] Backend types (`Campaign`, `Draft`, etc.) defined in `src/api/types.ts`.
-- [ ] Tests pass.
+- [x] Navigating to `/` redirects to `/campaigns`.
+- [x] The sidebar shows an empty list with "No campaigns yet" message (real listing is spec 08).
+- [x] The header shows the SSE indicator (may be gray if no campaign is selected yet).
+- [x] React Query devtools (in dev) show active queries.
+- [x] Backend types (`Campaign`, `Draft`, etc.) defined in `src/api/types.ts`.
+- [x] Tests pass.
 
 ## Suggested commit plan
 
@@ -420,6 +420,15 @@ feat(web): app shell with header and sidebar
 test(web): api client error handling
 test(web): use-event-stream lifecycle
 ```
+
+## Deviations from spec (implemented 2026-04-28)
+
+- `src/vite-env.d.ts` with `/// <reference types="vite/client" />` was required — the spec did not mention it but the project scaffolding omitted it, breaking `import.meta.env` types.
+- `@tanstack/react-query-devtools` had to be installed explicitly (it was not in the original `package.json`).
+- `<TooltipProvider>` added at app root — required by shadcn's tooltip component; mentioned in the CLI's post-install output.
+- `CreateCampaignDialog` lives under `src/features/campaigns/` and is imported by `Sidebar` — spec did not prescribe the exact location; feature folder is cleaner than embedding form logic in layout.
+- `Header`'s SSE indicator is a controlled component accepting a `sseConnected: boolean | null` prop — actual SSE connection state wiring deferred to specs 08–09 where campaign context is available.
+- `src/types/api.ts` re-exports from `src/api/types.ts` via `export type *` — avoids duplication between the two paths the spec listed.
 
 ## Notes
 
