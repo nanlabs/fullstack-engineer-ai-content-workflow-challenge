@@ -213,15 +213,15 @@ Component: `DraftHistoryList`. A dropdown or side list.
 
 ## Acceptance criteria
 
-- [ ] I can navigate to `/content-pieces/:id` and see the generated draft.
-- [ ] I can switch tabs and see the draft per language.
-- [ ] I can edit the text and see the diff appear.
-- [ ] I can approve a draft → badge updates and disappears from "pending".
-- [ ] I can reject a draft with notes.
-- [ ] I can regenerate with feedback and see the new draft appear (no F5).
-- [ ] While the LLM is regenerating, I see the tokens streaming.
-- [ ] The metadata panel shows all fields from the draft's JSONB.
-- [ ] Tests pass.
+- [x] I can navigate to `/content-pieces/:id` and see the generated draft.
+- [x] I can switch tabs and see the draft per language.
+- [x] I can edit the text and see the diff appear.
+- [x] I can approve a draft → badge updates and disappears from "pending".
+- [x] I can reject a draft with notes.
+- [x] I can regenerate with feedback and see the new draft appear (no F5).
+- [x] While the LLM is regenerating, I see the tokens streaming.
+- [x] The metadata panel shows all fields from the draft's JSONB.
+- [x] Tests pass.
 
 ## Tests
 
@@ -258,6 +258,15 @@ test(web): draft actions and editor behavior
 3. **Cost badge** on each draft. Shows production mindset.
 4. **Lineage (parent_draft_id)** visualized as a mini-tree. Demonstrates traceability awareness.
 5. **Structured metadata** rendered with semantic badges instead of raw JSON.
+
+## Implementation deviations (2026-04-29)
+
+- **`DraftTabs` renders `<TabsList>` only** (no `<TabsContent>`). The page renders draft content directly below the tabs, not through Radix's show/hide mechanism. This keeps the page state machine simple and avoids mounting all language trees simultaneously.
+- **`source_language` added to `ContentPieceDetail`** — backend schema and frontend types updated. `get_content_piece` now joins the campaign relationship to populate it. The spec assumed this was already available but it was missing from the API response.
+- **`TokenStreamPanel` owns its SSE connection** — per the spec's code example. The page also connects to the same SSE URL for query invalidation; both connections work independently via per-subscriber queues on the backend.
+- **Metadata panel shows only `sentiment`, `tone`, `keywords`** — the backend stores only these three fields in the draft's JSONB. `tokens`, `cost`, and `latency` are logged to structlog but not persisted in the DB; they are not shown (no fabricated values).
+- **Approve includes `edited_content` when dirty** — when the user has unsaved edits and clicks Approve, `edited_content` is sent in the `ResumeRequest` body. This satisfies "confirms this draft as is (with or without edits)".
+- **No ADR created** — this is a pure frontend spec with one minor backend addition (`source_language` field). The decision is documented in CLAUDE.md under Spec 09.
 
 ## Notes
 

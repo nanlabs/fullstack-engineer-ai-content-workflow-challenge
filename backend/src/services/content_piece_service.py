@@ -23,7 +23,8 @@ async def create_content_piece(
     session: AsyncSession, campaign_id: UUID, data: ContentPieceCreate
 ) -> ContentPieceDetail:
     result = await session.execute(select(Campaign).where(Campaign.id == campaign_id))
-    if result.scalar_one_or_none() is None:
+    campaign = result.scalar_one_or_none()
+    if campaign is None:
         raise NotFoundError(f"Campaign {campaign_id} not found")
 
     cp = ContentPiece(
@@ -35,19 +36,20 @@ async def create_content_piece(
     session.add(cp)
     await session.flush()
     await session.refresh(cp)
-    return _to_detail(cp, drafts=[])
+    return _to_detail(cp, drafts=[], source_language=campaign.source_language)
 
 
 async def get_content_piece(session: AsyncSession, content_piece_id: UUID) -> ContentPieceDetail:
     result = await session.execute(
         select(ContentPiece)
         .where(ContentPiece.id == content_piece_id)
-        .options(selectinload(ContentPiece.drafts))
+        .options(selectinload(ContentPiece.drafts), selectinload(ContentPiece.campaign))
     )
     cp = result.scalar_one_or_none()
     if cp is None:
         raise NotFoundError(f"ContentPiece {content_piece_id} not found")
-    return _to_detail(cp, drafts=cp.drafts)
+    source_language = cp.campaign.source_language if cp.campaign else None
+    return _to_detail(cp, drafts=cp.drafts, source_language=source_language)
 
 
 async def update_content_piece(
@@ -56,7 +58,7 @@ async def update_content_piece(
     result = await session.execute(
         select(ContentPiece)
         .where(ContentPiece.id == content_piece_id)
-        .options(selectinload(ContentPiece.drafts))
+        .options(selectinload(ContentPiece.drafts), selectinload(ContentPiece.campaign))
     )
     cp = result.scalar_one_or_none()
     if cp is None:
@@ -67,7 +69,8 @@ async def update_content_piece(
         setattr(cp, field, value)
     cp.updated_at = datetime.now(tz=UTC)
     await session.flush()
-    return _to_detail(cp, drafts=cp.drafts)
+    source_language = cp.campaign.source_language if cp.campaign else None
+    return _to_detail(cp, drafts=cp.drafts, source_language=source_language)
 
 
 async def delete_content_piece(session: AsyncSession, content_piece_id: UUID) -> None:
@@ -79,7 +82,11 @@ async def delete_content_piece(session: AsyncSession, content_piece_id: UUID) ->
     await session.flush()
 
 
-def _to_detail(cp: ContentPiece, drafts: list[Draft]) -> ContentPieceDetail:
+def _to_detail(
+    cp: ContentPiece,
+    drafts: list[Draft],
+    source_language: str | None = None,
+) -> ContentPieceDetail:
     sorted_drafts = sorted(drafts, key=lambda d: d.created_at, reverse=True)
     draft_reads = [_draft_read(d) for d in sorted_drafts]
     return ContentPieceDetail(
@@ -89,6 +96,7 @@ def _to_detail(cp: ContentPiece, drafts: list[Draft]) -> ContentPieceDetail:
         has_drafts=len(drafts) > 0,
         latest_status=sorted_drafts[0].status if sorted_drafts else None,
         campaign_id=cp.campaign_id,
+        source_language=source_language,
         source_text=cp.source_text,
         drafts=draft_reads,
         created_at=cp.created_at,

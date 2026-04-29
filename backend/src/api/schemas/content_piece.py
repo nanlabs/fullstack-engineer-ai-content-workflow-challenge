@@ -34,6 +34,7 @@ class ContentPieceSummary(BaseModel):
 
 class ContentPieceDetail(ContentPieceSummary):
     campaign_id: UUID
+    source_language: str | None = None
     source_text: str | None
     drafts: list[DraftRead]
     created_at: datetime

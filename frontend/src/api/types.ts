@@ -62,6 +62,7 @@ export interface ContentPieceUpdate {
 
 export interface ContentPieceDetail extends ContentPieceSummary {
   campaign_id: string;
+  source_language: string | null;
   source_text: string | null;
   drafts: DraftRead[];
   created_at: string;
