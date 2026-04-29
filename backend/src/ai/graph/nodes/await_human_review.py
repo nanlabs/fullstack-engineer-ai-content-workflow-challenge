@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from uuid import UUID
 
 import structlog
@@ -12,6 +13,9 @@ from src.db.enums import DraftStatus, WorkflowStatus
 from src.db.models.draft import Draft
 from src.db.models.workflow_run import WorkflowRun
 from src.db.session import AsyncSessionLocal
+from src.events.bus import get_event_bus
+from src.events.topics import publish_workflow_event
+from src.events.types import Event, EventType
 
 logger = structlog.get_logger(__name__)
 
@@ -68,6 +72,20 @@ async def await_human_review(
         content_piece_id=state["content_piece_id"],
         thread_id=thread_id,
         iteration=state["iteration"],
+    )
+
+    campaign_id = UUID(state["campaign_id"]) if state.get("campaign_id") else None
+    content_piece_id = UUID(state["content_piece_id"]) if state.get("content_piece_id") else None
+    await publish_workflow_event(
+        get_event_bus(),
+        Event(
+            type=EventType.WORKFLOW_AWAITING_HUMAN,
+            timestamp=datetime.now(tz=UTC),
+            thread_id=thread_id,
+            campaign_id=campaign_id,
+            content_piece_id=content_piece_id,
+            payload={"iteration": state["iteration"]},
+        ),
     )
 
     # Graph suspends here; resumes when Command(resume=feedback) is issued.

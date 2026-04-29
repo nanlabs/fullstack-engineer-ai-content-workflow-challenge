@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeftIcon, RefreshCwIcon, SparklesIcon } from "lucide-react";
@@ -74,6 +74,16 @@ export default function ContentPieceDetailPage() {
     setConnected(connected ? true : null);
     return () => setConnected(null);
   }, [connected, setConnected]);
+
+  // On SSE connect, refresh immediately to catch events fired before connection was ready.
+  const prevConnectedRef = useRef(false);
+  useEffect(() => {
+    if (connected && !prevConnectedRef.current) {
+      if (id) queryClient.invalidateQueries({ queryKey: contentPieceKeys.detail(id) });
+      if (threadId) queryClient.invalidateQueries({ queryKey: workflowKeys.detail(threadId) });
+    }
+    prevConnectedRef.current = connected;
+  }, [connected, id, threadId, queryClient]);
 
   useEffect(() => {
     if (piece && !activeLanguage) {

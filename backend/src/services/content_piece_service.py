@@ -14,9 +14,11 @@ from src.api.schemas.content_piece import (
     ContentPieceUpdate,
 )
 from src.api.schemas.draft import DraftRead
+from src.db.enums import WorkflowStatus
 from src.db.models.campaign import Campaign
 from src.db.models.content_piece import ContentPiece
 from src.db.models.draft import Draft
+from src.db.models.workflow_run import WorkflowRun  # noqa: F401 — ensure relationship loaded
 
 
 async def create_content_piece(
@@ -43,13 +45,24 @@ async def get_content_piece(session: AsyncSession, content_piece_id: UUID) -> Co
     result = await session.execute(
         select(ContentPiece)
         .where(ContentPiece.id == content_piece_id)
-        .options(selectinload(ContentPiece.drafts), selectinload(ContentPiece.campaign))
+        .options(
+            selectinload(ContentPiece.drafts),
+            selectinload(ContentPiece.campaign),
+            selectinload(ContentPiece.workflow_run),
+        )
     )
     cp = result.scalar_one_or_none()
     if cp is None:
         raise NotFoundError(f"ContentPiece {content_piece_id} not found")
     source_language = cp.campaign.source_language if cp.campaign else None
-    return _to_detail(cp, drafts=cp.drafts, source_language=source_language)
+    wr = cp.workflow_run
+    return _to_detail(
+        cp,
+        drafts=cp.drafts,
+        source_language=source_language,
+        workflow_status=wr.status if wr else None,
+        latest_thread_id=wr.langgraph_thread_id if wr else None,
+    )
 
 
 async def update_content_piece(
@@ -58,7 +71,11 @@ async def update_content_piece(
     result = await session.execute(
         select(ContentPiece)
         .where(ContentPiece.id == content_piece_id)
-        .options(selectinload(ContentPiece.drafts), selectinload(ContentPiece.campaign))
+        .options(
+            selectinload(ContentPiece.drafts),
+            selectinload(ContentPiece.campaign),
+            selectinload(ContentPiece.workflow_run),
+        )
     )
     cp = result.scalar_one_or_none()
     if cp is None:
@@ -70,7 +87,14 @@ async def update_content_piece(
     cp.updated_at = datetime.now(tz=UTC)
     await session.flush()
     source_language = cp.campaign.source_language if cp.campaign else None
-    return _to_detail(cp, drafts=cp.drafts, source_language=source_language)
+    wr = cp.workflow_run
+    return _to_detail(
+        cp,
+        drafts=cp.drafts,
+        source_language=source_language,
+        workflow_status=wr.status if wr else None,
+        latest_thread_id=wr.langgraph_thread_id if wr else None,
+    )
 
 
 async def delete_content_piece(session: AsyncSession, content_piece_id: UUID) -> None:
@@ -86,6 +110,8 @@ def _to_detail(
     cp: ContentPiece,
     drafts: list[Draft],
     source_language: str | None = None,
+    workflow_status: WorkflowStatus | None = None,
+    latest_thread_id: str | None = None,
 ) -> ContentPieceDetail:
     sorted_drafts = sorted(drafts, key=lambda d: d.created_at, reverse=True)
     draft_reads = [_draft_read(d) for d in sorted_drafts]
@@ -95,10 +121,13 @@ def _to_detail(
         title=cp.title,
         has_drafts=len(drafts) > 0,
         latest_status=sorted_drafts[0].status if sorted_drafts else None,
+        drafts_count=len(drafts),
         campaign_id=cp.campaign_id,
         source_language=source_language,
         source_text=cp.source_text,
         drafts=draft_reads,
+        workflow_status=workflow_status,
+        latest_thread_id=latest_thread_id,
         created_at=cp.created_at,
         updated_at=cp.updated_at,
     )

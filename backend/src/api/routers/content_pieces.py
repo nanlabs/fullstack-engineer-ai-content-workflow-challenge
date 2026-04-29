@@ -73,7 +73,7 @@ async def delete_content_piece(
 )
 async def generate_content(
     content_piece_id: UUID,
-    body: GenerateRequest,  # noqa: ARG001 — reserved for future provider override
+    body: GenerateRequest | None = None,  # noqa: ARG001 — reserved for future provider override
     service: WorkflowService = Depends(_get_workflow_service),
 ) -> GenerateResponse:
     """Launch the LangGraph workflow for a content piece. Returns 202 immediately."""
