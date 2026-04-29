@@ -108,8 +108,7 @@ export function ContentPieceFormDialog({ campaignId, open, onOpenChange }: Props
 
           <div className="space-y-1">
             <label className="text-sm font-medium">
-              Source text{" "}
-              <span className="text-muted-foreground font-normal">(optional)</span>
+              Source text <span className="text-muted-foreground font-normal">(optional)</span>
             </label>
             <Textarea
               {...register("source_text")}

@@ -6,7 +6,7 @@ import { SseProvider, useSseContext } from "@/lib/sse-context";
 function AppShellInner() {
   const { connected } = useSseContext();
   return (
-    <div className="bg-background min-h-screen">
+    <div className="bg-background text-foreground min-h-screen">
       <Header sseConnected={connected} />
       <div className="flex">
         <Sidebar />

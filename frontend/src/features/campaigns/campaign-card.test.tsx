@@ -7,7 +7,8 @@ import type { Campaign } from "@/api/types";
 const campaign: Campaign = {
   id: "c1",
   name: "Spring Sale 2026",
-  brief: "A very long brief that should get truncated when it exceeds the card display limit because it is too long to show fully in the card view.",
+  brief:
+    "A very long brief that should get truncated when it exceeds the card display limit because it is too long to show fully in the card view.",
   source_language: "en",
   target_languages: ["es", "fr", "de"],
   content_pieces_count: 3,

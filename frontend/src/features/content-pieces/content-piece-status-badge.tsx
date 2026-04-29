@@ -51,15 +51,18 @@ export function ContentPieceStatusBadge({ piece, currentNode, className }: Props
   switch (status) {
     case "draft":
       return (
-        <span className={cn(baseClass, "bg-secondary text-secondary-foreground")}>
-          📝 Draft
-        </span>
+        <span className={cn(baseClass, "bg-secondary text-secondary-foreground")}>📝 Draft</span>
       );
 
     case "generating": {
       const nodeLabel = currentNode ? (NODE_LABELS[currentNode] ?? currentNode) : null;
       return (
-        <span className={cn(baseClass, "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300")}>
+        <span
+          className={cn(
+            baseClass,
+            "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+          )}
+        >
           <Loader2Icon className="h-3 w-3 animate-spin" />
           {nodeLabel ? `Generating… (${nodeLabel.toLowerCase()})` : "Generating…"}
         </span>
@@ -68,29 +71,45 @@ export function ContentPieceStatusBadge({ piece, currentNode, className }: Props
 
     case "awaiting_review":
       return (
-        <span className={cn(baseClass, "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300")}>
+        <span
+          className={cn(
+            baseClass,
+            "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+          )}
+        >
           ⚡ Awaiting review
-          {piece.drafts_count > 0 ? ` (${piece.drafts_count} draft${piece.drafts_count !== 1 ? "s" : ""})` : ""}
+          {piece.drafts_count > 0
+            ? ` (${piece.drafts_count} draft${piece.drafts_count !== 1 ? "s" : ""})`
+            : ""}
         </span>
       );
 
     case "completed":
       return (
-        <span className={cn(baseClass, "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300")}>
+        <span
+          className={cn(
+            baseClass,
+            "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+          )}
+        >
           �� Completed
         </span>
       );
 
     case "rejected":
       return (
-        <span className={cn(baseClass, "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300")}>
+        <span
+          className={cn(baseClass, "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300")}
+        >
           ❌ Rejected
         </span>
       );
 
     case "failed":
       return (
-        <span className={cn(baseClass, "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300")}>
+        <span
+          className={cn(baseClass, "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300")}
+        >
           ❌ Failed
         </span>
       );

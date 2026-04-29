@@ -26,9 +26,7 @@ export function ContentPieceRow({ piece }: Props) {
 
   const isGenerating = displayStatus === "generating";
 
-  const { data: workflowRun } = useWorkflow(
-    isGenerating ? (piece.latest_thread_id ?? null) : null
-  );
+  const { data: workflowRun } = useWorkflow(isGenerating ? (piece.latest_thread_id ?? null) : null);
 
   const regenerate = useStartWorkflow();
 
@@ -50,9 +48,7 @@ export function ContentPieceRow({ piece }: Props) {
           <Badge variant="outline" className="shrink-0 text-xs">
             {TYPE_LABELS[piece.type] ?? piece.type}
           </Badge>
-          {piece.title && (
-            <span className="truncate text-sm font-medium">{piece.title}</span>
-          )}
+          {piece.title && <span className="truncate text-sm font-medium">{piece.title}</span>}
         </div>
         <ContentPieceStatusBadge piece={piece} currentNode={workflowRun?.current_node} />
       </div>

@@ -121,7 +121,7 @@ export function DraftActions({
         <AlertDialogTrigger asChild>
           <Button
             size="sm"
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-green-600 text-white hover:bg-green-700"
             disabled={isPending}
             data-testid="approve-button"
           >
@@ -151,7 +151,7 @@ export function DraftActions({
       <Button
         size="sm"
         variant="outline"
-        className="border-red-300 text-red-700 hover:bg-red-50 hover:text-red-800 dark:border-red-700 dark:text-red-400"
+        className="border-red-300 text-red-700 hover:bg-red-50 hover:text-red-800 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/30 dark:hover:text-red-300"
         disabled={isPending}
         onClick={() => setRejectOpen(true)}
         data-testid="reject-button"

@@ -27,12 +27,7 @@ export function GenerateButton({ contentPieceId, onStart, disabled }: Props) {
   }
 
   return (
-    <Button
-      size="sm"
-      variant="outline"
-      disabled={isPending || disabled}
-      onClick={handleClick}
-    >
+    <Button size="sm" variant="outline" disabled={isPending || disabled} onClick={handleClick}>
       <SparklesIcon className="mr-1.5 h-4 w-4" />
       {isPending ? "Starting…" : "Generate with AI"}
     </Button>

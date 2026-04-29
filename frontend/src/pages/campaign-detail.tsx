@@ -87,10 +87,7 @@ export default function CampaignDetailPage() {
   return (
     <div className="space-y-8">
       <CampaignHeader campaign={campaign} />
-      <ContentPiecesList
-        pieces={campaign.content_pieces}
-        campaignId={campaign.id}
-      />
+      <ContentPiecesList pieces={campaign.content_pieces} campaignId={campaign.id} />
     </div>
   );
 }

@@ -59,18 +59,14 @@ describe("ContentPieceStatusBadge", () => {
 
   it("shows Completed when latest_status is approved", () => {
     render(
-      <ContentPieceStatusBadge
-        piece={makePiece({ has_drafts: true, latest_status: "approved" })}
-      />
+      <ContentPieceStatusBadge piece={makePiece({ has_drafts: true, latest_status: "approved" })} />
     );
     expect(screen.getByText(/Completed/)).toBeInTheDocument();
   });
 
   it("shows Rejected when latest_status is rejected", () => {
     render(
-      <ContentPieceStatusBadge
-        piece={makePiece({ has_drafts: true, latest_status: "rejected" })}
-      />
+      <ContentPieceStatusBadge piece={makePiece({ has_drafts: true, latest_status: "rejected" })} />
     );
     expect(screen.getByText(/Rejected/)).toBeInTheDocument();
   });

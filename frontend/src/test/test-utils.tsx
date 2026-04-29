@@ -14,18 +14,12 @@ function makeQueryClient() {
 
 export function renderWithProviders(ui: ReactElement, options?: RenderOptions) {
   const queryClient = makeQueryClient();
-  return render(
-    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
-    options
-  );
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>, options);
 }
 
 export function renderWithRouter(
   element: ReactElement,
-  {
-    path = "/",
-    initialPath = "/",
-  }: { path?: string; initialPath?: string } = {}
+  { path = "/", initialPath = "/" }: { path?: string; initialPath?: string } = {}
 ) {
   const queryClient = makeQueryClient();
   const router = createMemoryRouter([{ path, element }], {

@@ -192,7 +192,7 @@ export function CampaignFormDialog({ open, onOpenChange, campaign }: Props) {
 
           <div className="space-y-2">
             <label className="text-sm font-medium">Target languages</label>
-            <div className="flex flex-wrap gap-1 min-h-[32px]">
+            <div className="flex min-h-[32px] flex-wrap gap-1">
               {selectedTargetLanguages.map((lang) => (
                 <Badge key={lang} variant="secondary" className="gap-1 pr-1">
                   {lang}
