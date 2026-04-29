@@ -26,6 +26,8 @@ dev = [
     "pytest>=8.4.0",
     "pytest-asyncio>=0.25.0",
     "pytest-cov>=6.0.0",
+    "faker>=33.0.0",
+    "respx>=0.22.0",
     "ruff>=0.15.0",
     "mypy>=1.13.0",
 ]
@@ -36,3 +38,8 @@ package = false
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = [
+    "real_llm: tests that hit real LLM APIs (skipped by default)",
+    "slow: tests over 1 second",
+]
+addopts = "-ra --strict-markers --cov=src --cov-report=term-missing"
