@@ -1,5 +1,7 @@
 # ACME Content Workflow — AI Engineer Challenge
 
+[![CI](https://github.com/maxivitale/fullstack-engineer-ai-content-workflow-challenge/actions/workflows/ci.yml/badge.svg)](https://github.com/maxivitale/fullstack-engineer-ai-content-workflow-challenge/actions/workflows/ci.yml)
+
 Full-stack system for **ACME GLOBAL MEDIA** to manage a multilingual content workflow (creation, translation, review) powered by LLMs, with human-in-the-loop review.
 
 ## Architecture overview
@@ -209,3 +211,20 @@ The Docker setup serves the frontend via `pnpm dev` (Vite HMR) rather than a pro
     │   └── components/        # shadcn/ui + custom components
     └── Dockerfile
 ```
+
+## CI
+
+GitHub Actions runs lint + tests + Docker build verification on every push and PR targeting `main`. Three parallel jobs (`backend`, `frontend`, `docker`) plus a `ci-success` gate job used for branch protection rules.
+
+No secrets are required — the backend job uses `DEFAULT_LLM_PROVIDER=mock` so no real LLM calls are made.
+
+A separate [real-llm workflow](.github/workflows/real-llm.yml) runs smoke tests against real APIs on manual trigger or every Monday at 6am UTC (requires `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` repository secrets).
+
+## Not implemented / future work
+
+- **CD pipeline** — deploy to a PaaS (Fly.io, Railway) on merge to main
+- **Image push to registry** — push to GHCR/Docker Hub with semver tags
+- **Security scans** — Trivy or Snyk in the Docker build job
+- **Performance regression tests** — k6 + bench fixtures
+- **Lighthouse CI** — frontend performance budget
+- **E2E tests** — Playwright smoke tests against the running stack

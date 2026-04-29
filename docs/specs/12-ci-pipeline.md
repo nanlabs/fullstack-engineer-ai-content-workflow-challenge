@@ -340,3 +340,8 @@ In the README, "Future work" or "Not implemented" section:
 - Performance regression tests (k6 + bench fixtures).
 - Lighthouse CI for frontend.
 - E2E tests with Playwright.
+
+## Deviations (implemented 2026-04-29)
+
+- **`real-llm.yml` includes postgres service + `alembic upgrade head`** (not in spec) — the current `real_llm` test (`test_anthropic_provider_real_call`) does not require a DB, but the postgres service is added proactively so future real-LLM tests that exercise the full graph layer (which uses DB-backed checkpoints) can run without modifying the workflow. Cost is minimal (one service container).
+- **Previous stub replaced in full** — the existing `ci.yml` stub (`backend-lint-test`, `frontend-lint-test`, `docker-build` jobs with no concurrency, no caching, no type checks, no build step) was replaced entirely with the spec's design. No backwards compatibility with the stub was preserved.

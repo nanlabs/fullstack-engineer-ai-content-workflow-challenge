@@ -1,0 +1,58 @@
+name: Real LLM Smoke Tests
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"  # every Monday at 6am UTC
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: acme_content_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/acme_content_test
+      RUN_REAL_LLM_TESTS: "1"
+      APP_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "backend/uv.lock"
+
+      - name: Install dependencies
+        working-directory: backend
+        run: uv sync --frozen
+
+      - name: Run migrations
+        working-directory: backend
+        run: uv run alembic upgrade head
+
+      - name: Run real LLM smoke tests
+        working-directory: backend
+        run: uv run pytest -m real_llm -v
