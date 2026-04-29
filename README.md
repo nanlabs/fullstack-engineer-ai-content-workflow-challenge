@@ -1,129 +1,211 @@
-# 🚀 Fullstack Engineer Challenge – AI Content Workflow
+# ACME Content Workflow — AI Engineer Challenge
 
-Welcome to the **Fullstack Engineer Challenge!** 🤖📝  
-In this challenge, you'll help the fictional company **ACME GLOBAL MEDIA** build a system to manage the **content creation and review workflow** for their international campaigns — powered by **AI**.
+Full-stack system for **ACME GLOBAL MEDIA** to manage a multilingual content workflow (creation, translation, review) powered by LLMs, with human-in-the-loop review.
 
-## 🎯 Context
+## Architecture overview
 
-ACME GLOBAL MEDIA produces ads, micro-sites, and marketing materials in multiple languages.  
-Traditionally, creating and translating this content is slow and error-prone. They want to experiment with **LLMs** to:
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Browser (React + Vite)                                     │
+│  :5173 — Campaigns dashboard, Review UI, SSE token stream   │
+└────────────────────┬────────────────────────────────────────┘
+                     │ HTTP + SSE
+┌────────────────────▼────────────────────────────────────────┐
+│  FastAPI backend                                            │
+│  :8000 — REST API, SSE endpoints, LangGraph runner         │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │  LangGraph content workflow (human-in-the-loop)      │   │
+│  │  generate_draft → await_human_review → refine/done   │   │
+│  └──────────────────────────────────────────────────────┘   │
+└────────────────────┬────────────────────────────────────────┘
+                     │ asyncpg
+┌────────────────────▼────────────────────────────────────────┐
+│  PostgreSQL 16                                              │
+│  :5432 — campaigns, content_pieces, drafts, workflow_runs   │
+│           + LangGraph checkpoint store                      │
+└─────────────────────────────────────────────────────────────┘
+```
 
-- Generate initial content drafts (headlines, product descriptions, etc.).
-- Translate and localize content into multiple languages.
-- Extract structured data (keywords, tone, sentiment).
-- Keep a **review workflow** where humans can accept, edit, or reject AI suggestions.
+**Key design decision:** the review workflow (Draft → Suggested → Reviewed → Approved/Rejected) is modeled as a **LangGraph graph with `interrupt()` for human-in-the-loop**, not as loose CRUD endpoints. See [`docs/adr/`](docs/adr/) for all architectural decision records.
 
-Your task is to build a simple system to:
+## Quick start
 
-- Manage **campaigns** (each with multiple content pieces).
-- Generate **AI-powered drafts** for a content piece using OpenAI or Anthropic.
-- Provide **translation/localization** suggestions via AI.
-- Track a **review state** (Draft → Suggested by AI → Reviewed → Approved/Rejected).
-- Show updates to all users in real-time.
+### Prerequisites
 
-## 📌 Requirements
+- [Docker](https://docs.docker.com/get-docker/) 26+ with Compose v2 (`docker compose`, not `docker-compose`)
+- An Anthropic or OpenAI API key (optional — the app works with `MockProvider` without one)
 
-### ⚙️ Tech Stack
+### 1. Clone and configure
 
-> ⚡ **Must Include** - Use the following technologies, aligned with our tech stack:
+```bash
+git clone <repo-url>
+cd fullstack-engineer-ai-content-workflow-challenge
 
-- **Backend:** You can use any stack you're comfortable with, but we recommend:
-  - TypeScript + NestJS (Fastify/Koa also valid)  
-  - Python + FastAPI (Flask/Django also valid)  
-  - Go + Fiber (Gin/Echo also valid)  
-- **API:** REST and/or GraphQL (justify your choice if only one)  
-- **Frontend:** React (Next.js, Remix, or Vite)  
-- **Database:** PostgreSQL (primary), MongoDB (optional if needed)  
-- **Containerization:** Docker (required)  
-- **AI Integrations:** OpenAI and/or Anthropic SDKs (required)  
-- **Bonus:** LangChain, Kafka, Redis, ArgoCD, Kubernetes  
+cp .env.example .env
+# Edit .env and add your ANTHROPIC_API_KEY or OPENAI_API_KEY
+```
 
-### 📦 Deliverables
+### 2. Start everything
 
-> 📥 **Your submission must be a Pull Request that includes:**
+```bash
+docker compose up
+```
 
-- A **backend API** that supports:
-  - Creating a campaign and its content pieces.
-  - Generating AI drafts (titles, descriptions, translations).
-  - Updating the review state of content.
-  - Querying campaigns with their content and review states.
-- A **frontend built with React** to:
-  - Display a campaign dashboard.
-  - Trigger AI draft generation.
-  - Provide UI to review/edit/approve/reject drafts.
-  - Show updates in real-time.
-- Docker setup to run the entire app locally.
-- A `README.md` with:
-  - Setup instructions.
-  - Tech decisions and tradeoffs.
-  - If applicable, reasoning for REST, GraphQL, or both.
-- A `docs/` folder for any diagrams, workflows, or extra notes.
+On first run this will:
+1. Pull `postgres:16-alpine` and build the backend/frontend images (~2 min)
+2. Wait for Postgres to be healthy
+3. Run Alembic migrations automatically
+4. Seed demo data (idempotent — safe to run multiple times)
+5. Start Uvicorn with hot-reload and Vite with HMR
 
-### 📂 Suggested Folder Structure
+Once up:
+- **Frontend:** http://localhost:5173
+- **Backend API:** http://localhost:8000
+- **API docs (Swagger):** http://localhost:8000/docs
+- **Health check:** http://localhost:8000/health
 
-```txt
-/
-├── .github/
-│   ├── workflows/
-│   └── PULL_REQUEST_TEMPLATE.md
+## Development commands
+
+```bash
+# Start everything
+docker compose up
+
+# Rebuild after dependency changes (pyproject.toml / package.json)
+docker compose up --build
+
+# Start in background
+docker compose up -d
+
+# View logs
+docker compose logs -f backend
+docker compose logs -f frontend
+
+# Enter the backend container
+docker compose exec backend bash
+
+# Run backend tests inside the container
+docker compose exec backend uv run pytest
+
+# Run backend linter/formatter
+docker compose exec backend uv run ruff check src tests scripts alembic
+docker compose exec backend uv run ruff format src tests scripts alembic
+
+# Apply a new migration
+docker compose exec backend alembic revision --autogenerate -m "add_something"
+docker compose exec backend alembic upgrade head
+
+# Reset the DB (tear down volumes + restart from scratch)
+docker compose down -v && docker compose up
+
+# Start only the database (useful for local backend dev outside Docker)
+docker compose up db -d
+```
+
+## Running outside Docker (local dev)
+
+### Backend
+
+```bash
+cd backend
+uv sync
+cp ../.env.example ../.env   # fill in your keys
+
+# Start Postgres first (see above), then:
+uv run alembic upgrade head
+uv run python -m scripts.seed
+uv run uvicorn src.main:app --reload
+```
+
+### Frontend
+
+```bash
+cd frontend
+pnpm install
+pnpm dev
+```
+
+## Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Backend | FastAPI + Pydantic v2 + SQLAlchemy 2 async + Alembic |
+| AI agent | LangGraph + LangChain + Anthropic SDK + OpenAI SDK |
+| Database | PostgreSQL 16 (also used as LangGraph checkpoint store) |
+| Real-time | Server-Sent Events (SSE) |
+| Frontend | Vite + React 19 + TypeScript + Tailwind 4 + shadcn/ui + TanStack Query |
+| Tests | pytest + pytest-asyncio (back) / Vitest + RTL (front) |
+| Lint/Format | Ruff (Python) / ESLint + Prettier (TypeScript) |
+| Containers | Docker + Docker Compose v2 |
+| CI | GitHub Actions (lint + test) |
+
+## Tech decisions & tradeoffs
+
+### Why LangGraph?
+
+The review workflow is fundamentally a state machine: generate → await human → (approve / reject / regenerate). LangGraph models this natively with `interrupt()` for suspending the graph at the human review node and resuming it with feedback. This makes the flow explicit, auditable, and easy to extend (e.g. adding auto-approve rules).
+
+### Why SSE over WebSockets?
+
+All real-time communication in this app is **server → client** (token streaming, workflow status updates). SSE is simpler, works over plain HTTP/2, and doesn't require a separate upgrade handshake. WebSockets add bidirectional complexity we don't need.
+
+### Why REST over GraphQL?
+
+The domain is small and well-defined. REST endpoints map cleanly to the entities (campaigns, content pieces, drafts, workflows). SSE complements REST for streaming. GraphQL subscriptions would add complexity with no benefit at this scale.
+
+### Why in-memory pub/sub?
+
+MVP uses `asyncio.Queue` per SSE subscriber. A Redis pub/sub backend can be swapped in for multi-worker deployments — the `InMemoryEventBus` interface is already designed for this.
+
+### Auth
+
+Authentication is **intentionally not implemented**. The app uses a hardcoded mock reviewer (`reviewer@acme.com`). Adding auth (e.g. JWT + OAuth) would be the next step for a production deployment.
+
+### Frontend in dev mode (not nginx)
+
+The Docker setup serves the frontend via `pnpm dev` (Vite HMR) rather than a production nginx build. This was a deliberate choice:
+- The challenge is evaluated locally, not deployed
+- HMR lets reviewers experiment without rebuilding
+- A production multi-stage build + nginx would be straightforward to add
+
+## Troubleshooting
+
+| Symptom | Likely cause | Solution |
+|---------|--------------|----------|
+| `compose up` hangs at "Waiting for postgres" | Port 5432 taken on host | `lsof -i :5432` and kill, or change the host port in compose.yml |
+| Frontend doesn't hot-reload on edit | Polling not active in Docker Desktop | Verify `usePolling: true` in `frontend/vite.config.ts` |
+| Backend won't start: `cannot connect to postgres` | Postgres not ready yet | Check healthcheck logs: `docker compose logs db` |
+| No AI drafts generated | Missing API keys | Copy `.env.example` → `.env` and fill in your key |
+| `docker compose up --build` fails on `pnpm install` | Network / cache issue | `docker system prune -af && docker compose build --no-cache` |
+| SSE doesn't receive events in browser | Proxy buffering | Verify response header `X-Accel-Buffering: no` |
+| `pnpm install` fails on Windows host | pnpm virtual store incompatibility | `frontend/.npmrc` sets `node-linker=hoisted` to fix this |
+| `ImportError: no pq wrapper available` | Missing libpq5 | Already patched in Dockerfile; rebuild with `docker compose up --build` |
+
+## Project structure
+
+```
+.
+├── compose.yml                # Docker Compose orchestration
+├── .env.example               # Template for required env vars
 ├── docs/
+│   ├── adr/                   # Architecture Decision Records
+│   └── specs/                 # Per-module implementation specs
 ├── backend/
 │   ├── src/
-│   ├── test/
+│   │   ├── api/               # FastAPI routers
+│   │   ├── ai/                # LLM providers, prompts, LangGraph
+│   │   ├── db/                # SQLAlchemy models + Alembic
+│   │   ├── services/          # Business logic / use cases
+│   │   └── events/            # In-memory pub/sub for SSE
+│   ├── scripts/
+│   │   ├── seed.py            # Demo data seed (idempotent)
+│   │   └── start.sh           # Container startup (migrate + seed + serve)
+│   ├── tests/
 │   └── Dockerfile
-├── frontend/
-│   ├── src/
-│   ├── public/
-│   └── Dockerfile
-├── compose.yml
-├── .env.example
-├── README.md
-├── .prettierrc.js
-├── eslint.config.mjs
-└── ...
-````
-
-## 🌟 Nice to Have
-
-> 💡 **Bonus Points For:**
-
-* Using **LangChain** to chain AI tasks (generate → translate → summarize).
-* Supporting **multi-model comparison** (OpenAI vs Anthropic).
-* Real-time features with WebSockets, GraphQL Subscriptions, or SSE.
-* Automated testing & GitHub Actions CI pipeline.
-* Unit/integration tests for API or AI-related logic.
-* Using Redis/Kafka for async event messaging.
-* Deploy manifests for Kubernetes or ArgoCD.
-
-## 🧪 Submission Guidelines
-
-1. **Fork this repository.**
-2. **Create a feature branch** for your implementation.
-3. **Commit your changes** with meaningful commit messages.
-4. **Open a Pull Request** following the provided template.
-5. **Our team will review** and provide feedback.
-
-## ✅ Evaluation Criteria
-
-> 🔍 **What we'll be looking at:**
-
-* Ability to work **across the stack** (NestJS/FastAPI/Go + PostgreSQL + React).
-* Integration of **AI features** in a clean, modular way.
-* Clear **data modeling** and workflow management.
-* **Human-in-the-loop UX** for reviewing AI content.
-* Documentation of assumptions, tradeoffs, and AI design choices.
-* Creativity in using AI to enhance the workflow.
-
-## 💬 Final Notes
-
-This challenge is designed to be **flexible**. Some tips:
-
-* If you’re stronger in backend, focus there but add a simple UI.
-* If you’re stronger in frontend, ensure your backend has clean APIs.
-* Time-box your work — we want to see **how you think and solve problems**, not perfection.
-* Surprise us with creative uses of AI! 🎉
-
-## 🏁 Good luck and have fun building!
-
-
+└── frontend/
+    ├── src/
+    │   ├── features/          # campaigns/, review/
+    │   ├── api/               # HTTP client + SSE hook
+    │   └── components/        # shadcn/ui + custom components
+    └── Dockerfile
 ```

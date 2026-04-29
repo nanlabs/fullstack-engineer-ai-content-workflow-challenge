@@ -17,17 +17,19 @@ Anyone with Docker and an API key can run the entire app with a single command. 
 │  compose.yml                                │
 │                                             │
 │  ┌─────────┐    ┌─────────┐    ┌─────────┐  │
-│  │postgres │←───│ backend │←───│frontend │  │
+│  │   db    │←───│ backend │←───│frontend │  │
 │  │  :5432  │    │  :8000  │    │  :5173  │  │
 │  └─────────┘    └─────────┘    └─────────┘  │
 └─────────────────────────────────────────────┘
 ```
 
+> **Deviation:** the Postgres service is named `db` (not `postgres`) — established in earlier specs; all DATABASE_URL references, compose commands, and documentation use `db`.
+
 ### `compose.yml`
 
 ```yaml
 services:
-  postgres:
+  db:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: postgres
@@ -49,7 +51,7 @@ services:
       dockerfile: Dockerfile
     environment:
       APP_ENV: development
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/acme_content
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/acme_content
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       DEFAULT_LLM_PROVIDER: ${DEFAULT_LLM_PROVIDER:-anthropic}
@@ -58,16 +60,13 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      postgres:
+      db:
         condition: service_healthy
     volumes:
       - ./backend/src:/app/src           # hot reload in dev
       - ./backend/alembic:/app/alembic
       - ./backend/scripts:/app/scripts
-    command: >
-      sh -c "uv run alembic upgrade head &&
-             uv run python -m scripts.seed --idempotent &&
-             uv run uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload"
+    command: /app/scripts/start.sh
 
   frontend:
     build:
@@ -90,34 +89,43 @@ volumes:
   postgres_data:
 ```
 
+> **Deviation:** backend `command` uses `scripts/start.sh` (not inline `sh -c "uv run ..."`) — cleaner as noted in spec notes. The script calls binaries directly from the venv (`alembic`, `python`, `uvicorn`) instead of `uv run ...` because the multi-stage runtime image does not include `uv`.
+
 ## Backend Dockerfile
+
+> **Deviation:** uses a multi-stage build (builder + runtime) instead of a single stage. The builder stage uses the official `uv` image to install dependencies into `.venv`; the runtime stage copies only the venv and application code. This avoids shipping build tools and is already established. `curl` and `libpq5` are installed in the runtime stage for the healthcheck and psycopg.
 
 `backend/Dockerfile`:
 
 ```dockerfile
-FROM python:3.12-slim AS base
-
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    UV_SYSTEM_PYTHON=1
-
-# uv for deps
-RUN pip install --no-cache-dir uv
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
 
 WORKDIR /app
-
-# install deps first (better cache)
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-install-project
+RUN uv sync --frozen --no-dev
 
-# copy source
-COPY src ./src
-COPY alembic ./alembic
+FROM python:3.12-slim AS runtime
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl libpq5 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY --from=builder /app/.venv /app/.venv
+COPY src/ ./src/
+COPY alembic/ ./alembic/
 COPY alembic.ini ./
-COPY scripts ./scripts
+COPY scripts/ ./scripts/
+RUN chmod +x ./scripts/start.sh
+
+ENV VIRTUAL_ENV=/app/.venv \
+    PATH="/app/.venv/bin:$PATH"
+
+HEALTHCHECK --interval=10s --timeout=3s --start-period=20s \
+  CMD curl -f http://localhost:8000/health || exit 1
 
 EXPOSE 8000
-CMD ["uv", "run", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["/app/scripts/start.sh"]
 ```
 
 `backend/.dockerignore`:
@@ -205,14 +213,21 @@ For SSE specifically, ensure the preflight does not break (test from browser, no
 `.env.example` (in root):
 
 ```bash
-# REQUIRED to use real LLMs (otherwise app uses MockProvider)
+# ──────────────────────────────────────────────────────────────────────────────
+# AI Provider Keys — at least one is required to use real LLMs.
+# Without any key the app falls back to MockProvider (fake text, full flow).
+# ──────────────────────────────────────────────────────────────────────────────
 ANTHROPIC_API_KEY=sk-ant-api03-...
 OPENAI_API_KEY=sk-proj-...
 
-# Optional
-DEFAULT_LLM_PROVIDER=anthropic   # or "openai" or "mock"
+# ──────────────────────────────────────────────────────────────────────────────
+# Optional tuning
+# ──────────────────────────────────────────────────────────────────────────────
+DEFAULT_LLM_PROVIDER=anthropic   # anthropic | openai | mock
 LOG_LEVEL=INFO
 ```
+
+> **Deviation:** `DATABASE_URL` and `APP_ENV` are NOT in `.env.example` — they are set directly in `compose.yml` environment block. The `.env` file only needs API keys.
 
 `.env` (NEVER commit):
 ```bash
@@ -269,24 +284,13 @@ docker compose exec backend uv run alembic upgrade head
 
 ## Seed script
 
-`scripts/seed.py` must be **idempotent** (running it twice does not break):
-
-```python
-async def seed():
-    async with async_session_factory() as session:
-        existing = await session.scalar(
-            select(Campaign).where(Campaign.name == "Spring Sale 2026")
-        )
-        if existing:
-            print("Seed already applied, skipping.")
-            return
-        # ... create data
-```
+`scripts/seed.py` is **idempotent** by default — checks for `"Spring Sale 2026"` campaign before inserting. A `--reset` flag wipes all seed tables (`Draft`, `WorkflowRun`, `ContentPiece`, `Campaign`, `PromptTemplate`) and recreates. `--idempotent` is an explicit alias for the default (skip-if-exists) behavior, used by `start.sh`.
 
 CLI:
 ```bash
-uv run python -m scripts.seed             # creates if not exists
-uv run python -m scripts.seed --reset     # wipes everything and recreates
+uv run python -m scripts.seed               # creates if not exists (idempotent)
+uv run python -m scripts.seed --idempotent  # explicit idempotent flag
+uv run python -m scripts.seed --reset       # wipes everything and recreates
 ```
 
 ## Troubleshooting documentation
@@ -336,13 +340,14 @@ docs(readme): add development commands and troubleshooting
 
 - `docker compose` (no hyphen) is the modern command (Compose v2). If anyone has `docker-compose` (v1), warn them in the README to upgrade.
 - The `--idempotent` seed must be robust to multiple executions.
-- If the backend `command` becomes too long, split into `scripts/start.sh`:
+- The backend startup command is split into `scripts/start.sh` (the spec suggested this as an option; it was adopted):
   ```bash
   #!/bin/sh
   set -e
-  uv run alembic upgrade head
-  uv run python -m scripts.seed --idempotent
-  exec uv run uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+  alembic upgrade head
+  python -m scripts.seed --idempotent
+  exec uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
   ```
+  Note: binaries called directly (not `uv run`) — runtime image has `.venv/bin` in PATH but does not have `uv`.
 - pnpm/node_modules volumes: do NOT mount `node_modules` from host because your host may have incompatible binaries (macOS vs alpine). Let the container use its own. Mount ONLY `src/`.
 - If the backend explodes at startup because the DB isn't ready, check that `depends_on` uses `service_healthy`, not just `service_started`.
