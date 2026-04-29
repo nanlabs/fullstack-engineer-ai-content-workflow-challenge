@@ -1,12 +1,12 @@
 import { useMutation } from "@tanstack/react-query";
-import { post } from "@/api/client";
+import { patch } from "@/api/client";
 import { queryClient } from "@/lib/query-client";
 import { contentPieceKeys } from "./content-pieces";
 import type { DraftRead, DraftReviewAction } from "./types";
 
 export const draftsApi = {
   review: (draftId: string, body: DraftReviewAction) =>
-    post<DraftRead>(`/api/drafts/${draftId}/review`, body),
+    patch<DraftRead>(`/api/drafts/${draftId}/review`, body),
 };
 
 export const draftKeys = {

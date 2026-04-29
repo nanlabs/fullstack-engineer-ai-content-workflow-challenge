@@ -3,7 +3,7 @@ from __future__ import annotations
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, StateGraph
 
-from src.ai.graph.nodes.await_human_review import await_human_review
+from src.ai.graph.nodes.await_human_review import await_human_review, persist_drafts
 from src.ai.graph.nodes.extract_metadata import extract_metadata
 from src.ai.graph.nodes.generate_draft import generate_draft
 from src.ai.graph.nodes.refine import refine
@@ -31,6 +31,7 @@ def build_graph(checkpointer: BaseCheckpointSaver) -> object:
     builder.add_node("generate_draft", generate_draft)
     builder.add_node("extract_metadata", extract_metadata)
     builder.add_node("translate_to_language", translate_to_language)
+    builder.add_node("persist_drafts", persist_drafts)
     builder.add_node("await_human_review", await_human_review)
     builder.add_node("refine", refine)
 
@@ -43,7 +44,10 @@ def build_graph(checkpointer: BaseCheckpointSaver) -> object:
         fan_out_translations,
         ["translate_to_language"],
     )
-    builder.add_edge("translate_to_language", "await_human_review")
+    # persist_drafts runs once before the interrupt node so DB writes don't
+    # double-fire when LangGraph re-executes await_human_review on resume.
+    builder.add_edge("translate_to_language", "persist_drafts")
+    builder.add_edge("persist_drafts", "await_human_review")
 
     builder.add_conditional_edges(
         "await_human_review",

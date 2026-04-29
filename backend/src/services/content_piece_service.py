@@ -14,7 +14,7 @@ from src.api.schemas.content_piece import (
     ContentPieceUpdate,
 )
 from src.api.schemas.draft import DraftRead
-from src.db.enums import WorkflowStatus
+from src.db.enums import DraftStatus, WorkflowStatus
 from src.db.models.campaign import Campaign
 from src.db.models.content_piece import ContentPiece
 from src.db.models.draft import Draft
@@ -115,12 +115,25 @@ def _to_detail(
 ) -> ContentPieceDetail:
     sorted_drafts = sorted(drafts, key=lambda d: d.created_at, reverse=True)
     draft_reads = [_draft_read(d) for d in sorted_drafts]
+
+    # Aggregate status: "suggested" if any latest draft per language still needs review.
+    seen_langs: set[str] = set()
+    latest_per_lang: list[Draft] = []
+    for d in sorted_drafts:
+        if d.language not in seen_langs:
+            seen_langs.add(d.language)
+            latest_per_lang.append(d)
+    if any(d.status == DraftStatus.suggested for d in latest_per_lang):
+        agg_status = DraftStatus.suggested
+    else:
+        agg_status = latest_per_lang[0].status if latest_per_lang else None
+
     return ContentPieceDetail(
         id=cp.id,
         type=cp.type,
         title=cp.title,
         has_drafts=len(drafts) > 0,
-        latest_status=sorted_drafts[0].status if sorted_drafts else None,
+        latest_status=agg_status,
         drafts_count=len(drafts),
         campaign_id=cp.campaign_id,
         source_language=source_language,

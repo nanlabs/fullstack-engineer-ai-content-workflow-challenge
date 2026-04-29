@@ -11,6 +11,7 @@ from src.api.errors import NotFoundError
 from src.api.schemas.campaign import CampaignCreate, CampaignDetail, CampaignRead, CampaignUpdate
 from src.api.schemas.common import PaginatedResponse
 from src.api.schemas.content_piece import ContentPieceSummary
+from src.db.enums import DraftStatus
 from src.db.models.campaign import Campaign
 from src.db.models.content_piece import ContentPiece
 from src.db.models.draft import Draft
@@ -143,12 +144,30 @@ def _to_detail(campaign: Campaign) -> CampaignDetail:
 def _piece_summary(cp: ContentPiece) -> ContentPieceSummary:
     drafts: list[Draft] = sorted(cp.drafts, key=lambda d: d.created_at, reverse=True)
     wr = cp.workflow_run
+
+    # Determine the latest draft per language (newest-first list → first seen wins).
+    seen_langs: set[str] = set()
+    latest_per_lang: list[Draft] = []
+    for d in drafts:
+        if d.language not in seen_langs:
+            seen_langs.add(d.language)
+            latest_per_lang.append(d)
+
+    # Aggregate status: "suggested" if any latest draft still needs review, otherwise
+    # use the most recent draft's status. This lets the campaign badge stay on
+    # "awaiting_review" until every language has been signed off, even after the
+    # AI workflow has completed.
+    if any(d.status == DraftStatus.suggested for d in latest_per_lang):
+        agg_status = DraftStatus.suggested
+    else:
+        agg_status = latest_per_lang[0].status if latest_per_lang else None
+
     return ContentPieceSummary(
         id=cp.id,
         type=cp.type,
         title=cp.title,
         has_drafts=len(drafts) > 0,
-        latest_status=drafts[0].status if drafts else None,
+        latest_status=agg_status,
         drafts_count=len(drafts),
         workflow_status=wr.status if wr is not None else None,
         latest_thread_id=wr.langgraph_thread_id if wr is not None else None,

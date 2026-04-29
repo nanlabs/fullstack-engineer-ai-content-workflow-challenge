@@ -33,6 +33,7 @@ const defaultProps = {
   contentPieceId: "piece-1",
   editorValue: "Spring Awakening: Bold New Colors to Light Up Your Style",
   isDirty: false,
+  isAwaitingHuman: true,
   onSaved: vi.fn(),
 };
 
@@ -41,12 +42,41 @@ describe("DraftActions", () => {
     vi.clearAllMocks();
   });
 
-  it("renders all four action buttons", () => {
-    renderWithProviders(<DraftActions {...defaultProps} />);
+  it("renders all four action buttons when awaiting human", () => {
+    renderWithProviders(<DraftActions {...defaultProps} isAwaitingHuman={true} />);
     expect(screen.getByTestId("approve-button")).toBeInTheDocument();
     expect(screen.getByTestId("reject-button")).toBeInTheDocument();
     expect(screen.getByTestId("regenerate-button")).toBeInTheDocument();
     expect(screen.getByTestId("save-edits-button")).toBeInTheDocument();
+  });
+
+  it("hides regenerate button when workflow is not awaiting human", () => {
+    renderWithProviders(<DraftActions {...defaultProps} isAwaitingHuman={false} />);
+    expect(screen.getByTestId("approve-button")).toBeInTheDocument();
+    expect(screen.getByTestId("reject-button")).toBeInTheDocument();
+    expect(screen.queryByTestId("regenerate-button")).not.toBeInTheDocument();
+    expect(screen.getByTestId("save-edits-button")).toBeInTheDocument();
+  });
+
+  it("approve uses reviewDraft when workflow is not awaiting human", async () => {
+    const reviewSpy = vi.fn();
+    server.use(
+      http.patch(`${BASE}/api/drafts/draft-1/review`, async ({ request }) => {
+        const body = await request.json();
+        reviewSpy(body);
+        return HttpResponse.json({ ...mockDraft, status: "approved" });
+      })
+    );
+
+    const user = userEvent.setup();
+    renderWithProviders(<DraftActions {...defaultProps} isAwaitingHuman={false} />);
+
+    await user.click(screen.getByTestId("approve-button"));
+    await user.click(screen.getByTestId("confirm-approve-button"));
+
+    await waitFor(() => {
+      expect(reviewSpy).toHaveBeenCalledWith(expect.objectContaining({ action: "approve" }));
+    });
   });
 
   it("save edits button is disabled when not dirty", () => {

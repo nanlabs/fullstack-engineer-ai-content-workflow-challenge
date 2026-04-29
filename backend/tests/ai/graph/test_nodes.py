@@ -286,20 +286,13 @@ async def test_persist_drafts_only_persists_latest_translations() -> None:
 
 async def test_await_human_review_returns_failed_when_iteration_cap_reached() -> None:
     """If iteration >= 5 and action == regenerate, node must return status='failed'."""
-    from unittest.mock import patch as mp
-
     state = _base_state(iteration=5)
     config = {"configurable": {"thread_id": "cap-test"}}
-
-    cm, session = _mock_session_cm()
     feedback = {"action": "regenerate", "edited_content": None, "notes": "Again"}
 
-    with (
-        mp("src.ai.graph.nodes.await_human_review.AsyncSessionLocal", return_value=cm),
-        mp(
-            "src.ai.graph.nodes.await_human_review.interrupt",
-            return_value=feedback,
-        ),
+    with patch(
+        "src.ai.graph.nodes.await_human_review.interrupt",
+        return_value=feedback,
     ):
         result = await await_human_review(state, config)  # type: ignore[arg-type]
 
@@ -311,14 +304,9 @@ async def test_await_human_review_returns_failed_when_iteration_cap_reached() ->
 async def test_await_human_review_returns_approved_status() -> None:
     state = _base_state(iteration=0)
     config = {"configurable": {"thread_id": "approve-test"}}
-
-    cm, _ = _mock_session_cm()
     feedback = {"action": "approve", "edited_content": None, "notes": None}
 
-    with (
-        patch("src.ai.graph.nodes.await_human_review.AsyncSessionLocal", return_value=cm),
-        patch("src.ai.graph.nodes.await_human_review.interrupt", return_value=feedback),
-    ):
+    with patch("src.ai.graph.nodes.await_human_review.interrupt", return_value=feedback):
         result = await await_human_review(state, config)  # type: ignore[arg-type]
 
     assert result["status"] == "approved"

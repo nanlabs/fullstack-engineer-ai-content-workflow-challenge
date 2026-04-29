@@ -5,6 +5,7 @@ import { ArrowLeftIcon, RefreshCwIcon, SparklesIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { campaignKeys } from "@/api/campaigns";
 import { contentPieceKeys, useContentPiece, useStartWorkflow } from "@/api/content-pieces";
 import { useWorkflow, workflowKeys } from "@/api/workflows";
 import { useEventStream, type SseEvent } from "@/lib/hooks/use-event-stream";
@@ -97,7 +98,14 @@ export default function ContentPieceDetailPage() {
 
   const workflowStatus = piece?.workflow_status ?? null;
   const isRunning = workflowStatus === "running" || workflowStatus === "pending";
+  // True only when the graph is at an interrupt — determines which API to call.
   const isAwaitingHuman = workflowStatus === "awaiting_human";
+  // For the banner: if the graph finished but some drafts are still suggested,
+  // keep showing "Awaiting review" until every language is signed off.
+  const displayWorkflowStatus =
+    workflowStatus === "completed" && piece?.latest_status === "suggested"
+      ? ("awaiting_human" as const)
+      : workflowStatus;
   const hasDrafts = (piece?.drafts.length ?? 0) > 0;
 
   const latestPerLanguage = getLatestDraftPerLanguage(piece?.drafts ?? []);
@@ -113,7 +121,6 @@ export default function ContentPieceDetailPage() {
     viewingDraftId !== null ||
     activeDraft?.status === "approved" ||
     activeDraft?.status === "rejected" ||
-    workflowStatus === "completed" ||
     workflowStatus === "failed";
 
   const editor = useDraftEditor(activeDraft);
@@ -121,6 +128,9 @@ export default function ContentPieceDetailPage() {
   function handleActionComplete() {
     editor.reset();
     setViewingDraftId(null);
+    if (piece?.campaign_id) {
+      queryClient.invalidateQueries({ queryKey: campaignKeys.detail(piece.campaign_id) });
+    }
   }
 
   if (!id) return null;
@@ -188,9 +198,9 @@ export default function ContentPieceDetailPage() {
       </div>
 
       {/* Workflow status banner */}
-      {workflowStatus && (
+      {displayWorkflowStatus && (
         <WorkflowStatusBanner
-          workflowStatus={workflowStatus}
+          workflowStatus={displayWorkflowStatus}
           workflowRun={workflowRun ?? null}
           currentDraft={latestDraft}
         />
@@ -278,13 +288,14 @@ export default function ContentPieceDetailPage() {
                     />
                   )}
 
-                  {isAwaitingHuman && viewingDraftId === null && threadId && (
+                  {!isReadonly && threadId && (
                     <DraftActions
                       draft={activeDraft}
                       threadId={threadId}
                       contentPieceId={piece.id}
                       editorValue={editor.value}
                       isDirty={editor.isDirty}
+                      isAwaitingHuman={isAwaitingHuman}
                       onSaved={handleActionComplete}
                     />
                   )}

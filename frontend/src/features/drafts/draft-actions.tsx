@@ -31,6 +31,7 @@ interface Props {
   contentPieceId: string;
   editorValue: string;
   isDirty: boolean;
+  isAwaitingHuman: boolean;
   onSaved: () => void;
 }
 
@@ -40,6 +41,7 @@ export function DraftActions({
   contentPieceId,
   editorValue,
   isDirty,
+  isAwaitingHuman,
   onSaved,
 }: Props) {
   const [rejectOpen, setRejectOpen] = useState(false);
@@ -65,38 +67,66 @@ export function DraftActions({
   }
 
   function handleApprove() {
-    resumeWorkflow.mutate(
-      {
-        threadId,
-        body: {
-          action: "approve",
-          draft_id: draft.id,
-          edited_content: isDirty ? editorValue : undefined,
+    if (isAwaitingHuman) {
+      resumeWorkflow.mutate(
+        {
+          threadId,
+          body: {
+            action: "approve",
+            draft_id: draft.id,
+            edited_content: isDirty ? editorValue : undefined,
+          },
         },
-      },
-      {
-        onSuccess: () => {
-          toast.success("Draft approved");
-          onSaved();
-        },
-        onError: (err) => toast.error(err.message ?? "Failed to approve draft"),
-      }
-    );
+        {
+          onSuccess: () => {
+            toast.success("Draft approved");
+            onSaved();
+          },
+          onError: (err) => toast.error(err.message ?? "Failed to approve draft"),
+        }
+      );
+    } else {
+      reviewDraft.mutate(
+        { draftId: draft.id, body: { action: "approve" } },
+        {
+          onSuccess: () => {
+            toast.success("Draft approved");
+            onSaved();
+          },
+          onError: (err) => toast.error(err.message ?? "Failed to approve draft"),
+        }
+      );
+    }
   }
 
   function handleReject() {
-    resumeWorkflow.mutate(
-      { threadId, body: { action: "reject", draft_id: draft.id, notes: rejectNotes } },
-      {
-        onSuccess: () => {
-          toast.success("Draft rejected");
-          setRejectOpen(false);
-          setRejectNotes("");
-          onSaved();
-        },
-        onError: (err) => toast.error(err.message ?? "Failed to reject draft"),
-      }
-    );
+    if (isAwaitingHuman) {
+      resumeWorkflow.mutate(
+        { threadId, body: { action: "reject", draft_id: draft.id, notes: rejectNotes } },
+        {
+          onSuccess: () => {
+            toast.success("Draft rejected");
+            setRejectOpen(false);
+            setRejectNotes("");
+            onSaved();
+          },
+          onError: (err) => toast.error(err.message ?? "Failed to reject draft"),
+        }
+      );
+    } else {
+      reviewDraft.mutate(
+        { draftId: draft.id, body: { action: "reject", review_notes: rejectNotes } },
+        {
+          onSuccess: () => {
+            toast.success("Draft rejected");
+            setRejectOpen(false);
+            setRejectNotes("");
+            onSaved();
+          },
+          onError: (err) => toast.error(err.message ?? "Failed to reject draft"),
+        }
+      );
+    }
   }
 
   function handleRegenerate() {
@@ -160,17 +190,19 @@ export function DraftActions({
         Reject
       </Button>
 
-      {/* Regenerate */}
-      <Button
-        size="sm"
-        variant="outline"
-        disabled={isPending}
-        onClick={() => setRegenerateOpen(true)}
-        data-testid="regenerate-button"
-      >
-        <RefreshCwIcon className="mr-1.5 h-4 w-4" />
-        Regenerate
-      </Button>
+      {/* Regenerate — only available while workflow is still at the interrupt */}
+      {isAwaitingHuman && (
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={isPending}
+          onClick={() => setRegenerateOpen(true)}
+          data-testid="regenerate-button"
+        >
+          <RefreshCwIcon className="mr-1.5 h-4 w-4" />
+          Regenerate
+        </Button>
+      )}
 
       {/* Save edits */}
       <Button

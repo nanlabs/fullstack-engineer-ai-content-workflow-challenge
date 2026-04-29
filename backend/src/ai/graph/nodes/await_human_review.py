@@ -58,17 +58,24 @@ async def _persist_drafts_from_state(
     await session.commit()  # type: ignore[union-attr]
 
 
-async def await_human_review(
+async def persist_drafts(
     state: ContentWorkflowState,
     config: RunnableConfig,
 ) -> dict:
+    """Persist source draft + translations to DB once per review cycle.
+
+    Runs as a separate node before await_human_review so the DB writes and the
+    awaiting_human event are emitted exactly once — LangGraph re-executes a node
+    from its top when resuming an interrupt, which would double-write if this logic
+    lived inside await_human_review.
+    """
     thread_id: str = config["configurable"]["thread_id"]
 
     async with AsyncSessionLocal() as session:
         await _persist_drafts_from_state(session, state, thread_id)
 
     logger.info(
-        "awaiting_human_review",
+        "drafts_persisted",
         content_piece_id=state["content_piece_id"],
         thread_id=thread_id,
         iteration=state["iteration"],
@@ -86,6 +93,22 @@ async def await_human_review(
             content_piece_id=content_piece_id,
             payload={"iteration": state["iteration"]},
         ),
+    )
+
+    return {}
+
+
+async def await_human_review(
+    state: ContentWorkflowState,
+    config: RunnableConfig,
+) -> dict:
+    thread_id: str = config["configurable"]["thread_id"]
+
+    logger.info(
+        "awaiting_human_review",
+        content_piece_id=state["content_piece_id"],
+        thread_id=thread_id,
+        iteration=state["iteration"],
     )
 
     # Graph suspends here; resumes when Command(resume=feedback) is issued.

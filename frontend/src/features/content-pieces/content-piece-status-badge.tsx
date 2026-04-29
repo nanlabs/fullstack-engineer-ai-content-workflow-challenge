@@ -23,6 +23,11 @@ export function getDisplayStatus(piece: ContentPieceSummary): DisplayStatus {
   if (ws === "running" || ws === "pending") return "generating";
   if (ws === "awaiting_human") return "awaiting_review";
   if (ws === "failed") return "failed";
+  // Workflow completed but translations may still need human sign-off:
+  // stay on "awaiting_review" until latest_status is no longer "suggested".
+  if (ws === "completed") {
+    return piece.latest_status === "suggested" ? "awaiting_review" : "completed";
+  }
 
   if (!piece.has_drafts) return "draft";
   if (piece.latest_status === "approved") return "completed";
