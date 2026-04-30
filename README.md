@@ -6,27 +6,46 @@ Full-stack system for **ACME GLOBAL MEDIA** to manage a multilingual content wor
 
 ## Architecture overview
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Browser (React + Vite)                                     │
-│  :5173 — Campaigns dashboard, Review UI, SSE token stream   │
-└────────────────────┬────────────────────────────────────────┘
-                     │ HTTP + SSE
-┌────────────────────▼────────────────────────────────────────┐
-│  FastAPI backend                                            │
-│  :8000 — REST API, SSE endpoints, LangGraph runner         │
-│                                                             │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │  LangGraph content workflow (human-in-the-loop)      │   │
-│  │  generate_draft → await_human_review → refine/done   │   │
-│  └──────────────────────────────────────────────────────┘   │
-└────────────────────┬────────────────────────────────────────┘
-                     │ asyncpg
-┌────────────────────▼────────────────────────────────────────┐
-│  PostgreSQL 16                                              │
-│  :5432 — campaigns, content_pieces, drafts, workflow_runs   │
-│           + LangGraph checkpoint store                      │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+
+    subgraph Frontend["Browser - React SPA"]
+        direction TB
+        UI["shadcn/ui + Tailwind v4"]
+        RQ["React Query - State Management"]
+        SSE_C["SSE Client - Real-time Updates"]
+
+        UI --> RQ
+        RQ --> SSE_C
+    end
+
+    subgraph Backend["FastAPI - Python 3.12"]
+        direction TB
+        API["REST Endpoints"]
+        BUS["In-Memory Event Bus"]
+        LG["LangGraph State Machine"]
+        LLM["LLM Provider Abstraction"]
+
+        API --> LG
+        LG --> LLM
+        API --> BUS
+    end
+
+    subgraph Infrastructure
+        direction TB
+        LG_CP["LangGraph Checkpointer"]
+        DB[("PostgreSQL 16")]
+
+        LG_CP --- DB
+    end
+
+    UI --> API
+    LLM --> Providers["External LLM Providers"]
+
+    API <--> DB
+    LG <--> LG_CP
+
+    BUS -.-> SSE_C
 ```
 
 **Key design decision:** the review workflow (Draft → Suggested → Reviewed → Approved/Rejected) is modeled as a **LangGraph graph with `interrupt()` for human-in-the-loop**, not as loose CRUD endpoints. See [`docs/adr/`](docs/adr/) for all architectural decision records.
@@ -55,6 +74,7 @@ docker compose up
 ```
 
 On first run this will:
+
 1. Pull `postgres:16-alpine` and build the backend/frontend images (~2 min)
 2. Wait for Postgres to be healthy
 3. Run Alembic migrations automatically
@@ -62,6 +82,7 @@ On first run this will:
 5. Start Uvicorn with hot-reload and Vite with HMR
 
 Once up:
+
 - **Frontend:** http://localhost:5173
 - **Backend API:** http://localhost:8000
 - **API docs (Swagger):** http://localhost:8000/docs
@@ -129,17 +150,17 @@ pnpm dev
 
 ## Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Backend | FastAPI + Pydantic v2 + SQLAlchemy 2 async + Alembic |
-| AI agent | LangGraph + LangChain + Anthropic SDK + OpenAI SDK |
-| Database | PostgreSQL 16 (also used as LangGraph checkpoint store) |
-| Real-time | Server-Sent Events (SSE) |
-| Frontend | Vite + React 19 + TypeScript + Tailwind 4 + shadcn/ui + TanStack Query |
-| Tests | pytest + pytest-asyncio (back) / Vitest + RTL (front) |
-| Lint/Format | Ruff (Python) / ESLint + Prettier (TypeScript) |
-| Containers | Docker + Docker Compose v2 |
-| CI | GitHub Actions (lint + test) |
+| Layer       | Technology                                                             |
+| ----------- | ---------------------------------------------------------------------- |
+| Backend     | FastAPI + Pydantic v2 + SQLAlchemy 2 async + Alembic                   |
+| AI agent    | LangGraph + LangChain + Anthropic SDK + OpenAI SDK                     |
+| Database    | PostgreSQL 16 (also used as LangGraph checkpoint store)                |
+| Real-time   | Server-Sent Events (SSE)                                               |
+| Frontend    | Vite + React 19 + TypeScript + Tailwind 4 + shadcn/ui + TanStack Query |
+| Tests       | pytest + pytest-asyncio (back) / Vitest + RTL (front)                  |
+| Lint/Format | Ruff (Python) / ESLint + Prettier (TypeScript)                         |
+| Containers  | Docker + Docker Compose v2                                             |
+| CI          | GitHub Actions (lint + test)                                           |
 
 ## Tech decisions & tradeoffs
 
@@ -166,22 +187,23 @@ Authentication is **intentionally not implemented**. The app uses a hardcoded mo
 ### Frontend in dev mode (not nginx)
 
 The Docker setup serves the frontend via `pnpm dev` (Vite HMR) rather than a production nginx build. This was a deliberate choice:
+
 - The challenge is evaluated locally, not deployed
 - HMR lets reviewers experiment without rebuilding
 - A production multi-stage build + nginx would be straightforward to add
 
 ## Troubleshooting
 
-| Symptom | Likely cause | Solution |
-|---------|--------------|----------|
-| `compose up` hangs at "Waiting for postgres" | Port 5432 taken on host | `lsof -i :5432` and kill, or change the host port in compose.yml |
-| Frontend doesn't hot-reload on edit | Polling not active in Docker Desktop | Verify `usePolling: true` in `frontend/vite.config.ts` |
-| Backend won't start: `cannot connect to postgres` | Postgres not ready yet | Check healthcheck logs: `docker compose logs db` |
-| No AI drafts generated | Missing API keys | Copy `.env.example` → `.env` and fill in your key |
-| `docker compose up --build` fails on `pnpm install` | Network / cache issue | `docker system prune -af && docker compose build --no-cache` |
-| SSE doesn't receive events in browser | Proxy buffering | Verify response header `X-Accel-Buffering: no` |
-| `pnpm install` fails on Windows host | pnpm virtual store incompatibility | `frontend/.npmrc` sets `node-linker=hoisted` to fix this |
-| `ImportError: no pq wrapper available` | Missing libpq5 | Already patched in Dockerfile; rebuild with `docker compose up --build` |
+| Symptom                                             | Likely cause                         | Solution                                                                |
+| --------------------------------------------------- | ------------------------------------ | ----------------------------------------------------------------------- |
+| `compose up` hangs at "Waiting for postgres"        | Port 5432 taken on host              | `lsof -i :5432` and kill, or change the host port in compose.yml        |
+| Frontend doesn't hot-reload on edit                 | Polling not active in Docker Desktop | Verify `usePolling: true` in `frontend/vite.config.ts`                  |
+| Backend won't start: `cannot connect to postgres`   | Postgres not ready yet               | Check healthcheck logs: `docker compose logs db`                        |
+| No AI drafts generated                              | Missing API keys                     | Copy `.env.example` → `.env` and fill in your key                       |
+| `docker compose up --build` fails on `pnpm install` | Network / cache issue                | `docker system prune -af && docker compose build --no-cache`            |
+| SSE doesn't receive events in browser               | Proxy buffering                      | Verify response header `X-Accel-Buffering: no`                          |
+| `pnpm install` fails on Windows host                | pnpm virtual store incompatibility   | `frontend/.npmrc` sets `node-linker=hoisted` to fix this                |
+| `ImportError: no pq wrapper available`              | Missing libpq5                       | Already patched in Dockerfile; rebuild with `docker compose up --build` |
 
 ## Project structure
 
