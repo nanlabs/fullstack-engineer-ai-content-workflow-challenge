@@ -1,16 +1,22 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from uuid import UUID
 
 import structlog
 from langgraph.types import Command
+from sqlalchemy import select
 from sqlalchemy import update as sa_update
+from sqlalchemy.orm import selectinload
 
 from src.ai.graph.state import HumanFeedback
 from src.config import settings
 from src.db.enums import WorkflowStatus
 from src.db.models.workflow_run import WorkflowRun
 from src.db.session import AsyncSessionLocal
+from src.events.bus import get_event_bus
+from src.events.topics import publish_workflow_event
+from src.events.types import Event, EventType
 
 # AsyncPostgresSaver is imported lazily inside init_runner() to avoid triggering
 # the psycopg / libpq import chain at module load time (which fails if libpq is absent).
@@ -97,7 +103,20 @@ class WorkflowRunner:
         return self._graph
 
     async def _mark_failed(self, thread_id: str, error: str) -> None:
+        content_piece_id: UUID | None = None
+        campaign_id: UUID | None = None
+
         async with AsyncSessionLocal() as session:
+            result = await session.execute(
+                select(WorkflowRun)
+                .options(selectinload(WorkflowRun.content_piece))
+                .where(WorkflowRun.langgraph_thread_id == thread_id)
+            )
+            run = result.scalar_one_or_none()
+            if run is not None:
+                content_piece_id = run.content_piece_id
+                campaign_id = run.content_piece.campaign_id
+
             await session.execute(
                 sa_update(WorkflowRun)
                 .where(WorkflowRun.langgraph_thread_id == thread_id)
@@ -108,3 +127,15 @@ class WorkflowRunner:
                 )
             )
             await session.commit()
+
+        await publish_workflow_event(
+            get_event_bus(),
+            Event(
+                type=EventType.WORKFLOW_FAILED,
+                timestamp=datetime.now(tz=UTC),
+                thread_id=thread_id,
+                campaign_id=campaign_id,
+                content_piece_id=content_piece_id,
+                payload={"error": error},
+            ),
+        )
