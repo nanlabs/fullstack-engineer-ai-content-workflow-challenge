@@ -18,7 +18,7 @@ from src.ai.providers.base import (
 
 class AnthropicProvider:
     name = "anthropic"
-    default_model = "claude-3-5-sonnet-20241022"
+    default_model = "claude-4-6-sonnet-20260217"
 
     def __init__(self, api_key: str) -> None:
         self._client = anthropic.AsyncAnthropic(api_key=api_key)

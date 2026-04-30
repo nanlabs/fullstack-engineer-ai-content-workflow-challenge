@@ -18,7 +18,7 @@ from src.ai.providers.base import (
 
 class OpenAIProvider:
     name = "openai"
-    default_model = "gpt-4o"
+    default_model = "gpt-5.3-instant"
 
     def __init__(self, api_key: str) -> None:
         self._client = openai.AsyncOpenAI(api_key=api_key)

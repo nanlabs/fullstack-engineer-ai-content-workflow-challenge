@@ -97,7 +97,7 @@ export function ContentPieceStatusBadge({ piece, currentNode, className }: Props
             "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
           )}
         >
-          �� Completed
+          ✅ Completed
         </span>
       );
 
