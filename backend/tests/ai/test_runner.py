@@ -58,8 +58,11 @@ async def test_run_graph_marks_failed_on_exception() -> None:
     mock_graph.ainvoke.side_effect = RuntimeError("graph exploded")
     runner = WorkflowRunner(mock_graph)
 
+    result_mock = MagicMock()
+    result_mock.scalar_one_or_none.return_value = None
+
     session = AsyncMock()
-    session.execute = AsyncMock()
+    session.execute = AsyncMock(return_value=result_mock)
     session.commit = AsyncMock()
 
     cm = MagicMock()
@@ -69,7 +72,7 @@ async def test_run_graph_marks_failed_on_exception() -> None:
     with patch("src.ai.graph.runner.AsyncSessionLocal", return_value=cm):
         await runner.run_graph("thread-fail", {})
 
-    session.execute.assert_awaited_once()
+    assert session.execute.await_count == 2
     session.commit.assert_awaited_once()
 
 
@@ -98,8 +101,11 @@ async def test_resume_marks_failed_on_exception() -> None:
     mock_graph.ainvoke.side_effect = Exception("resume failed")
     runner = WorkflowRunner(mock_graph)
 
+    result_mock = MagicMock()
+    result_mock.scalar_one_or_none.return_value = None
+
     session = AsyncMock()
-    session.execute = AsyncMock()
+    session.execute = AsyncMock(return_value=result_mock)
     session.commit = AsyncMock()
 
     cm = MagicMock()
@@ -110,6 +116,7 @@ async def test_resume_marks_failed_on_exception() -> None:
         feedback: HumanFeedback = {"action": "reject", "edited_content": None, "notes": "bad"}
         await runner.resume("thread-fail", feedback)
 
+    assert session.execute.await_count == 2
     session.commit.assert_awaited_once()
 
 
