@@ -18,6 +18,7 @@ export function DraftDiffView({ aiContent, editedContent }: Props) {
           splitView={false}
           hideLineNumbers
           showDiffOnly={false}
+          useDarkTheme
         />
       </div>
     </div>
