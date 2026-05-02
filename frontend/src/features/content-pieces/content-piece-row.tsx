@@ -1,9 +1,20 @@
 import { useNavigate } from "react-router";
-import { RefreshCwIcon } from "lucide-react";
+import { RefreshCwIcon, Trash2Icon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useWorkflow } from "@/api/workflows";
-import { useStartWorkflow } from "@/api/content-pieces";
+import { useStartWorkflow, useDeleteContentPiece } from "@/api/content-pieces";
 import { toast } from "sonner";
 import { ContentPieceStatusBadge, getDisplayStatus } from "./content-piece-status-badge";
 import { GenerateButton } from "./generate-button";
@@ -18,9 +29,10 @@ const TYPE_LABELS: Record<string, string> = {
 
 interface Props {
   piece: ContentPieceSummary;
+  campaignId: string;
 }
 
-export function ContentPieceRow({ piece }: Props) {
+export function ContentPieceRow({ piece, campaignId }: Props) {
   const navigate = useNavigate();
   const displayStatus = getDisplayStatus(piece);
 
@@ -29,6 +41,7 @@ export function ContentPieceRow({ piece }: Props) {
   const { data: workflowRun } = useWorkflow(isGenerating ? (piece.latest_thread_id ?? null) : null);
 
   const regenerate = useStartWorkflow();
+  const deletePiece = useDeleteContentPiece(campaignId);
 
   function handleRegenerate() {
     regenerate.mutate(
@@ -39,6 +52,14 @@ export function ContentPieceRow({ piece }: Props) {
         },
       }
     );
+  }
+
+  function handleDelete() {
+    deletePiece.mutate(piece.id, {
+      onError: (err) => {
+        toast.error(err.message ?? "Failed to delete content piece");
+      },
+    });
   }
 
   return (
@@ -75,6 +96,27 @@ export function ContentPieceRow({ piece }: Props) {
             {regenerate.isPending ? "Starting…" : "Regenerate"}
           </Button>
         )}
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button size="sm" variant="ghost" disabled={deletePiece.isPending}>
+              <Trash2Icon className="h-4 w-4" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete content piece?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete this content piece and all its drafts. This action
+                cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

@@ -39,7 +39,7 @@ export function ContentPiecesList({ pieces, campaignId, isLoading }: Props) {
       ) : (
         <div className="space-y-2">
           {pieces.map((piece) => (
-            <ContentPieceRow key={piece.id} piece={piece} />
+            <ContentPieceRow key={piece.id} piece={piece} campaignId={campaignId} />
           ))}
         </div>
       )}
