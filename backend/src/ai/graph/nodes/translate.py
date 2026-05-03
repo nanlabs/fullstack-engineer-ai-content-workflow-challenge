@@ -1,18 +1,37 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 import structlog
+from langchain_core.runnables import RunnableConfig
 from langgraph.types import Send
 
 from src.ai.graph.state import ContentWorkflowState
 from src.ai.observability import log_llm_call
 from src.ai.prompts.registry import registry
 from src.ai.providers.factory import get_provider
+from src.events.bus import get_event_bus
+from src.events.topics import publish_workflow_event
+from src.events.types import Event, EventType
 
 logger = structlog.get_logger(__name__)
 
 
-async def translate_to_language(state: dict) -> dict:
+async def translate_to_language(state: dict, config: RunnableConfig) -> dict:
     """Per-language translation node — receives a sub-state from Send fan-out."""
+    thread_id: str | None = (config.get("configurable") or {}).get("thread_id")
+    bus = get_event_bus()
+
+    def _event(etype: EventType) -> Event:
+        return Event(
+            type=etype,
+            timestamp=datetime.now(tz=UTC),
+            thread_id=thread_id,
+            payload={"node": "translate_to_language", "language": state["target_language"]},
+        )
+
+    await publish_workflow_event(bus, _event(EventType.WORKFLOW_NODE_STARTED))
+
     provider = get_provider()
     prompt = registry.render(
         "translation",
@@ -28,6 +47,9 @@ async def translate_to_language(state: dict) -> dict:
         target_language=state["target_language"],
         length=len(response.content),
     )
+
+    await publish_workflow_event(bus, _event(EventType.WORKFLOW_NODE_COMPLETED))
+
     return {
         "translations": [
             {

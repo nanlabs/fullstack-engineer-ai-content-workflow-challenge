@@ -69,8 +69,16 @@ class MockProvider:
     name = "mock"
     default_model = "mock-model-v1"
 
-    def __init__(self, fixtures: dict[str, str] | None = None) -> None:
+    def __init__(
+        self,
+        fixtures: dict[str, str] | None = None,
+        *,
+        initial_delay: float = 0.8,
+        chunk_delay: float = 0.1,
+    ) -> None:
         self._fixtures = fixtures or {}
+        self._initial_delay = initial_delay
+        self._chunk_delay = chunk_delay
 
     async def generate(
         self,
@@ -102,8 +110,11 @@ class MockProvider:
             max_tokens=max_tokens,
             temperature=temperature,
         )
+        # Simulate realistic first-token latency so the SSE connection has time
+        # to be established before chunks start arriving. Real LLMs take 0.5-2s.
+        await asyncio.sleep(self._initial_delay)
         for word in response.content.split():
-            await asyncio.sleep(0.02)
+            await asyncio.sleep(self._chunk_delay)
             yield LLMStreamChunk(delta=word + " ")
         yield LLMStreamChunk(delta="", is_final=True, response=response)
 

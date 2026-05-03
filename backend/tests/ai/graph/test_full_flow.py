@@ -61,7 +61,9 @@ def _make_provider() -> MockProvider:
             "sentiment": _METADATA_JSON,
             # translation prompt contains 'translate'
             "translate": _TRANSLATION_ES,
-        }
+        },
+        initial_delay=0,
+        chunk_delay=0.02,
     )
 
 

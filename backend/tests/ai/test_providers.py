@@ -170,7 +170,7 @@ async def test_mock_provider_returns_generic_when_no_fixture_matches() -> None:
 
 
 async def test_mock_provider_stream_yields_chunks() -> None:
-    provider = MockProvider(fixtures={"test": "one two three"})
+    provider = MockProvider(fixtures={"test": "one two three"}, initial_delay=0, chunk_delay=0)
     chunks = []
 
     async for chunk in provider.generate_stream("test prompt"):
@@ -254,8 +254,10 @@ async def test_fallback_uses_primary_when_healthy() -> None:
 
 
 async def test_fallback_stream_falls_back_on_primary_error() -> None:
-    primary = MockProvider(fixtures={"test": "should fail"})
-    fallback = MockProvider(fixtures={"test": "fallback stream content"})
+    primary = MockProvider(fixtures={"test": "should fail"}, initial_delay=0, chunk_delay=0)
+    fallback = MockProvider(
+        fixtures={"test": "fallback stream content"}, initial_delay=0, chunk_delay=0
+    )
 
     async def _fail_stream(*args: object, **kwargs: object):  # type: ignore[return]
         raise AIRateLimitError("rate limited")
@@ -272,8 +274,8 @@ async def test_fallback_stream_falls_back_on_primary_error() -> None:
 
 
 async def test_fallback_stream_uses_primary_when_healthy() -> None:
-    primary = MockProvider(fixtures={"test": "primary stream"})
-    fallback = MockProvider(fixtures={"test": "should not be used"})
+    primary = MockProvider(fixtures={"test": "primary stream"}, initial_delay=0, chunk_delay=0)
+    fallback = MockProvider(fixtures={"test": "should not be used"}, initial_delay=0, chunk_delay=0)
 
     wrapper = FallbackProvider(primary=primary, fallback=fallback)
     chunks = [chunk async for chunk in wrapper.generate_stream("test prompt")]

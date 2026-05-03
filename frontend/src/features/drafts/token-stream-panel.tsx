@@ -33,9 +33,9 @@ export const TokenStreamPanel = memo(function TokenStreamPanel({ threadId, activ
     !!threadId
   );
 
-  if (!activeNode && !streamedText) return null;
+  if (!threadId) return null;
 
-  const nodeLabel = activeNode ? (NODE_LABELS[activeNode] ?? activeNode) : "generating";
+  const nodeLabel = activeNode ? (NODE_LABELS[activeNode] ?? activeNode) : "starting";
 
   return (
     <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20">

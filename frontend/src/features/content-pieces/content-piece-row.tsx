@@ -47,6 +47,10 @@ export function ContentPieceRow({ piece, campaignId }: Props) {
     regenerate.mutate(
       { contentPieceId: piece.id },
       {
+        onSuccess: (data) =>
+          navigate(`/content-pieces/${piece.id}`, {
+            state: { pendingThreadId: data.thread_id },
+          }),
         onError: (err) => {
           toast.error(err.message ?? "Failed to start generation");
         },
@@ -75,7 +79,16 @@ export function ContentPieceRow({ piece, campaignId }: Props) {
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
-        {displayStatus === "draft" && <GenerateButton contentPieceId={piece.id} />}
+        {displayStatus === "draft" && (
+          <GenerateButton
+            contentPieceId={piece.id}
+            onStart={(threadId) =>
+              navigate(`/content-pieces/${piece.id}`, {
+                state: { pendingThreadId: threadId },
+              })
+            }
+          />
+        )}
 
         {displayStatus === "awaiting_review" && (
           <Button size="sm" onClick={() => navigate(`/content-pieces/${piece.id}`)}>

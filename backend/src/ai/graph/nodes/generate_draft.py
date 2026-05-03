@@ -52,6 +52,11 @@ async def generate_draft(
             payload=payload,
         )
 
+    await publish_workflow_event(
+        bus,
+        _make_event(EventType.WORKFLOW_NODE_STARTED, {"node": "generate_draft"}),
+    )
+
     full_text = ""
     buffer = ""
     last_flush = time.monotonic()

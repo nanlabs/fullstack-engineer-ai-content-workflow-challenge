@@ -24,5 +24,7 @@ def mock_provider() -> MockProvider:
                     "estimated_reading_time_seconds": 3,
                 }
             ),
-        }
+        },
+        initial_delay=0,
+        chunk_delay=0.02,
     )

@@ -68,12 +68,15 @@ def _mock_session_cm() -> tuple[MagicMock, AsyncMock]:
 # ---------------------------------------------------------------------------
 
 
-_DRAFT_CONFIG: dict = {"configurable": {"thread_id": "test-thread"}}
+_CONFIG: dict = {"configurable": {"thread_id": "test-thread"}}
+_DRAFT_CONFIG = _CONFIG  # alias kept for clarity in generate_draft tests
 
 
 async def test_generate_draft_node_updates_initial_draft() -> None:
     state = _base_state()
-    provider = MockProvider(fixtures={"launch": "Buy our amazing widget today!"})
+    provider = MockProvider(
+        fixtures={"launch": "Buy our amazing widget today!"}, initial_delay=0, chunk_delay=0
+    )
 
     with (
         patch("src.ai.graph.nodes.generate_draft.get_provider", return_value=provider),
@@ -88,7 +91,7 @@ async def test_generate_draft_node_updates_initial_draft() -> None:
 
 async def test_generate_draft_node_uses_source_text() -> None:
     state = _base_state(source_text="reference copy here")
-    provider = MockProvider()
+    provider = MockProvider(initial_delay=0, chunk_delay=0)
 
     with (
         patch("src.ai.graph.nodes.generate_draft.get_provider", return_value=provider),
@@ -101,7 +104,7 @@ async def test_generate_draft_node_uses_source_text() -> None:
 
 async def test_generate_draft_handles_none_source_text() -> None:
     state = _base_state(source_text=None)
-    provider = MockProvider()
+    provider = MockProvider(initial_delay=0, chunk_delay=0)
 
     with (
         patch("src.ai.graph.nodes.generate_draft.get_provider", return_value=provider),
@@ -122,8 +125,11 @@ async def test_extract_metadata_returns_structured() -> None:
     # fixture key "sentiment" appears in the metadata_extraction template
     provider = MockProvider(fixtures={"sentiment": _METADATA_JSON})
 
-    with patch("src.ai.graph.nodes.extract_metadata.get_provider", return_value=provider):
-        result = await extract_metadata(state)
+    with (
+        patch("src.ai.graph.nodes.extract_metadata.get_provider", return_value=provider),
+        patch("src.ai.graph.nodes.extract_metadata.publish_workflow_event", new_callable=AsyncMock),
+    ):
+        result = await extract_metadata(state, _CONFIG)
 
     assert result["metadata"] is not None
     meta = result["metadata"]
@@ -139,8 +145,11 @@ async def test_extract_metadata_schema_is_dict_in_state() -> None:
     state = _base_state(initial_draft="Some great copy.")
     provider = MockProvider(fixtures={"sentiment": _METADATA_JSON})
 
-    with patch("src.ai.graph.nodes.extract_metadata.get_provider", return_value=provider):
-        result = await extract_metadata(state)
+    with (
+        patch("src.ai.graph.nodes.extract_metadata.get_provider", return_value=provider),
+        patch("src.ai.graph.nodes.extract_metadata.publish_workflow_event", new_callable=AsyncMock),
+    ):
+        result = await extract_metadata(state, _CONFIG)
 
     assert isinstance(result["metadata"], dict)
 
@@ -184,8 +193,11 @@ async def test_translate_to_language_returns_one_entry() -> None:
     }
     provider = MockProvider(fixtures={"buy": "¡Compra ahora!"})
 
-    with patch("src.ai.graph.nodes.translate.get_provider", return_value=provider):
-        result = await translate_to_language(sub_state)
+    with (
+        patch("src.ai.graph.nodes.translate.get_provider", return_value=provider),
+        patch("src.ai.graph.nodes.translate.publish_workflow_event", new_callable=AsyncMock),
+    ):
+        result = await translate_to_language(sub_state, _CONFIG)
 
     assert "translations" in result
     assert len(result["translations"]) == 1
@@ -212,8 +224,11 @@ async def test_refine_increments_iteration() -> None:
     )
     provider = MockProvider(fixtures={"old": "New punchy draft!"})
 
-    with patch("src.ai.graph.nodes.refine.get_provider", return_value=provider):
-        result = await refine(state)
+    with (
+        patch("src.ai.graph.nodes.refine.get_provider", return_value=provider),
+        patch("src.ai.graph.nodes.refine.publish_workflow_event", new_callable=AsyncMock),
+    ):
+        result = await refine(state, _CONFIG)
 
     assert result["iteration"] == 3
     assert result["initial_draft"] != "Old draft."
@@ -228,8 +243,11 @@ async def test_refine_handles_none_notes() -> None:
     )
     provider = MockProvider()
 
-    with patch("src.ai.graph.nodes.refine.get_provider", return_value=provider):
-        result = await refine(state)
+    with (
+        patch("src.ai.graph.nodes.refine.get_provider", return_value=provider),
+        patch("src.ai.graph.nodes.refine.publish_workflow_event", new_callable=AsyncMock),
+    ):
+        result = await refine(state, _CONFIG)
 
     assert result["initial_draft"] is not None
 
