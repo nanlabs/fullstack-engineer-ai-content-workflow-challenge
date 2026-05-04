@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router";
-import { RefreshCwIcon, Trash2Icon } from "lucide-react";
+import { EyeIcon, RefreshCwIcon, Trash2Icon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -99,15 +99,25 @@ export function ContentPieceRow({ piece, campaignId }: Props) {
         {(displayStatus === "completed" ||
           displayStatus === "rejected" ||
           displayStatus === "failed") && (
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={regenerate.isPending}
-            onClick={handleRegenerate}
-          >
-            <RefreshCwIcon className="mr-1.5 h-4 w-4" />
-            {regenerate.isPending ? "Starting…" : "Regenerate"}
-          </Button>
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => navigate(`/content-pieces/${piece.id}`)}
+            >
+              <EyeIcon className="mr-1.5 h-4 w-4" />
+              View
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={regenerate.isPending}
+              onClick={handleRegenerate}
+            >
+              <RefreshCwIcon className="mr-1.5 h-4 w-4" />
+              {regenerate.isPending ? "Starting…" : "Regenerate"}
+            </Button>
+          </>
         )}
 
         <AlertDialog>
@@ -126,7 +136,9 @@ export function ContentPieceRow({ piece, campaignId }: Props) {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+              <AlertDialogAction variant="destructive" onClick={handleDelete}>
+                Delete
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

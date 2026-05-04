@@ -20,7 +20,7 @@ export function useDraftEditor(draft: DraftRead | null): DraftEditorHandle {
     setValue(next);
     setIsDirty(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draft?.id]);
+  }, [draft?.id, draft?.edited_content]);
 
   function onChange(newValue: string) {
     setValue(newValue);
