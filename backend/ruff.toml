@@ -1,0 +1,9 @@
+target-version = "py312"
+line-length = 100
+
+[lint]
+select = ["E", "F", "I", "B", "UP", "N", "S", "ASYNC"]
+ignore = ["S101", "B008"]  # S101: assert OK in tests; B008: Depends() in defaults is idiomatic FastAPI
+
+[lint.per-file-ignores]
+"tests/*" = ["S"]
