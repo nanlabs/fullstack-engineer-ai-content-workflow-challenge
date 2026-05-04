@@ -67,7 +67,7 @@ async def seed(session: AsyncSession) -> None:
             "who want to upgrade their productivity toolkit. Focus on simplicity, "
             "speed, and value for money."
         ),
-        target_languages=["en", "es", "pt-BR"],
+        target_languages=["es", "pt-BR"],
         source_language="en",
     )
     session.add(campaign)
